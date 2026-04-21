@@ -54,6 +54,7 @@ class SettingsPane extends StatelessWidget {
               final credential = await authService.linkWithGoogle();
               if (context.mounted) {
                 if (credential != null) {
+                  await taskProvider.reloadFromStorage();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Succesfully linked to ${credential.user?.email}')),
                   );
@@ -70,6 +71,8 @@ class SettingsPane extends StatelessWidget {
             context,
             title: 'Signed in via Google',
             subtitle: authService.currentUser?.email ?? 'Bound Account',
+            icon: Icons.verified_user_rounded,
+            iconColor: Colors.green,
             trailing: IconButton(
               icon: const Icon(Icons.logout_rounded),
               onPressed: () async {
@@ -80,11 +83,10 @@ class SettingsPane extends StatelessWidget {
                   );
                   // Rerun the anon init
                   await authService.signInAnonymously();
+                  await taskProvider.reloadFromStorage();
                 }
               },
             ),
-            icon: Icons.verified_user_rounded,
-            iconColor: Colors.green,
           ),
         const SizedBox(height: 24),
         _buildSectionHeader(context, 'Data Management'),

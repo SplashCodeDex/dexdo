@@ -113,6 +113,10 @@ class TaskProvider with ChangeNotifier {
       await DataMigrationService.performMigrationIfNeeded(_storage as FirebaseStorageService);
     }
 
+    await reloadFromStorage();
+  }
+
+  Future<void> reloadFromStorage() async {
     final savedCategories = await _storage.loadCategories();
     if (savedCategories.isNotEmpty) _categories = savedCategories;
 
