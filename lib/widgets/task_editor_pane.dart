@@ -167,7 +167,22 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
                       lastDate: DateTime(2100),
                     );
                     if (pickedDate != null) {
-                      taskProvider.updateDueDate(widget.task, pickedDate);
+                      final pickedTime = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.fromDateTime(widget.task.dueDate ?? DateTime.now()),
+                      );
+                      if (pickedTime != null) {
+                        final finalDateTime = DateTime(
+                          pickedDate.year,
+                          pickedDate.month,
+                          pickedDate.day,
+                          pickedTime.hour,
+                          pickedTime.minute,
+                        );
+                        taskProvider.updateDueDate(widget.task, finalDateTime);
+                      } else {
+                        taskProvider.updateDueDate(widget.task, pickedDate);
+                      }
                     }
                   },
                   child: Text(

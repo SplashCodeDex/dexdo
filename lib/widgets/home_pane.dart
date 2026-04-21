@@ -43,6 +43,8 @@ class HomePane extends StatelessWidget {
           const SizedBox(height: 32),
           _buildProgressCard(context, progressToday, completedToday.length, totalToday),
           const SizedBox(height: 32),
+          _buildCategoryFilter(context, taskProvider),
+          const SizedBox(height: 8),
           _buildSectionTitle(context, 'Upcoming Tasks'),
           const SizedBox(height: 16),
           _buildUpcomingTasks(context, activeTasks),
@@ -180,6 +182,38 @@ class HomePane extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryFilter(BuildContext context, TaskProvider provider) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Row(
+        children: provider.categories.map((category) {
+          final isSelected = provider.selectedCategory == category;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: ChoiceChip(
+              label: Text(category),
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected) {
+                  provider.setCategory(category);
+                }
+              },
+              side: BorderSide.none,
+              selectedColor: Theme.of(context).colorScheme.primaryContainer,
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              labelStyle: TextStyle(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

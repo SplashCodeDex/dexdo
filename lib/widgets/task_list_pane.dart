@@ -479,13 +479,19 @@ class _TaskListPaneState extends State<TaskListPane> {
                               Text(' ${task.attachmentCount} ', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5))),
                             ],
                             if (task.subtasks.isNotEmpty) ...[
-                              Icon(
-                                task.progress == 1.0 ? Icons.check_circle_outline : Icons.checklist_rounded, 
-                                size: 14, 
-                                color: task.progress == 1.0 ? Colors.green : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
+                              SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  value: task.progress,
+                                  strokeWidth: 2,
+                                  backgroundColor: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                                  color: task.progress == 1.0 ? Colors.green : Theme.of(context).colorScheme.primary,
+                                ),
                               ),
+                              const SizedBox(width: 4),
                               Text(
-                                ' ${task.completedSubtaskCount}/${task.subtasks.length}', 
+                                '${task.completedSubtaskCount}/${task.subtasks.length}', 
                                 style: TextStyle(
                                   fontSize: 11, 
                                   color: task.progress == 1.0 ? Colors.green : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),

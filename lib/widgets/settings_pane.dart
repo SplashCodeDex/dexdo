@@ -39,6 +39,21 @@ class SettingsPane extends StatelessWidget {
           iconColor: Colors.deepPurple,
         ),
         const SizedBox(height: 24),
+        _buildSectionHeader(context, 'Account'),
+        _buildSettingTile(
+          context,
+          title: 'Sign In / Sync Data',
+          subtitle: 'Bind to a permanent cloud account',
+          trailing: const Icon(Icons.cloud_sync_rounded),
+          icon: Icons.account_circle_rounded,
+          iconColor: Colors.orange,
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Firebase UI binding coming soon...')),
+            );
+          },
+        ),
+        const SizedBox(height: 24),
         _buildSectionHeader(context, 'Data Management'),
         _buildSettingTile(
           context,

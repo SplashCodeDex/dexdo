@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/task.dart';
 import '../services/storage_service.dart';
 import '../services/firebase_storage_service.dart';
+import '../services/data_migration_service.dart';
 import '../services/notification_service.dart';
 import 'dart:convert';
 
@@ -106,6 +107,11 @@ class TaskProvider with ChangeNotifier {
   Future<void> _loadData() async {
     await _storage.init();
     await _notifications.init();
+
+    // Ensure migration from Local -> Firebase happens on first boot
+    if (_storage is FirebaseStorageService) {
+      await DataMigrationService.performMigrationIfNeeded(_storage as FirebaseStorageService);
+    }
 
     final savedCategories = await _storage.loadCategories();
     if (savedCategories.isNotEmpty) _categories = savedCategories;
