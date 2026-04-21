@@ -47,6 +47,7 @@ dependencies:
   path_provider: ^2.1.5
   share_plus: ^13.1.0
   google_sign_in: ^6.2.1
+  in_app_purchase: ^3.2.0
 
 dev_dependencies:
   flutter_test:
