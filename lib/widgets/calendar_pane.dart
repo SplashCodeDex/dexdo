@@ -218,7 +218,8 @@ class _CalendarPaneState extends State<CalendarPane> {
   Widget _buildTasksForSelectedDay(List<Task> allTasks) {
     if (_selectedDay == null) return const SizedBox.shrink();
 
-    final dayTasks = allTasks.where((t) => DateUtils.isSameDay(t.dueDate, _selectedDay)).toList();
+    final dayTasks = allTasks.where((t) => DateUtils.isSameDay(t.dueDate, _selectedDay)).toList()
+      ..sort((a, b) => (a.dueDate ?? DateTime.now()).compareTo(b.dueDate ?? DateTime.now()));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,36 +234,126 @@ class _CalendarPaneState extends State<CalendarPane> {
         if (dayTasks.isEmpty)
           const Expanded(
             child: Center(
-              child: Text('No tasks scheduled for this day'),
+              child: Text('Free time! No tasks scheduled for this day.'),
             ),
           )
         else
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               itemCount: dayTasks.length,
               itemBuilder: (context, index) {
                 final task = dayTasks[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    onTap: () {
-                      final provider = Provider.of<TaskProvider>(context, listen: false);
-                      provider.setSelectedTask(task);
-                      if (widget.onTaskTap != null) widget.onTaskTap!(task);
-                    },
-                    leading: Icon(task.icon, color: task.color),
-                    title: Text(
-                      task.title.isEmpty ? 'Untitled Task' : task.title,
-                      style: TextStyle(
-                        decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                final isLast = index == dayTasks.length - 1;
+                
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Column(
+                      children: [
+                        Container(
+                          width: 14,
+                          height: 14,
+                          margin: const EdgeInsets.only(top: 16),
+                          decoration: BoxDecoration(
+                            color: task.isCompleted ? Colors.green : Theme.of(context).colorScheme.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.surface,
+                              width: 3,
+                            ),
+                            boxShadow: [
+                              BoxShadow(color: (task.isCompleted ? Colors.green : Theme.of(context).colorScheme.primary).withValues(alpha: 0.3), blurRadius: 4),
+                            ]
+                          ),
+                        ),
+                        if (!isLast)
+                          Expanded(
+                            child: Container(
+                              width: 2,
+                              color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 24.0),
+                        child: GestureDetector(
+                          onTap: () {
+                            final provider = Provider.of<TaskProvider>(context, listen: false);
+                            provider.setSelectedTask(task);
+                            if (widget.onTaskTap != null) widget.onTaskTap!(task);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardTheme.color,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Theme.of(context).dividerColor),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2)),
+                              ]
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: task.color.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(task.icon, color: task.color, size: 20),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        task.dueDate != null ? DateFormat('h:mm a').format(task.dueDate!) : 'Anytime',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: task.isCompleted ? Colors.green : Theme.of(context).colorScheme.primary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        task.title.isEmpty ? 'Untitled Task' : task.title,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                                          color: task.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant : Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      if (task.description.isNotEmpty) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          task.description,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ]
+                                    ],
+                                  ),
+                                ),
+                                if (task.isCompleted)
+                                  const Icon(Icons.check_circle_rounded, color: Colors.green),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                    subtitle: Text(task.category),
-                    trailing: task.isCompleted 
-                        ? const Icon(Icons.check_circle, color: Colors.green)
-                        : null,
-                  ),
+                  ],
                 );
               },
             ),

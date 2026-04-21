@@ -42,6 +42,7 @@ class Task {
   List<SubTask> subtasks;
   DateTime? dueDate;
   int orderIndex;
+  String? recurrence;
 
   Task({
     required this.id,
@@ -57,6 +58,7 @@ class Task {
     List<SubTask>? subtasks,
     this.dueDate,
     this.orderIndex = 0,
+    this.recurrence = 'none',
   }) : subtasks = subtasks ?? [];
 
   int get subtaskCount => subtasks.length;
@@ -77,6 +79,7 @@ class Task {
     List<SubTask>? subtasks,
     DateTime? dueDate,
     int? orderIndex,
+    String? recurrence,
   }) {
     return Task(
       id: id ?? this.id,
@@ -92,6 +95,7 @@ class Task {
       subtasks: subtasks ?? this.subtasks,
       dueDate: dueDate ?? this.dueDate,
       orderIndex: orderIndex ?? this.orderIndex,
+      recurrence: recurrence ?? this.recurrence,
     );
   }
 
@@ -110,6 +114,7 @@ class Task {
       'subtasks': subtasks.map((s) => s.toJson()).toList(),
       'dueDate': dueDate?.toIso8601String(),
       'orderIndex': orderIndex,
+      'recurrence': recurrence,
     };
   }
 
@@ -130,6 +135,7 @@ class Task {
           .toList() ?? [],
       dueDate: map['dueDate'] != null ? DateTime.parse(map['dueDate']) : null,
       orderIndex: map['orderIndex'] ?? 0,
+      recurrence: map['recurrence'] ?? 'none',
     );
   }
 }

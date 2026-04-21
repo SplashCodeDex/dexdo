@@ -287,6 +287,12 @@ class TaskProvider with ChangeNotifier {
     await _saveTasks();
   }
 
+  Future<void> updateRecurrence(Task task, String recurrence) async {
+    task.recurrence = recurrence;
+    notifyListeners();
+    await _saveTasks();
+  }
+
   Future<void> reorderTasks(int oldIndex, int newIndex) async {
     final active = activeTasks;
     final completed = completedTasks;
@@ -392,11 +398,19 @@ class TaskProvider with ChangeNotifier {
 
   Future<void> markSelectedAsCompleted(bool completed) async {
     final now = DateTime.now();
+    List<Task> newRecurringTasks = [];
+
     for (var task in _tasks) {
       if (_selectedTaskIds.contains(task.id)) {
+        if (!task.isCompleted && completed) {
+           _handleRecurrence(task, now, newRecurringTasks);
+        }
         task.isCompleted = completed;
         task.completionDate = completed ? now : null;
       }
+    }
+    if (newRecurringTasks.isNotEmpty) {
+      _tasks.addAll(newRecurringTasks);
     }
     _selectedTaskIds.clear();
     _updateFilteredTasks();
@@ -418,14 +432,59 @@ class TaskProvider with ChangeNotifier {
     await _saveTasks();
   }
 
+  void _handleRecurrence(Task task, DateTime now, List<Task> newTasksList) {
+    if (task.recurrence != null && task.recurrence != 'none') {
+      DateTime nextDueDate = task.dueDate ?? now;
+      if (task.recurrence == 'daily') {
+        nextDueDate = nextDueDate.add(const Duration(days: 1));
+      } else if (task.recurrence == 'weekly') {
+        nextDueDate = nextDueDate.add(const Duration(days: 7));
+      } else if (task.recurrence == 'monthly') {
+        nextDueDate = DateTime(nextDueDate.year, nextDueDate.month + 1, nextDueDate.day, nextDueDate.hour, nextDueDate.minute);
+      } else if (task.recurrence == 'yearly') {
+        nextDueDate = DateTime(nextDueDate.year + 1, nextDueDate.month, nextDueDate.day, nextDueDate.hour, nextDueDate.minute);
+      }
+
+      // Clone the task
+      final clone = Task(
+        id: _uuid.v4(),
+        title: task.title,
+        description: task.description,
+        isCompleted: false,
+        completionDate: null,
+        isStarred: task.isStarred,
+        icon: task.icon,
+        color: task.color,
+        category: task.category,
+        dueDate: nextDueDate,
+        recurrence: task.recurrence,
+        orderIndex: task.orderIndex - 1, // Keep it near the top
+        subtasks: task.subtasks.map((s) => SubTask(id: _uuid.v4(), title: s.title, isCompleted: false)).toList()
+      );
+      newTasksList.add(clone);
+    }
+  }
+
   Future<void> toggleTask(Task task) async {
-    task.isCompleted = !task.isCompleted;
-    task.completionDate = task.isCompleted ? DateTime.now() : null;
-    if (task.isCompleted) {
+    bool isMarkingDone = !task.isCompleted;
+    task.isCompleted = isMarkingDone;
+    task.completionDate = isMarkingDone ? DateTime.now() : null;
+    
+    if (isMarkingDone) {
       HapticFeedback.heavyImpact();
+      List<Task> pendingClones = [];
+      _handleRecurrence(task, DateTime.now(), pendingClones);
+      if (pendingClones.isNotEmpty) {
+        _tasks.addAll(pendingClones);
+        // Deselect if we are completing it and looking at it
+        if (_selectedTask?.id == task.id) {
+           _selectedTask = pendingClones.first;
+        }
+      }
     } else {
       HapticFeedback.mediumImpact();
     }
+    
     _updateFilteredTasks();
     notifyListeners();
     await _saveTasks();

@@ -147,52 +147,67 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
             const SizedBox(height: 24),
 
             // Metadata Cards
-            Row(
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
               children: [
-                _buildDetailCard(
-                  icon: Icons.category_rounded,
-                  label: 'Category',
-                  child: _buildCategoryDropdown(taskProvider),
+                SizedBox(
+                  width: 160,
+                  child: _buildDetailCard(
+                    icon: Icons.category_rounded,
+                    label: 'Category',
+                    child: _buildCategoryDropdown(taskProvider),
+                  ),
                 ),
-                const SizedBox(width: 16),
-                _buildDetailCard(
-                  icon: Icons.calendar_today_rounded,
-                  label: 'Due Date',
-                  onTap: () async {
-                    FocusScope.of(context).unfocus();
-                    final pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: widget.task.dueDate ?? DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                    );
-                    if (pickedDate != null) {
-                      final pickedTime = await showTimePicker(
+                SizedBox(
+                  width: 160,
+                  child: _buildDetailCard(
+                    icon: Icons.calendar_today_rounded,
+                    label: 'Due Date',
+                    onTap: () async {
+                      FocusScope.of(context).unfocus();
+                      final pickedDate = await showDatePicker(
                         context: context,
-                        initialTime: TimeOfDay.fromDateTime(widget.task.dueDate ?? DateTime.now()),
+                        initialDate: widget.task.dueDate ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
                       );
-                      if (pickedTime != null) {
-                        final finalDateTime = DateTime(
-                          pickedDate.year,
-                          pickedDate.month,
-                          pickedDate.day,
-                          pickedTime.hour,
-                          pickedTime.minute,
+                      if (pickedDate != null) {
+                        final pickedTime = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.fromDateTime(widget.task.dueDate ?? DateTime.now()),
                         );
-                        taskProvider.updateDueDate(widget.task, finalDateTime);
-                      } else {
-                        taskProvider.updateDueDate(widget.task, pickedDate);
+                        if (pickedTime != null) {
+                          final finalDateTime = DateTime(
+                            pickedDate.year,
+                            pickedDate.month,
+                            pickedDate.day,
+                            pickedTime.hour,
+                            pickedTime.minute,
+                          );
+                          taskProvider.updateDueDate(widget.task, finalDateTime);
+                        } else {
+                          taskProvider.updateDueDate(widget.task, pickedDate);
+                        }
                       }
-                    }
-                  },
-                  child: Text(
-                    widget.task.dueDate == null
-                        ? 'Set Date'
-                        : _formatDate(widget.task.dueDate!),
-                    style: TextStyle(
-                      color: widget.task.dueDate == null ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
+                    },
+                    child: Text(
+                      widget.task.dueDate == null
+                          ? 'Set Date'
+                          : _formatDate(widget.task.dueDate!),
+                      style: TextStyle(
+                        color: widget.task.dueDate == null ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
+                  ),
+                ),
+                SizedBox(
+                  width: 160,
+                  child: _buildDetailCard(
+                    icon: Icons.repeat_rounded,
+                    label: 'Recurrence',
+                    child: _buildRecurrenceDropdown(taskProvider),
                   ),
                 ),
               ],
@@ -447,6 +462,113 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
             color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRecurrenceDropdown(TaskProvider taskProvider) {
+    String displayVal = widget.task.recurrence ?? 'none';
+    displayVal = displayVal[0].toUpperCase() + displayVal.substring(1);
+    
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        _showRecurrencePicker(context, taskProvider);
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            displayVal,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 20,
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRecurrencePicker(BuildContext context, TaskProvider taskProvider) {
+    const options = ['none', 'daily', 'weekly', 'monthly', 'yearly'];
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              'Select Recurrence',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: options.map((option) {
+                  final String displayOption = option[0].toUpperCase() + option.substring(1);
+                  final bool isSelected = widget.task.recurrence == option;
+                  return ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        option == 'none' ? Icons.not_interested_rounded : Icons.repeat_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(
+                      displayOption,
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected 
+                            ? Theme.of(context).colorScheme.primary 
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? Icon(Icons.check_circle_rounded, color: Theme.of(context).colorScheme.primary)
+                        : null,
+                    onTap: () {
+                      taskProvider.updateRecurrence(widget.task, option);
+                      Navigator.pop(context);
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
