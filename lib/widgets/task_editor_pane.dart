@@ -34,6 +34,15 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
   void didUpdateWidget(TaskEditorPane oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.task.id != widget.task.id) {
+      // Flush changes for the previous task if a debounce was pending
+      if (_debounce?.isActive ?? false) {
+        _debounce!.cancel();
+        Provider.of<TaskProvider>(context, listen: false).updateTask(
+          oldWidget.task,
+          _titleController.text,
+          _descriptionController.text,
+        );
+      }
       _titleController.text = widget.task.title;
       _descriptionController.text = widget.task.description;
     }
@@ -41,20 +50,33 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
 
   @override
   void dispose() {
+    // Flush any pending changes before disposing
+    if (_debounce?.isActive ?? false) {
+      _debounce!.cancel();
+      final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+      taskProvider.updateTask(
+        widget.task,
+        _titleController.text,
+        _descriptionController.text,
+      );
+    }
     _titleController.dispose();
     _descriptionController.dispose();
     _subtaskController.dispose();
-    _debounce?.cancel();
     super.dispose();
   }
 
   void _saveChanges(TaskProvider provider) {
+    final taskToUpdate = widget.task;
+    final newTitle = _titleController.text;
+    final newDescription = _descriptionController.text;
+
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       provider.updateTask(
-        widget.task,
-        _titleController.text,
-        _descriptionController.text,
+        taskToUpdate,
+        newTitle,
+        newDescription,
       );
     });
   }
@@ -65,7 +87,7 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.4),
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(32),
           bottomLeft: Radius.circular(32),
@@ -88,15 +110,18 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
                   },
                   icon: Icon(
                     widget.task.isStarred ? Icons.star_rounded : Icons.star_outline_rounded,
-                    color: widget.task.isStarred ? const Color(0xFFFFB300) : Colors.grey,
+                    color: widget.task.isStarred ? const Color(0xFFFFB300) : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                   ),
                 ),
                 IconButton(
                   onPressed: () {
                     FocusScope.of(context).unfocus();
                     taskProvider.deleteTask(widget.task);
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    }
                   },
-                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                  icon: Icon(Icons.delete_outline_rounded, color: Theme.of(context).colorScheme.error),
                   tooltip: 'Delete Task',
                 ),
               ],
@@ -106,15 +131,15 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
             // Title Input
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'What needs to be done?',
-                hintStyle: TextStyle(color: Colors.black26),
+                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
                 border: InputBorder.none,
               ),
               onTapOutside: (_) => FocusScope.of(context).unfocus(),
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: widget.task.isCompleted ? Colors.grey : Colors.black87,
+                    color: widget.task.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.onSurface,
                     decoration: widget.task.isCompleted ? TextDecoration.lineThrough : null,
                   ),
               onChanged: (_) => _saveChanges(taskProvider),
@@ -150,7 +175,7 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
                         ? 'Set Date'
                         : _formatDate(widget.task.dueDate!),
                     style: TextStyle(
-                      color: widget.task.dueDate == null ? Colors.black26 : Colors.blue[700],
+                      color: widget.task.dueDate == null ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -172,7 +197,7 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.grey[100]?.withValues(alpha: 0.5),
+                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: TextField(
@@ -183,7 +208,7 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
                 ),
                 onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 maxLines: 8,
-                style: const TextStyle(height: 1.6, color: Colors.black87),
+                style: TextStyle(height: 1.6, color: Theme.of(context).colorScheme.onSurface),
                 onChanged: (_) => _saveChanges(taskProvider),
               ),
             ),
@@ -194,12 +219,12 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.cloud_done_outlined, size: 16, color: Colors.green),
+                  Icon(Icons.cloud_done_outlined, size: 16, color: Colors.green.withValues(alpha: 0.7)),
                   const SizedBox(width: 8),
                   Text(
                     'Changes saved automatically',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                         ),
                   ),
                 ],
@@ -214,10 +239,10 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
   Widget _buildSectionLabel(String text) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.bold,
-        color: Colors.black38,
+        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
         letterSpacing: 1.2,
       ),
     );
@@ -229,7 +254,7 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.grey[50],
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -241,7 +266,7 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
               },
               child: Icon(
                 subtask.isCompleted ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
-                color: subtask.isCompleted ? Colors.green : Colors.grey[400],
+                color: subtask.isCompleted ? Colors.green : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                 size: 20,
               ),
             ),
@@ -250,13 +275,13 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
               child: Text(
                 subtask.title,
                 style: TextStyle(
-                  color: subtask.isCompleted ? Colors.grey : Colors.black87,
+                  color: subtask.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.onSurface,
                   decoration: subtask.isCompleted ? TextDecoration.lineThrough : null,
                 ),
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.close_rounded, size: 16, color: Colors.black12),
+              icon: Icon(Icons.close_rounded, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
               onPressed: () {
                 FocusScope.of(context).unfocus();
                 provider.deleteSubtask(widget.task, subtask);
@@ -273,19 +298,19 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.black12),
+        border: Border.all(color: Theme.of(context).dividerColor),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          const Icon(Icons.add_rounded, size: 20, color: Colors.black26),
+          Icon(Icons.add_rounded, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
               controller: _subtaskController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Add a subtask...',
-                hintStyle: TextStyle(fontSize: 14, color: Colors.black26),
+                hintStyle: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
                 border: InputBorder.none,
               ),
               onTapOutside: (_) => FocusScope.of(context).unfocus(),
@@ -311,7 +336,9 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: widget.task.isCompleted ? Colors.green.withValues(alpha: 0.1) : Colors.blue.withValues(alpha: 0.1),
+          color: widget.task.isCompleted 
+              ? Colors.green.withValues(alpha: 0.1) 
+              : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -320,7 +347,7 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
             Icon(
               widget.task.isCompleted ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
               size: 18,
-              color: widget.task.isCompleted ? Colors.green : Colors.blue,
+              color: widget.task.isCompleted ? Colors.green : Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(width: 8),
             Text(
@@ -328,7 +355,7 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: widget.task.isCompleted ? Colors.green : Colors.blue,
+                color: widget.task.isCompleted ? Colors.green : Theme.of(context).colorScheme.primary,
               ),
             ),
           ],
@@ -360,8 +387,8 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: onTap != null ? Colors.white : Colors.transparent,
-            border: Border.all(color: Colors.black12),
+            color: onTap != null ? Theme.of(context).colorScheme.surface : Colors.transparent,
+            border: Border.all(color: Theme.of(context).dividerColor),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
@@ -369,9 +396,9 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
             children: [
               Row(
                 children: [
-                  Icon(icon, size: 16, color: Colors.black38),
+                  Icon(icon, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
                   const SizedBox(width: 8),
-                  Text(label, style: const TextStyle(fontSize: 12, color: Colors.black38)),
+                  Text(label, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5))),
                 ],
               ),
               const SizedBox(height: 8),
@@ -384,25 +411,100 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
   }
 
   Widget _buildCategoryDropdown(TaskProvider taskProvider) {
-    return DropdownButtonHideUnderline(
-      child: DropdownButton<String>(
-        value: widget.task.category,
-        isDense: true,
-        icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
-        items: taskProvider.categories
-            .where((c) => c != 'All')
-            .map((String category) {
-          return DropdownMenuItem<String>(
-            value: category,
-            child: Text(category, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-          );
-        }).toList(),
-        onChanged: (String? newValue) {
-          FocusScope.of(context).unfocus();
-          if (newValue != null) {
-            taskProvider.updateCategory(widget.task, newValue);
-          }
-        },
+    return InkWell(
+      onTap: () => _showCategoryPicker(context, taskProvider),
+      borderRadius: BorderRadius.circular(12),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            widget.task.category,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 20,
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCategoryPicker(BuildContext context, TaskProvider taskProvider) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              'Select Category',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: taskProvider.categories
+                    .where((c) => c != 'All')
+                    .map((category) => ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: (taskProvider.categoryColors[category] ?? Colors.blue).withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              taskProvider.categoryIcons[category] ?? Icons.category_rounded,
+                              color: taskProvider.categoryColors[category] ?? Colors.blue,
+                              size: 20,
+                            ),
+                          ),
+                          title: Text(
+                            category,
+                            style: TextStyle(
+                              fontWeight: widget.task.category == category ? FontWeight.bold : FontWeight.normal,
+                              color: widget.task.category == category 
+                                  ? Theme.of(context).colorScheme.primary 
+                                  : Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          trailing: widget.task.category == category
+                              ? Icon(Icons.check_circle_rounded, color: Theme.of(context).colorScheme.primary)
+                              : null,
+                          onTap: () {
+                            taskProvider.updateCategory(widget.task, category);
+                            Navigator.pop(context);
+                          },
+                        ))
+                    .toList(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

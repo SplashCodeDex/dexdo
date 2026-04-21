@@ -68,97 +68,191 @@ class _CategoryDialogState extends State<CategoryDialog> {
     final provider = Provider.of<TaskProvider>(context, listen: false);
     final isEditing = widget.initialName != null;
 
-    return AlertDialog(
-      title: Text(isEditing ? 'Edit Category' : 'New Category'),
-      content: SingleChildScrollView(
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      padding: EdgeInsets.only(
+        top: 24,
+        left: 24,
+        right: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                Text(
+                  isEditing ? 'Edit Category' : 'New Category',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+                const Spacer(),
+                if (isEditing && widget.initialName != 'All' && widget.initialName != 'Personal')
+                  IconButton(
+                    onPressed: () {
+                      provider.deleteCategory(widget.initialName!);
+                      Navigator.pop(context);
+                    },
+                    icon: Icon(Icons.delete_outline_rounded, color: Theme.of(context).colorScheme.error),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 24),
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Category Name',
-                border: OutlineInputBorder(),
+                hintText: 'e.g. Work, Study, Health',
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                floatingLabelStyle: TextStyle(color: Theme.of(context).colorScheme.primary),
               ),
               autofocus: true,
             ),
             const SizedBox(height: 24),
-            const Text('Select Icon', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'Select Icon',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                letterSpacing: 0.5,
+              ),
+            ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _availableIcons.map((icon) {
-                final isSelected = _selectedIcon == icon;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedIcon = icon),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? _selectedColor.withValues(alpha: 0.1) : Colors.transparent,
-                      border: Border.all(color: isSelected ? _selectedColor : Colors.grey[300]!),
-                      borderRadius: BorderRadius.circular(8),
+            SizedBox(
+              height: 100,
+              child: GridView.builder(
+                scrollDirection: Axis.horizontal,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                ),
+                itemCount: _availableIcons.length,
+                itemBuilder: (context, index) {
+                  final icon = _availableIcons[index];
+                  final isSelected = _selectedIcon == icon;
+                  return GestureDetector(
+                    onTap: () => setState(() => _selectedIcon = icon),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      decoration: BoxDecoration(
+                        color: isSelected ? _selectedColor.withValues(alpha: 0.1) : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+                        border: Border.all(
+                          color: isSelected ? _selectedColor : Colors.transparent,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        icon,
+                        color: isSelected ? _selectedColor : Theme.of(context).colorScheme.onSurfaceVariant,
+                        size: 20,
+                      ),
                     ),
-                    child: Icon(icon, color: isSelected ? _selectedColor : Colors.grey[600]),
-                  ),
-                );
-              }).toList(),
+                  );
+                },
+              ),
             ),
             const SizedBox(height: 24),
-            const Text('Select Color', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'Select Color',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                letterSpacing: 0.5,
+              ),
+            ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: _availableColors.map((color) {
-                final isSelected = _selectedColor == color;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedColor = color),
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      border: isSelected ? Border.all(color: Colors.black, width: 2) : null,
+            SizedBox(
+              height: 44,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _availableColors.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final color = _availableColors[index];
+                  final isSelected = _selectedColor == color;
+                  return GestureDetector(
+                    onTap: () => setState(() => _selectedColor = color),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: isSelected ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 3) : null,
+                        boxShadow: [
+                          if (isSelected)
+                            BoxShadow(
+                              color: color.withValues(alpha: 0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                        ],
+                      ),
+                      child: isSelected ? const Icon(Icons.check, size: 20, color: Colors.white) : null,
                     ),
-                    child: isSelected ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
-                  ),
-                );
-              }).toList(),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: () {
+                  final name = _nameController.text.trim();
+                  if (name.isNotEmpty) {
+                    if (isEditing) {
+                      provider.editCategory(widget.initialName!, name, _selectedIcon, _selectedColor);
+                    } else {
+                      provider.addCategory(name, _selectedIcon, _selectedColor);
+                    }
+                    Navigator.pop(context);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
+                ),
+                child: Text(
+                  isEditing ? 'Save Changes' : 'Create Category',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ),
             ),
           ],
         ),
       ),
-      actions: [
-        if (isEditing && widget.initialName != 'All' && widget.initialName != 'Personal')
-          TextButton(
-            onPressed: () {
-              provider.deleteCategory(widget.initialName!);
-              Navigator.pop(context);
-            },
-            child: const Text('DELETE', style: TextStyle(color: Colors.red)),
-          ),
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('CANCEL'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            final name = _nameController.text.trim();
-            if (name.isNotEmpty) {
-              if (isEditing) {
-                provider.editCategory(widget.initialName!, name, _selectedIcon, _selectedColor);
-              } else {
-                provider.addCategory(name, _selectedIcon, _selectedColor);
-              }
-              Navigator.pop(context);
-            }
-          },
-          child: Text(isEditing ? 'SAVE' : 'ADD'),
-        ),
-      ],
     );
   }
 }

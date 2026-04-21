@@ -48,11 +48,13 @@ class TaskProvider with ChangeNotifier {
       ).toList();
     }
     
-    // Primary sort: starred, Secondary sort: orderIndex
+    // Primary sort: starred, Secondary sort: orderIndex, Tertiary sort: id for stability
     filtered.sort((a, b) {
       if (a.isStarred && !b.isStarred) return -1;
       if (!a.isStarred && b.isStarred) return 1;
-      return a.orderIndex.compareTo(b.orderIndex);
+      int res = a.orderIndex.compareTo(b.orderIndex);
+      if (res != 0) return res;
+      return a.id.compareTo(b.id);
     });
     return filtered;
   }
@@ -126,7 +128,17 @@ class TaskProvider with ChangeNotifier {
     if (tasksJson != null) {
       try {
         final List<dynamic> decoded = json.decode(tasksJson);
-        _tasks = decoded.map((item) => Task.fromMap(item)).toList();
+        _tasks = decoded
+            .map((item) {
+              try {
+                return Task.fromMap(item);
+              } catch (e) {
+                debugPrint('Error parsing individual task: $e');
+                return null;
+              }
+            })
+            .whereType<Task>()
+            .toList();
       } catch (e) {
         debugPrint('Error loading tasks: $e');
         _tasks = [];
@@ -165,6 +177,9 @@ class TaskProvider with ChangeNotifier {
   }
 
   Future<void> editCategory(String oldName, String newName, IconData icon, Color color) async {
+    if (newName.isEmpty) return;
+    if (newName != oldName && _categories.contains(newName)) return;
+
     final index = _categories.indexOf(oldName);
     if (index != -1) {
       _categories[index] = newName;
@@ -318,13 +333,31 @@ class TaskProvider with ChangeNotifier {
 
     uiItems.insert(newIndex, movedTask);
 
-    // Re-assign orderIndex for tasks in this view
-    int counter = 0;
-    for (var item in uiItems) {
-      if (item != null) {
-        item.orderIndex = counter++;
+    // Global Re-indexing to preserve relative order of hidden tasks
+    final List<Task> allTasksSorted = List.from(_tasks);
+    allTasksSorted.sort((a, b) {
+      if (a.isStarred && !b.isStarred) return -1;
+      if (!a.isStarred && b.isStarred) return 1;
+      int res = a.orderIndex.compareTo(b.orderIndex);
+      if (res != 0) return res;
+      return a.id.compareTo(b.id);
+    });
+
+    final List<Task> newlyOrderedVisible = uiItems.whereType<Task>().toList();
+    final Set<String> visibleIds = newlyOrderedVisible.map((t) => t.id).toSet();
+    
+    int visibleIdx = 0;
+    for (int i = 0; i < allTasksSorted.length; i++) {
+      if (visibleIds.contains(allTasksSorted[i].id)) {
+        allTasksSorted[i] = newlyOrderedVisible[visibleIdx++];
       }
     }
+    
+    // Assign final indices and update global list
+    for (int i = 0; i < allTasksSorted.length; i++) {
+      allTasksSorted[i].orderIndex = i;
+    }
+    _tasks = allTasksSorted;
 
     notifyListeners();
     await _saveTasks();

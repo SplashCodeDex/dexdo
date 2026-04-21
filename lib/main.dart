@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'providers/task_provider.dart';
+import 'providers/theme_provider.dart';
 import 'widgets/task_list_pane.dart';
 import 'widgets/task_editor_pane.dart';
 import 'package:animations/animations.dart';
@@ -9,8 +11,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => TaskProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => TaskProvider()),
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+      ],
       child: const DeXDoApp(),
     ),
   );
@@ -21,23 +26,74 @@ class DeXDoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return MaterialApp(
       title: 'DeXDo',
       debugShowCheckedModeBanner: false,
+      themeMode: themeProvider.themeMode,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          surface: Colors.grey[50]!,
+          seedColor: const Color(0xFF2563EB), // A more vibrant "DeX Blue"
+          brightness: Brightness.light,
+          surface: const Color(0xFFF8FAFC), // Slate 50
         ),
-        scaffoldBackgroundColor: Colors.grey[50],
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.grey[50],
+        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+        dividerColor: const Color(0xFFE2E8F0), // Slate 200
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFFF8FAFC),
           surfaceTintColor: Colors.transparent,
-          titleTextStyle: const TextStyle(
-            color: Colors.black,
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
+          systemOverlayStyle: SystemUiOverlayStyle.dark,
+          centerTitle: false,
+          elevation: 0,
+          titleTextStyle: TextStyle(
+            color: Color(0xFF1E293B), // Slate 800
+            fontSize: 24,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+          ),
+        ),
+        cardTheme: CardThemeData(
+          color: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+          ),
+        ),
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF3B82F6),
+          brightness: Brightness.dark,
+          surface: const Color(0xFF0F172A), // Slate 900 (Deep Navy)
+          onSurface: const Color(0xFFF1F5F9),
+          primaryContainer: const Color(0xFF1E293B),
+          onPrimaryContainer: const Color(0xFF3B82F6),
+        ),
+        scaffoldBackgroundColor: const Color(0xFF0F172A),
+        dividerColor: const Color(0xFF1E293B), // Slate 800
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF0F172A),
+          surfaceTintColor: Colors.transparent,
+          systemOverlayStyle: SystemUiOverlayStyle.light,
+          centerTitle: false,
+          elevation: 0,
+          titleTextStyle: TextStyle(
+            color: Color(0xFFF1F5F9),
+            fontSize: 24,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+          ),
+        ),
+        cardTheme: CardThemeData(
+          color: const Color(0xFF1E293B), // Slate 800
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: Color(0xFF334155), width: 1), // Slate 700
           ),
         ),
       ),
@@ -62,7 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           // Sidebar Navigation for Desktop
           _buildDesktopNavigationRail(),
-          const VerticalDivider(width: 1, color: Colors.black12),
+          VerticalDivider(width: 1, color: Theme.of(context).dividerColor),
           
           // Content Area
           Expanded(
@@ -83,12 +139,12 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() => _selectedIndex = index);
       },
       labelType: NavigationRailLabelType.selected,
-      backgroundColor: Colors.white.withValues(alpha: 0.5),
-      indicatorColor: Colors.blue.withValues(alpha: 0.1),
-      selectedIconTheme: const IconThemeData(color: Colors.blue),
-      unselectedIconTheme: const IconThemeData(color: Colors.grey),
-      selectedLabelTextStyle: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-      unselectedLabelTextStyle: const TextStyle(color: Colors.grey),
+      backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
+      indicatorColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+      selectedIconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
+      unselectedIconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurfaceVariant),
+      selectedLabelTextStyle: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+      unselectedLabelTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
       destinations: const [
         NavigationRailDestination(
           icon: Icon(Icons.home_outlined),
@@ -124,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
               'assets/images/logo2DexDoNo.svg',
               height: 120,
               colorFilter: ColorFilter.mode(
-                Colors.blue.withValues(alpha: 0.15),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
                 BlendMode.srcIn,
               ),
             ),
@@ -132,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               '${['Home View', 'Calendar View', '', 'Settings'][_selectedIndex < 2 ? _selectedIndex : _selectedIndex - 1]} Coming Soon',
               style: TextStyle(
-                color: Colors.blue[900]?.withValues(alpha: 0.4),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
                 fontSize: 20,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 1.2,
@@ -150,11 +206,11 @@ class _HomeScreenState extends State<HomeScreen> {
             flex: 2,
             child: TaskListPane(),
           ),
-          const VerticalDivider(width: 1, color: Colors.black12),
+          VerticalDivider(width: 1, color: Theme.of(context).dividerColor),
           Expanded(
             flex: 3,
             child: Container(
-              color: Colors.white.withValues(alpha: 0.3),
+              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
               child: PageTransitionSwitcher(
                 transitionBuilder: (child, primaryAnimation, secondaryAnimation) {
                   return SharedAxisTransition(
@@ -174,11 +230,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.edit_note_rounded, size: 64, color: Colors.blue.withValues(alpha: 0.1)),
+                            Icon(Icons.edit_note_rounded, size: 64, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)),
                             const SizedBox(height: 16),
-                            const Text(
+                            Text(
                               'Select a task to view details',
-                              style: TextStyle(color: Colors.black26, fontSize: 16),
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5), fontSize: 16),
                             ),
                           ],
                         ),
@@ -196,6 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final taskProvider = Provider.of<TaskProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -222,6 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       'assets/images/DexDo.png',
                       height: 40,
                       filterQuality: FilterQuality.high,
+                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white : null,
                     ),
               actions: [
                 if (taskProvider.isSelectionMode) ...[
@@ -254,6 +312,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         .toList(),
                   ),
                 ] else ...[
+                  IconButton(
+                    icon: Icon(themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode),
+                    onPressed: () => themeProvider.toggleTheme(!themeProvider.isDarkMode),
+                    tooltip: 'Toggle Theme',
+                  ),
                   if (taskProvider.hasCompleted && _selectedIndex == 2)
                     IconButton(
                       onPressed: () {
@@ -273,17 +336,20 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             body: _buildBody(isLargeScreen, taskProvider),
             bottomNavigationBar: !isLargeScreen ? _buildBottomNav() : null,
-            floatingActionButton: _selectedIndex == 2 ? FloatingActionButton(
+            floatingActionButton: FloatingActionButton(
               onPressed: () {
                 FocusScope.of(context).unfocus();
                 taskProvider.addTask();
+                if (_selectedIndex != 2) {
+                  setState(() => _selectedIndex = 2);
+                }
               },
-              backgroundColor: Colors.blue[600],
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               elevation: 4,
               child: const Icon(Icons.add, size: 32),
-            ) : null,
+            ),
             floatingActionButtonLocation: !isLargeScreen 
                 ? FloatingActionButtonLocation.centerDocked 
                 : FloatingActionButtonLocation.endFloat,
@@ -314,10 +380,10 @@ class _HomeScreenState extends State<HomeScreen> {
             filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.6),
+                color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(35),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                   width: 1.5,
                 ),
               ),
@@ -325,7 +391,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   IconButton(
-                    icon: Icon(Icons.home_outlined, color: _selectedIndex == 0 ? Colors.blue : Colors.grey),
+                    icon: Icon(Icons.home_outlined, color: _selectedIndex == 0 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
                     onPressed: () {
                       FocusScope.of(context).unfocus();
                       setState(() => _selectedIndex = 0);
@@ -333,7 +399,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     tooltip: 'Home',
                   ),
                   IconButton(
-                    icon: Icon(Icons.calendar_month_outlined, color: _selectedIndex == 1 ? Colors.blue : Colors.grey),
+                    icon: Icon(Icons.calendar_month_outlined, color: _selectedIndex == 1 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
                     onPressed: () {
                       FocusScope.of(context).unfocus();
                       setState(() => _selectedIndex = 1);
@@ -342,7 +408,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(width: 48), // Space for FAB
                   IconButton(
-                    icon: Icon(Icons.list_alt_rounded, color: _selectedIndex == 2 ? Colors.blue : Colors.grey),
+                    icon: Icon(Icons.list_alt_rounded, color: _selectedIndex == 2 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
                     onPressed: () {
                       FocusScope.of(context).unfocus();
                       setState(() => _selectedIndex = 2);
@@ -350,7 +416,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     tooltip: 'Tasks',
                   ),
                   IconButton(
-                    icon: Icon(Icons.person_outline, color: _selectedIndex == 3 ? Colors.blue : Colors.grey),
+                    icon: Icon(Icons.person_outline, color: _selectedIndex == 3 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
                     onPressed: () {
                       FocusScope.of(context).unfocus();
                       setState(() => _selectedIndex = 3);

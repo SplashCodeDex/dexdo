@@ -55,9 +55,12 @@ class _TaskListPaneState extends State<TaskListPane> {
                 ? _buildEmptyState(taskProvider)
                 : ReorderableListView(
                     key: ValueKey('list_${taskProvider.selectedCategory}'),
+                    buildDefaultDragHandles: taskProvider.searchQuery.isEmpty,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     onReorder: (oldIndex, newIndex) {
-                      taskProvider.reorderTasks(oldIndex, newIndex);
+                      if (taskProvider.searchQuery.isEmpty) {
+                        taskProvider.reorderTasks(oldIndex, newIndex);
+                      }
                     },
                     children: [
                       if (activeTasks.isNotEmpty) ...[
@@ -112,7 +115,7 @@ class _TaskListPaneState extends State<TaskListPane> {
               )
             : null,
           filled: true,
-          fillColor: Colors.grey[100],
+          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
           contentPadding: const EdgeInsets.symmetric(vertical: 0),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
@@ -134,7 +137,7 @@ class _TaskListPaneState extends State<TaskListPane> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[400],
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
               letterSpacing: 1.2,
             ),
           ),
@@ -142,16 +145,16 @@ class _TaskListPaneState extends State<TaskListPane> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               count.toString(),
-              style: TextStyle(fontSize: 10, color: Colors.grey[500], fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(child: Divider(color: Colors.grey[200], thickness: 1)),
+          Expanded(child: Divider(color: Theme.of(context).dividerColor, thickness: 1)),
         ],
       ),
     );
@@ -190,11 +193,23 @@ class _TaskListPaneState extends State<TaskListPane> {
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFFE8F0FE) : Colors.white,
+                    color: isSelected 
+                        ? Theme.of(context).colorScheme.primaryContainer 
+                        : Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(30),
                     border: Border.all(
-                      color: isSelected ? Colors.blue.withValues(alpha: 0.1) : Colors.transparent,
+                      color: isSelected 
+                          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) 
+                          : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
                     ),
+                    boxShadow: [
+                      if (!isSelected)
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                    ],
                   ),
                   child: Row(
                     children: [
@@ -204,14 +219,16 @@ class _TaskListPaneState extends State<TaskListPane> {
                           child: Icon(
                             provider.categoryIcons[category],
                             size: 18,
-                            color: Colors.blue[800],
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
                           ),
                         ),
                       Text(
                         category,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.blue[800] : Colors.grey[600],
+                          color: isSelected 
+                              ? Theme.of(context).colorScheme.onPrimaryContainer 
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -260,17 +277,17 @@ class _TaskListPaneState extends State<TaskListPane> {
           const SizedBox(height: 32),
           Text(
             'No tasks in ${taskProvider.selectedCategory}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.black26,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
               letterSpacing: 0.5,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Tap + to create your first task',
-            style: TextStyle(color: Colors.black12, fontSize: 14),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2), fontSize: 14),
           ),
         ],
       ),
@@ -329,19 +346,23 @@ class _TaskListPaneState extends State<TaskListPane> {
           duration: const Duration(milliseconds: 300),
           decoration: BoxDecoration(
             color: taskProvider.selectedTaskIds.contains(task.id)
-                ? Colors.blue.withValues(alpha: 0.1)
-                : (isSelected ? Colors.blue.withValues(alpha: 0.04) : Colors.white),
+                ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5)
+                : (isSelected 
+                    ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.2) 
+                    : Theme.of(context).colorScheme.surface),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
               color: taskProvider.selectedTaskIds.contains(task.id)
-                  ? Colors.blue
-                  : (isSelected ? Colors.blue.withValues(alpha: 0.2) : Colors.transparent),
+                  ? Theme.of(context).colorScheme.primary
+                  : (isSelected 
+                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3) 
+                      : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
                 color: isSelected 
-                    ? Colors.blue.withValues(alpha: 0.08) 
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.08) 
                     : Colors.black.withValues(alpha: 0.03),
                 blurRadius: isSelected ? 20 : 15,
                 offset: const Offset(0, 8),
@@ -375,18 +396,18 @@ class _TaskListPaneState extends State<TaskListPane> {
                     height: 26,
                     decoration: BoxDecoration(
                       color: taskProvider.selectedTaskIds.contains(task.id)
-                          ? Colors.blue
+                          ? Theme.of(context).colorScheme.primary
                           : (task.isCompleted ? task.color : Colors.transparent),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: taskProvider.selectedTaskIds.contains(task.id)
-                            ? Colors.blue
-                            : (task.isCompleted ? task.color : Colors.grey[300]!),
+                            ? Theme.of(context).colorScheme.primary
+                            : (task.isCompleted ? task.color : Theme.of(context).colorScheme.outline),
                         width: 2,
                       ),
                     ),
                     child: taskProvider.selectedTaskIds.contains(task.id)
-                        ? const Icon(Icons.check, size: 18, color: Colors.white)
+                        ? Icon(Icons.check, size: 18, color: Theme.of(context).colorScheme.onPrimary)
                         : (task.isCompleted ? const Icon(Icons.check, size: 18, color: Colors.white) : null),
                   ),
                 ),
@@ -401,7 +422,9 @@ class _TaskListPaneState extends State<TaskListPane> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 17,
-                          color: task.isCompleted ? Colors.grey : Colors.black87,
+                          color: task.isCompleted 
+                              ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) 
+                              : Theme.of(context).colorScheme.onSurface,
                           decoration: task.isCompleted ? TextDecoration.lineThrough : null,
                         ),
                       ),
@@ -420,27 +443,27 @@ class _TaskListPaneState extends State<TaskListPane> {
                           ),
                           if (task.attachmentCount > 0 || task.subtasks.isNotEmpty || task.dueDate != null) ...[
                             const SizedBox(width: 12),
-                            const Text('•', style: TextStyle(color: Colors.black12)),
+                            Text('•', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.2))),
                             const SizedBox(width: 12),
                             if (task.dueDate != null) ...[
                               _buildDueDateBadge(task.dueDate!),
                               const SizedBox(width: 12),
                             ],
                             if (task.attachmentCount > 0) ...[
-                              const Icon(Icons.attach_file_rounded, size: 14, color: Colors.black26),
-                              Text(' ${task.attachmentCount} ', style: const TextStyle(fontSize: 11, color: Colors.black26)),
+                              Icon(Icons.attach_file_rounded, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                              Text(' ${task.attachmentCount} ', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5))),
                             ],
                             if (task.subtasks.isNotEmpty) ...[
                               Icon(
                                 task.progress == 1.0 ? Icons.check_circle_outline : Icons.checklist_rounded, 
                                 size: 14, 
-                                color: task.progress == 1.0 ? Colors.green : Colors.black26
+                                color: task.progress == 1.0 ? Colors.green : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
                               ),
                               Text(
                                 ' ${task.completedSubtaskCount}/${task.subtasks.length}', 
                                 style: TextStyle(
                                   fontSize: 11, 
-                                  color: task.progress == 1.0 ? Colors.green : Colors.black26,
+                                  color: task.progress == 1.0 ? Colors.green : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                                   fontWeight: task.progress == 1.0 ? FontWeight.bold : FontWeight.normal,
                                 )
                               ),
@@ -580,14 +603,14 @@ class _TaskListPaneState extends State<TaskListPane> {
     final isOverdue = taskDate.isBefore(today);
     final isToday = taskDate.isAtSameMomentAs(today);
 
-    Color color = Colors.black26;
+    Color color = Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5);
     String label = '${date.day}/${date.month}';
 
     if (isOverdue) {
-      color = Colors.redAccent;
+      color = Theme.of(context).colorScheme.error;
       label = 'Overdue';
     } else if (isToday) {
-      color = Colors.blue;
+      color = Theme.of(context).colorScheme.primary;
       label = 'Today';
     }
 
