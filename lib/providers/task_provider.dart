@@ -3,12 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task.dart';
 import '../services/storage_service.dart';
-import '../services/local_storage_service.dart';
+import '../services/firebase_storage_service.dart';
 import '../services/notification_service.dart';
 import 'dart:convert';
 
 class TaskProvider with ChangeNotifier {
-  final StorageService _storage = LocalStorageService();
+  final StorageService _storage = FirebaseStorageService();
   final NotificationService _notifications = NotificationService();
 
   List<Task> _tasks = [];

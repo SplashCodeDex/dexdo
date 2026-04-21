@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,8 +11,13 @@ import 'widgets/home_pane.dart';
 import 'widgets/calendar_pane.dart';
 import 'widgets/settings_pane.dart';
 import 'package:animations/animations.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(
     MultiProvider(
       providers: [
@@ -324,14 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   : null,
               title: taskProvider.isSelectionMode
                   ? Text('${taskProvider.selectedTaskIds.length} Selected')
-                  : (_selectedIndex == 0
-                      ? null
-                      : Image.asset(
-                          'assets/images/DexDo.png',
-                          height: 40,
-                          filterQuality: FilterQuality.high,
-                          color: Theme.of(context).brightness == Brightness.dark ? Colors.white : null,
-                        )),
+                  : null,
               actions: [
                 if (taskProvider.isSelectionMode) ...[
                   IconButton(
