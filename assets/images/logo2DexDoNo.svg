@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1049.28 1063.44">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: url(#linear-gradient-2);
+      }
+
+      .cls-2 {
+        filter: url(#drop-shadow-3);
+      }
+
+      .cls-2, .cls-3 {
+        fill: #d9d3e3;
+      }
+
+      .cls-4 {
+        fill: url(#linear-gradient);
+        filter: url(#drop-shadow-1);
+      }
+
+      .cls-3 {
+        filter: url(#drop-shadow-2);
+      }
+
+      .cls-5 {
+        fill: url(#linear-gradient-3);
+      }
+    </style>
+    <linearGradient id="linear-gradient" x1="402.98" y1="701.79" x2="958.04" y2="20.16" gradientUnits="userSpaceOnUse">
+      <stop offset=".22" stop-color="#6c3db8"/>
+      <stop offset=".67" stop-color="#885ad2"/>
+    </linearGradient>
+    <filter id="drop-shadow-1" filterUnits="userSpaceOnUse">
+      <feOffset dx="-28.47" dy="14.23"/>
+      <feGaussianBlur result="blur" stdDeviation="10.67"/>
+      <feFlood flood-color="#000" flood-opacity=".19"/>
+      <feComposite in2="blur" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <linearGradient id="linear-gradient-2" x1="436.86" y1="663.92" x2="541.6" y2="535.29" gradientUnits="userSpaceOnUse">
+      <stop offset=".22" stop-color="#d9d3e3"/>
+      <stop offset=".67" stop-color="#885ad2"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient-3" x1="470.86" y1="437.06" x2="575.6" y2="308.44" xlink:href="#linear-gradient-2"/>
+    <filter id="drop-shadow-2" filterUnits="userSpaceOnUse">
+      <feOffset dx="-38.75" dy="-8.94"/>
+      <feGaussianBlur result="blur-2" stdDeviation="8.94"/>
+      <feFlood flood-color="#000" flood-opacity=".19"/>
+      <feComposite in2="blur-2" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="drop-shadow-3" filterUnits="userSpaceOnUse">
+      <feOffset dx="-47.31" dy="-10.92"/>
+      <feGaussianBlur result="blur-3" stdDeviation="10.92"/>
+      <feFlood flood-color="#000" flood-opacity=".19"/>
+      <feComposite in2="blur-3" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <ellipse class="cls-4" cx="553.14" cy="517.38" rx="492.51" ry="499.55"/>
+  <ellipse class="cls-1" cx="465.19" cy="629.12" rx="92.94" ry="94.27"/>
+  <ellipse class="cls-5" cx="499.19" cy="402.27" rx="92.94" ry="94.27"/>
+  <path class="cls-3" d="m519.21,730.29l-19.79,20.07c-20.21,20.5-52.98,20.5-73.19,0l-200.94-203.81c-20.21-20.5-20.21-53.73,0-74.23l19.79-20.07c20.21-20.5,52.98-20.5,73.19,0l200.94,203.81c20.21,20.5,20.21,53.73,0,74.23Z"/>
+  <path class="cls-2" d="m855.92,327.52l.06.06c25.66,26.02,25.66,68.22,0,94.24l-315.85,320.37c-25.66,26.02-67.26,26.02-92.92,0l-.06-.06c-25.66-26.02-25.66-68.22,0-94.24l315.85-320.37c25.66-26.02,67.26-26.02,92.92,0Z"/>
+</svg>

@@ -1,0 +1,135 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:width="432dp"
+            android:height="432dp"
+            android:viewportWidth="1024"
+            android:viewportHeight="1024">
+
+            <!-- Main Background Circle -->
+            <path
+                android:name="bg_circle"
+                android:pathData="M 512 512 m -485.52 0 a 485.52 485.52 0 1 1 971.04 0 a 485.52 485.52 0 1 1 -971.04 0"
+                android:strokeWidth="10"
+                android:strokeColor="#6439ab"
+                android:trimPathEnd="0">
+                <aapt:attr name="android:fillColor">
+                    <gradient
+                        android:startX="365.23"
+                        android:startY="331.77"
+                        android:endX="907.74"
+                        android:endY="997.97"
+                        android:type="linear">
+                        <item android:offset="0.22" android:color="#FF6439AB"/>
+                        <item android:offset="0.67" android:color="#FF885AD2"/>
+                    </gradient>
+                </aapt:attr>
+            </path>
+
+            <!-- Small Decorative Circle -->
+            <path
+                android:name="small_circle"
+                android:pathData="M 458.71 391.06 m -91.62 0 a 91.62 91.62 0 1 1 183.24 0 a 91.62 91.62 0 1 1 -183.24 0"
+                android:fillAlpha="0">
+                <aapt:attr name="android:fillColor">
+                    <gradient
+                        android:startX="431.02"
+                        android:startY="598.94"
+                        android:endX="533.39"
+                        android:endY="724.65"
+                        android:type="linear">
+                        <item android:offset="0.22" android:color="#FFD9D3E3"/>
+                        <item android:offset="0.67" android:color="#FF885AD2"/>
+                    </gradient>
+                </aapt:attr>
+            </path>
+
+            <!-- Logo Path 1 (Checkmark style) -->
+            <path
+                android:name="logo_path_1"
+                android:pathData="m519.97,725.43l-19.51,19.51c-19.92,19.92-52.22,19.92-72.15,0l-198.09-198.09c-19.92-19.92-19.92-52.22,0-72.15l19.51-19.51c19.92-19.92,52.22-19.92,72.15,0l198.09,198.09c19.92,19.93,19.92,52.22,0,72.15Z"
+                android:fillColor="#D9D3E3"
+                android:strokeColor="#D9D3E3"
+                android:strokeWidth="2"
+                android:fillAlpha="0"
+                android:trimPathEnd="0"/>
+
+            <!-- Logo Path 2 (Accent style) -->
+            <path
+                android:name="logo_path_2"
+                android:pathData="m824.62,336.75l.06.06c25.29,25.29,25.29,66.3,0,91.6l-311.37,311.37c-25.29,25.29-66.3,25.29-91.6,0l-.06-.06c-25.29-25.3-25.29-66.3,0-91.6l311.37-311.37c25.3-25.29,66.31-25.29,91.6,0Z"
+                android:fillColor="#D9D3E3"
+                android:strokeColor="#D9D3E3"
+                android:strokeWidth="2"
+                android:fillAlpha="0"
+                android:trimPathEnd="0"/>
+        </vector>
+    </aapt:attr>
+
+    <!-- Background Circle Drawing -->
+    <target android:name="bg_circle">
+        <animation>
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:duration="800"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:interpolator="@android:interpolator/fast_out_slow_in" />
+        </animation>
+    </target>
+
+    <!-- Small Circle Fade In -->
+    <target android:name="small_circle">
+        <animation>
+            <objectAnimator
+                android:propertyName="fillAlpha"
+                android:startOffset="600"
+                android:duration="400"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:interpolator="@android:interpolator/linear" />
+        </animation>
+    </target>
+
+    <!-- Logo Paths Drawing and Filling -->
+    <target android:name="logo_path_1">
+        <animation>
+            <set>
+                <objectAnimator
+                    android:propertyName="trimPathEnd"
+                    android:startOffset="200"
+                    android:duration="600"
+                    android:valueFrom="0"
+                    android:valueTo="1"
+                    android:interpolator="@android:interpolator/fast_out_slow_in" />
+                <objectAnimator
+                    android:propertyName="fillAlpha"
+                    android:startOffset="700"
+                    android:duration="300"
+                    android:valueFrom="0"
+                    android:valueTo="1" />
+            </set>
+        </animation>
+    </target>
+
+    <target android:name="logo_path_2">
+        <animation>
+            <set>
+                <objectAnimator
+                    android:propertyName="trimPathEnd"
+                    android:startOffset="400"
+                    android:duration="600"
+                    android:valueFrom="0"
+                    android:valueTo="1"
+                    android:interpolator="@android:interpolator/fast_out_slow_in" />
+                <objectAnimator
+                    android:propertyName="fillAlpha"
+                    android:startOffset="900"
+                    android:duration="300"
+                    android:valueFrom="0"
+                    android:valueTo="1" />
+            </set>
+        </animation>
+    </target>
+</animated-vector>
