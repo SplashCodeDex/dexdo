@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'local_storage_service.dart';
-import 'firebase_storage_service.dart';
+import '../repositories/firebase_task_repository.dart';
 
 class DataMigrationService {
   static const String _migrationKey = 'migrated_to_firebase';
 
-  static Future<void> performMigrationIfNeeded(FirebaseStorageService firebaseStorage) async {
+  static Future<void> performMigrationIfNeeded(FirebaseTaskRepository firebaseStorage) async {
     final prefs = await SharedPreferences.getInstance();
     final hasMigrated = prefs.getBool(_migrationKey) ?? false;
 

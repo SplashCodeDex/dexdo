@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task.dart';
-import 'storage_service.dart';
+import '../repositories/task_repository.dart';
 
-class LocalStorageService implements StorageService {
+class LocalStorageService implements TaskRepository {
   late SharedPreferences _prefs;
 
   @override
@@ -36,6 +36,44 @@ class LocalStorageService implements StorageService {
   Future<void> saveTasks(List<Task> tasks) async {
     final String encoded = json.encode(tasks.map((t) => t.toJson()).toList());
     await _prefs.setString('tasks', encoded);
+  }
+
+  @override
+  Future<void> saveTask(Task task) async {
+    final tasks = await loadTasks();
+    final index = tasks.indexWhere((t) => t.id == task.id);
+    if (index >= 0) {
+      tasks[index] = task;
+    } else {
+      tasks.add(task);
+    }
+    await saveTasks(tasks);
+  }
+
+  @override
+  Future<void> deleteTask(String taskId) async {
+    final tasks = await loadTasks();
+    tasks.removeWhere((t) => t.id == taskId);
+    await saveTasks(tasks);
+  }
+
+  @override
+  Future<void> batchUpdateTasks(List<Task> updatedTasks) async {
+    final tasks = await loadTasks();
+    for (var task in updatedTasks) {
+      final index = tasks.indexWhere((t) => t.id == task.id);
+      if (index >= 0) {
+        tasks[index] = task;
+      }
+    }
+    await saveTasks(tasks);
+  }
+
+  @override
+  Future<void> batchDeleteTasks(List<String> taskIds) async {
+    final tasks = await loadTasks();
+    tasks.removeWhere((t) => taskIds.contains(t.id));
+    await saveTasks(tasks);
   }
 
   @override

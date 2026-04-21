@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task.dart';
-import '../services/storage_service.dart';
-import '../services/firebase_storage_service.dart';
+import '../repositories/task_repository.dart';
+import '../repositories/firebase_task_repository.dart';
 import '../services/data_migration_service.dart';
 import '../services/notification_service.dart';
 import 'dart:convert';
+import 'dart:async';
 
 class TaskProvider with ChangeNotifier {
-  final StorageService _storage = FirebaseStorageService();
+  final TaskRepository _repository = FirebaseTaskRepository();
   final NotificationService _notifications = NotificationService();
+
+  Timer? _searchDebounce;
 
   List<Task> _tasks = [];
   List<Task> _filteredTasks = [];
@@ -85,6 +88,12 @@ class TaskProvider with ChangeNotifier {
     _loadData();
   }
 
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
+
   void setCategory(String category) {
     if (_selectedCategory == category) return;
     _selectedCategory = category;
@@ -95,8 +104,12 @@ class TaskProvider with ChangeNotifier {
   void setSearchQuery(String query) {
     if (_searchQuery == query) return;
     _searchQuery = query;
-    _updateFilteredTasks();
-    notifyListeners();
+
+    if (_searchDebounce?.isActive ?? false) _searchDebounce!.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      _updateFilteredTasks();
+      notifyListeners();
+    });
   }
 
   void setSelectedTask(Task? task) {
@@ -105,31 +118,35 @@ class TaskProvider with ChangeNotifier {
   }
 
   Future<void> _loadData() async {
-    await _storage.init();
+    await _repository.init();
     await _notifications.init();
 
     // Ensure migration from Local -> Firebase happens on first boot
-    if (_storage is FirebaseStorageService) {
-      await DataMigrationService.performMigrationIfNeeded(_storage as FirebaseStorageService);
+    if (_repository is FirebaseTaskRepository) {
+      await DataMigrationService.performMigrationIfNeeded(_repository as FirebaseTaskRepository);
     }
 
-    final savedCategories = await _storage.loadCategories();
+    await reloadFromStorage();
+  }
+
+  Future<void> reloadFromStorage() async {
+    final savedCategories = await _repository.loadCategories();
     if (savedCategories.isNotEmpty) _categories = savedCategories;
 
-    final savedIcons = await _storage.loadCategoryIcons();
+    final savedIcons = await _repository.loadCategoryIcons();
     if (savedIcons.isNotEmpty) _categoryIcons.addAll(savedIcons);
 
-    final savedColors = await _storage.loadCategoryColors();
+    final savedColors = await _repository.loadCategoryColors();
     if (savedColors.isNotEmpty) _categoryColors.addAll(savedColors);
 
-    _tasks = await _storage.loadTasks();
+    _tasks = await _repository.loadTasks();
 
     _updateFilteredTasks();
     notifyListeners();
   }
 
   Future<void> _saveTasks() async {
-    await _storage.saveTasks(_tasks);
+    await _repository.saveTasks(_tasks);
     
     // Sync notifications when saving tasks
     for (var task in _tasks) {
@@ -141,10 +158,23 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
+  Future<void> _syncTask(Task task) async {
+    await _repository.saveTask(task);
+    if (task.isCompleted) {
+      _notifications.cancelTaskReminder(task.id);
+    } else {
+      _notifications.scheduleTaskReminder(task);
+    }
+  }
+
+  Future<void> _removeTask(Task task) async {
+    await _repository.deleteTask(task.id);
+    _notifications.cancelTaskReminder(task.id);
+  }
   Future<void> _saveCategories() async {
-    await _storage.saveCategories(_categories);
-    await _storage.saveCategoryIcons(_categoryIcons);
-    await _storage.saveCategoryColors(_categoryColors);
+    await _repository.saveCategories(_categories);
+    await _repository.saveCategoryIcons(_categoryIcons);
+    await _repository.saveCategoryColors(_categoryColors);
   }
 
   Future<void> addCategory(String name, IconData icon, Color color) async {
@@ -360,15 +390,21 @@ class TaskProvider with ChangeNotifier {
       return a.orderIndex.compareTo(b.orderIndex);
     });
 
-    // Assign final indices and update global list
+    // Assign final indices and track modified ones
+    final List<Task> affectedTasks = [];
     for (int i = 0; i < allTasksSorted.length; i++) {
-      allTasksSorted[i].orderIndex = i;
+      if (allTasksSorted[i].orderIndex != i) {
+        allTasksSorted[i].orderIndex = i;
+        affectedTasks.add(allTasksSorted[i]);
+      }
     }
     _tasks = allTasksSorted;
 
     _updateFilteredTasks();
     notifyListeners();
-    await _saveTasks();
+    if (affectedTasks.isNotEmpty) {
+      await _repository.batchUpdateTasks(affectedTasks);
+    }
   }
 
   void toggleTaskSelection(String taskId) {
@@ -389,11 +425,17 @@ class TaskProvider with ChangeNotifier {
     if (_selectedTask != null && _selectedTaskIds.contains(_selectedTask!.id)) {
       _selectedTask = null;
     }
+    final toDeleteIds = _selectedTaskIds.toList();
     _tasks.removeWhere((t) => _selectedTaskIds.contains(t.id));
     _selectedTaskIds.clear();
     _updateFilteredTasks();
     notifyListeners();
-    await _saveTasks();
+    if (toDeleteIds.isNotEmpty) {
+      await _repository.batchDeleteTasks(toDeleteIds);
+      for (var id in toDeleteIds) {
+        _notifications.cancelTaskReminder(id);
+      }
+    }
   }
 
   Future<void> markSelectedAsCompleted(bool completed) async {
@@ -534,22 +576,31 @@ class TaskProvider with ChangeNotifier {
   }
 
   Future<void> clearCompleted() async {
+    final toDelete = _tasks.where((t) => t.isCompleted).toList();
+    final toDeleteIds = toDelete.map((t) => t.id).toList();
     _tasks.removeWhere((t) => t.isCompleted);
     if (_selectedTask?.isCompleted == true) {
       _selectedTask = null;
     }
     _updateFilteredTasks();
     notifyListeners();
-    await _saveTasks();
-  }
-
-  Future<void> clearAllTasks() async {
+    if (toDeleteIds.isNotEmpty) {
+      await _repository.batchDeleteTasks(toDeleteIds);
+      for (var id in toDeleteIds) {
+        _notifications.cancelTaskReminder(id);
+      }
+    }
     _tasks.clear();
     _selectedTask = null;
     _selectedTaskIds.clear();
     _updateFilteredTasks();
     notifyListeners();
-    await _saveTasks();
+    if (toDeleteIds.isNotEmpty) {
+      await _repository.batchDeleteTasks(toDeleteIds);
+      for (var id in toDeleteIds) {
+         _notifications.cancelTaskReminder(id);
+      }
+    }
   }
 
   bool get hasCompleted => _tasks.any((t) => t.isCompleted);
