@@ -7,6 +7,8 @@ abstract class StorageService {
   // Tasks
   Future<List<Task>> loadTasks();
   Future<void> saveTasks(List<Task> tasks);
+  Future<void> saveTask(Task task);
+  Future<void> deleteTask(String taskId);
   
   // Categories
   Future<List<String>> loadCategories();

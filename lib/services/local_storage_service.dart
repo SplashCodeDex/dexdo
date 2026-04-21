@@ -39,6 +39,25 @@ class LocalStorageService implements StorageService {
   }
 
   @override
+  Future<void> saveTask(Task task) async {
+    final tasks = await loadTasks();
+    final index = tasks.indexWhere((t) => t.id == task.id);
+    if (index >= 0) {
+      tasks[index] = task;
+    } else {
+      tasks.add(task);
+    }
+    await saveTasks(tasks);
+  }
+
+  @override
+  Future<void> deleteTask(String taskId) async {
+    final tasks = await loadTasks();
+    tasks.removeWhere((t) => t.id == taskId);
+    await saveTasks(tasks);
+  }
+
+  @override
   Future<List<String>> loadCategories() async {
     return _prefs.getStringList('categories') ?? [];
   }

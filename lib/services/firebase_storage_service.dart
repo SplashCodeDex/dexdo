@@ -53,19 +53,48 @@ class FirebaseStorageService implements StorageService {
   Future<void> saveTasks(List<Task> tasks) async {
     if (_auth.currentUser == null) return;
 
-    final batch = _db.batch();
+    var batch = _db.batch();
     final tasksRef = _db.collection('users').doc(_userId).collection('tasks');
 
-    // In a true production app, we would only sync diffs!
-    // For this migration, we'll batch write the current state.
+    var count = 0;
     for (var task in tasks) {
       batch.set(tasksRef.doc(task.id), task.toJson());
+      count++;
+      if (count >= 490) {
+        try {
+          await batch.commit();
+          batch = _db.batch();
+          count = 0;
+        } catch (e) {
+          debugPrint('Firestore saveTasks batch chunk Error: $e');
+        }
+      }
     }
 
     try {
-      await batch.commit();
+      if (count > 0) await batch.commit();
     } catch (e) {
       debugPrint('Firestore saveTasks Error: $e');
+    }
+  }
+
+  @override
+  Future<void> saveTask(Task task) async {
+    if (_auth.currentUser == null) return;
+    try {
+      await _db.collection('users').doc(_userId).collection('tasks').doc(task.id).set(task.toJson());
+    } catch (e) {
+      debugPrint('Firestore saveTask Error: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteTask(String taskId) async {
+    if (_auth.currentUser == null) return;
+    try {
+      await _db.collection('users').doc(_userId).collection('tasks').doc(taskId).delete();
+    } catch (e) {
+      debugPrint('Firestore deleteTask Error: $e');
     }
   }
 
