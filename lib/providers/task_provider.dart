@@ -88,6 +88,12 @@ class TaskProvider with ChangeNotifier {
     _loadData();
   }
 
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
+
   void setCategory(String category) {
     if (_selectedCategory == category) return;
     _selectedCategory = category;

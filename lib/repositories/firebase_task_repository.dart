@@ -53,7 +53,9 @@ class FirebaseTaskRepository implements TaskRepository {
              archiveBatch.delete(tasksRef.doc(task.id));
              archiveCount++;
              
-             if (archiveCount >= 490) { // Firestore batch limit is 500
+             // 1 Task = 2 operations (set + delete). 
+             // Firestore limit is 500 ops per batch. Max tasks per batch = 250.
+             if (archiveCount >= 245) { 
                await archiveBatch.commit();
                archiveBatch = _db.batch();
                archiveCount = 0;
