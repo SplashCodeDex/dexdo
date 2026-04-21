@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:io';
+import 'subscription_pane.dart';
 
 class SettingsPane extends StatelessWidget {
   const SettingsPane({super.key});
@@ -28,6 +29,21 @@ class SettingsPane extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 32),
+        _buildSettingTile(
+          context,
+          title: 'Upgrade to Premium',
+          subtitle: 'Unlock all features and support the developer',
+          trailing: const Icon(Icons.star_rounded, color: Colors.orange),
+          icon: Icons.workspace_premium_rounded,
+          iconColor: Colors.orange,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SubscriptionPane()),
+            );
+          },
+        ),
+        const SizedBox(height: 24),
         _buildSectionHeader(context, 'Appearance'),
         _buildSettingTile(
           context,
