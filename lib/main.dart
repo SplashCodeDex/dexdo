@@ -6,8 +6,10 @@ import 'providers/task_provider.dart';
 import 'providers/theme_provider.dart';
 import 'widgets/task_list_pane.dart';
 import 'widgets/task_editor_pane.dart';
+import 'widgets/home_pane.dart';
+import 'widgets/calendar_pane.dart';
+import 'widgets/settings_pane.dart';
 import 'package:animations/animations.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 void main() {
   runApp(
@@ -172,29 +174,37 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildMainContent(bool isLargeScreen, TaskProvider taskProvider) {
     if (_selectedIndex != 2) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SvgPicture.asset(
-              'assets/images/logo2DexDoNo.svg',
-              height: 120,
-              colorFilter: ColorFilter.mode(
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-                BlendMode.srcIn,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              '${['Home View', 'Calendar View', '', 'Settings'][_selectedIndex < 2 ? _selectedIndex : _selectedIndex - 1]} Coming Soon',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ],
+      Widget content;
+      switch (_selectedIndex) {
+        case 0:
+          content = HomePane(
+            onTaskTap: (task) => setState(() => _selectedIndex = 2),
+          );
+          break;
+        case 1:
+          content = CalendarPane(
+            onTaskTap: (task) => setState(() => _selectedIndex = 2),
+          );
+          break;
+        case 3:
+          content = const SettingsPane();
+          break;
+        default:
+          content = const Center(child: Text('Coming Soon'));
+      }
+
+      return PageTransitionSwitcher(
+        transitionBuilder: (child, primaryAnimation, secondaryAnimation) {
+          return SharedAxisTransition(
+            animation: primaryAnimation,
+            secondaryAnimation: secondaryAnimation,
+            transitionType: SharedAxisTransitionType.horizontal,
+            child: child,
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey(_selectedIndex),
+          child: content,
         ),
       );
     }
@@ -312,11 +322,43 @@ class _HomeScreenState extends State<HomeScreen> {
                         .toList(),
                   ),
                 ] else ...[
-                  IconButton(
-                    icon: Icon(themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode),
-                    onPressed: () => themeProvider.toggleTheme(!themeProvider.isDarkMode),
-                    tooltip: 'Toggle Theme',
+                  // Premium Theme Toggle
+                  GestureDetector(
+                    onTap: () => themeProvider.toggleTheme(!themeProvider.isDarkMode),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 400),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: themeProvider.isDarkMode 
+                            ? Colors.amber.withValues(alpha: 0.1) 
+                            : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 400),
+                        transitionBuilder: (Widget child, Animation<double> animation) {
+                          return ScaleTransition(
+                            scale: animation,
+                            child: RotationTransition(
+                              turns: animation,
+                              child: FadeTransition(opacity: animation, child: child),
+                            ),
+                          );
+                        },
+                        child: Icon(
+                          themeProvider.isDarkMode 
+                              ? Icons.wb_sunny_rounded 
+                              : Icons.nightlight_round,
+                          key: ValueKey(themeProvider.isDarkMode),
+                          size: 20,
+                          color: themeProvider.isDarkMode 
+                              ? Colors.amber[400] 
+                              : Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   if (taskProvider.hasCompleted && _selectedIndex == 2)
                     IconButton(
                       onPressed: () {

@@ -1,5 +1,4 @@
 import 'category_dialog.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -38,11 +37,6 @@ class _TaskListPaneState extends State<TaskListPane> {
     final activeTasks = taskProvider.activeTasks;
     final completedTasks = taskProvider.completedTasks;
     final isLargeScreen = MediaQuery.of(context).size.width > 600;
-
-    // Sync search controller if query changed from outside (e.g. cleared elsewhere)
-    if (_searchController.text != taskProvider.searchQuery && !_searchFocusNode.hasFocus) {
-      _searchController.text = taskProvider.searchQuery;
-    }
 
     return Column(
       children: [
@@ -166,77 +160,80 @@ class _TaskListPaneState extends State<TaskListPane> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       child: Row(
         children: [
-          ...provider.categories.map((category) {
-            final isSelected = provider.selectedCategory == category;
-            return Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: GestureDetector(
-                onTap: () {
-                  FocusScope.of(context).unfocus();
-                  provider.setCategory(category);
-                },
-                onLongPress: () {
-                  FocusScope.of(context).unfocus();
-                  if (category != 'All' && category != 'Personal') {
-                    HapticFeedback.heavyImpact();
-                    showDialog(
-                      context: context,
-                      builder: (context) => CategoryDialog(
-                        initialName: category,
-                        initialIcon: provider.categoryIcons[category],
-                        initialColor: provider.categoryColors[category],
-                      ),
-                    );
-                  }
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isSelected 
-                        ? Theme.of(context).colorScheme.primaryContainer 
-                        : Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(30),
-                    border: Border.all(
-                      color: isSelected 
-                          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) 
-                          : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
-                    ),
-                    boxShadow: [
-                      if (!isSelected)
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      if (isSelected)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: Icon(
-                            provider.categoryIcons[category],
-                            size: 18,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+          for (var category in provider.categories)
+            Builder(
+              builder: (context) {
+                final isSelected = provider.selectedCategory == category;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: GestureDetector(
+                    onTap: () {
+                      FocusScope.of(context).unfocus();
+                      provider.setCategory(category);
+                    },
+                    onLongPress: () {
+                      FocusScope.of(context).unfocus();
+                      if (category != 'All' && category != 'Personal') {
+                        HapticFeedback.heavyImpact();
+                        showDialog(
+                          context: context,
+                          builder: (context) => CategoryDialog(
+                            initialName: category,
+                            initialIcon: provider.categoryIcons[category],
+                            initialColor: provider.categoryColors[category],
                           ),
-                        ),
-                      Text(
-                        category,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
+                        );
+                      }
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isSelected 
+                            ? Theme.of(context).colorScheme.primaryContainer 
+                            : Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
                           color: isSelected 
-                              ? Theme.of(context).colorScheme.onPrimaryContainer 
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) 
+                              : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
                         ),
+                        boxShadow: [
+                          if (!isSelected)
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                        ],
                       ),
-                    ],
+                      child: Row(
+                        children: [
+                          if (isSelected)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Icon(
+                                provider.categoryIcons[category],
+                                size: 18,
+                                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              ),
+                            ),
+                          Text(
+                            category,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: isSelected 
+                                  ? Theme.of(context).colorScheme.onPrimaryContainer 
+                                  : Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            );
-          }).toList(),
+                );
+              },
+            ),
           // Add Category Button
           IconButton(
             onPressed: () {

@@ -33,6 +33,7 @@ class Task {
   String title;
   String description;
   bool isCompleted;
+  DateTime? completionDate;
   bool isStarred;
   IconData icon;
   Color color;
@@ -47,6 +48,7 @@ class Task {
     required this.title,
     this.description = '',
     this.isCompleted = false,
+    this.completionDate,
     this.isStarred = false,
     this.icon = Icons.task_alt,
     this.color = Colors.blue,
@@ -66,6 +68,7 @@ class Task {
     String? title,
     String? description,
     bool? isCompleted,
+    DateTime? completionDate,
     bool? isStarred,
     IconData? icon,
     Color? color,
@@ -80,6 +83,7 @@ class Task {
       title: title ?? this.title,
       description: description ?? this.description,
       isCompleted: isCompleted ?? this.isCompleted,
+      completionDate: completionDate ?? this.completionDate,
       isStarred: isStarred ?? this.isStarred,
       icon: icon ?? this.icon,
       color: color ?? this.color,
@@ -97,6 +101,7 @@ class Task {
       'title': title,
       'description': description,
       'isCompleted': isCompleted ? 1 : 0,
+      'completionDate': completionDate?.toIso8601String(),
       'isStarred': isStarred ? 1 : 0,
       'icon': icon.codePoint,
       'color': color.toARGB32(),
@@ -114,6 +119,7 @@ class Task {
       title: map['title'],
       description: map['description'] ?? '',
       isCompleted: map['isCompleted'] == 1,
+      completionDate: map['completionDate'] != null ? DateTime.parse(map['completionDate']) : null,
       isStarred: map['isStarred'] == 1,
       icon: IconData(map['icon'] ?? Icons.task_alt.codePoint, fontFamily: 'MaterialIcons'),
       color: Color(map['color'] ?? Colors.blue.toARGB32()),

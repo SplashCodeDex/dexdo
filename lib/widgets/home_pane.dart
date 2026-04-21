@@ -1,0 +1,400 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/task_provider.dart';
+import '../models/task.dart';
+import 'package:intl/intl.dart';
+
+class HomePane extends StatelessWidget {
+  final Function(Task)? onTaskTap;
+  const HomePane({super.key, this.onTaskTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final taskProvider = Provider.of<TaskProvider>(context);
+    final activeTasks = taskProvider.activeTasks;
+    final allTasks = taskProvider.allTasks;
+    final now = DateTime.now();
+    final completedToday = allTasks.where((t) {
+      if (t.isCompleted && t.completionDate != null) {
+        return t.completionDate!.year == now.year &&
+            t.completionDate!.month == now.month &&
+            t.completionDate!.day == now.day;
+      }
+      return false;
+    }).toList();
+
+    final activeToday = allTasks.where((t) {
+      if (t.isCompleted) return false;
+      if (t.dueDate == null) return true; // Include tasks without dates as "general"
+      return t.dueDate!.year == now.year &&
+          t.dueDate!.month == now.month &&
+          t.dueDate!.day == now.day;
+    }).toList();
+
+    final totalToday = completedToday.length + activeToday.length;
+    final progressToday = totalToday == 0 ? 0.0 : completedToday.length / totalToday;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(context),
+          const SizedBox(height: 32),
+          _buildProgressCard(context, progressToday, completedToday.length, totalToday),
+          const SizedBox(height: 32),
+          _buildSectionTitle(context, 'Upcoming Tasks'),
+          const SizedBox(height: 16),
+          _buildUpcomingTasks(context, activeTasks),
+          const SizedBox(height: 32),
+          _buildSectionTitle(context, 'Categories'),
+          const SizedBox(height: 16),
+          _buildCategoryOverview(context, taskProvider),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    final hour = DateTime.now().hour;
+    String greeting = 'Good Morning';
+    if (hour >= 12 && hour < 17) greeting = 'Good Afternoon';
+    if (hour >= 17) greeting = 'Good Evening';
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              greeting,
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const Text(
+              'Felix!',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -1,
+              ),
+            ),
+          ],
+        ),
+        const CircleAvatar(
+          radius: 28,
+          backgroundImage: NetworkImage('https://api.dicebear.com/7.x/avataaars/png?seed=Felix'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProgressCard(BuildContext context, double progress, int completed, int total) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary,
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Daily Progress',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  total == 0 
+                      ? 'No tasks for today' 
+                      : 'You\'ve completed $completed of $total tasks today!',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${(progress * 100).toInt()}% Done',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 24),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                width: 80,
+                height: 80,
+                child: CircularProgressIndicator(
+                  value: progress,
+                  strokeWidth: 10,
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                  strokeCap: StrokeCap.round,
+                ),
+              ),
+              Icon(
+                progress == 1.0 ? Icons.celebration_rounded : Icons.bolt_rounded,
+                color: Colors.white,
+                size: 32,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        letterSpacing: -0.5,
+      ),
+    );
+  }
+
+  Widget _buildUpcomingTasks(BuildContext context, List<Task> tasks) {
+    final upcoming = tasks.take(5).toList();
+    if (upcoming.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.auto_awesome_rounded, size: 48, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
+            const SizedBox(height: 16),
+            const Center(
+              child: Text(
+                'All caught up!\nEnjoy your free time.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: upcoming.map((task) => _buildSimpleTaskTile(context, task)).toList(),
+    );
+  }
+
+  Widget _buildSimpleTaskTile(BuildContext context, Task task) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: () {
+          final provider = Provider.of<TaskProvider>(context, listen: false);
+          provider.setSelectedTask(task);
+          if (onTaskTap != null) onTaskTap!(task);
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Theme.of(context).dividerColor),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: task.color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(task.icon, size: 24, color: task.color),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      task.title.isEmpty ? 'Untitled Task' : task.title,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      task.category,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (task.dueDate != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.calendar_today_rounded, size: 12, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 6),
+                      Text(
+                        DateFormat('MMM d').format(task.dueDate!),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryOverview(BuildContext context, TaskProvider provider) {
+    final activeCategories = provider.categories.where((c) => c != 'All').toList();
+    
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 1.3,
+      ),
+      itemCount: activeCategories.length,
+      itemBuilder: (context, index) {
+        final category = activeCategories[index];
+        final tasks = provider.tasks.where((t) => t.category == category).toList();
+        final activeCount = tasks.where((t) => !t.isCompleted).length;
+        final totalCount = tasks.length;
+        final progress = totalCount == 0 ? 0.0 : (totalCount - activeCount) / totalCount;
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Theme.of(context).dividerColor),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: provider.categoryColors[category]!.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      provider.categoryIcons[category],
+                      color: provider.categoryColors[category],
+                      size: 20,
+                    ),
+                  ),
+                  Text(
+                    '${(progress * 100).toInt()}%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: provider.categoryColors[category],
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                category,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 4),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 6,
+                  backgroundColor: provider.categoryColors[category]!.withValues(alpha: 0.1),
+                  valueColor: AlwaysStoppedAnimation<Color>(provider.categoryColors[category]!),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '$activeCount active tasks',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}

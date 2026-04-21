@@ -7,6 +7,7 @@ import 'dart:convert';
 
 class TaskProvider with ChangeNotifier {
   List<Task> _tasks = [];
+  List<Task> _filteredTasks = [];
   Task? _selectedTask;
   String _selectedCategory = 'All';
   String _searchQuery = '';
@@ -36,15 +37,20 @@ class TaskProvider with ChangeNotifier {
   Map<String, IconData> get categoryIcons => _categoryIcons;
   Map<String, Color> get categoryColors => _categoryColors;
 
-  List<Task> get tasks {
+  List<Task> get allTasks => _tasks;
+
+  List<Task> get tasks => _filteredTasks;
+
+  void _updateFilteredTasks() {
     List<Task> filtered = _selectedCategory == 'All' 
         ? List.from(_tasks) 
         : _tasks.where((t) => t.category == _selectedCategory).toList();
 
     if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
       filtered = filtered.where((t) => 
-        t.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-        t.description.toLowerCase().contains(_searchQuery.toLowerCase())
+        t.title.toLowerCase().contains(query) ||
+        t.description.toLowerCase().contains(query)
       ).toList();
     }
     
@@ -56,11 +62,11 @@ class TaskProvider with ChangeNotifier {
       if (res != 0) return res;
       return a.id.compareTo(b.id);
     });
-    return filtered;
+    _filteredTasks = filtered;
   }
 
-  List<Task> get activeTasks => tasks.where((t) => !t.isCompleted).toList();
-  List<Task> get completedTasks => tasks.where((t) => t.isCompleted).toList();
+  List<Task> get activeTasks => _filteredTasks.where((t) => !t.isCompleted).toList();
+  List<Task> get completedTasks => _filteredTasks.where((t) => t.isCompleted).toList();
 
   Task? get selectedTask => _selectedTask;
   String get selectedCategory => _selectedCategory;
@@ -74,12 +80,16 @@ class TaskProvider with ChangeNotifier {
   }
 
   void setCategory(String category) {
+    if (_selectedCategory == category) return;
     _selectedCategory = category;
+    _updateFilteredTasks();
     notifyListeners();
   }
 
   void setSearchQuery(String query) {
+    if (_searchQuery == query) return;
     _searchQuery = query;
+    _updateFilteredTasks();
     notifyListeners();
   }
 
@@ -139,6 +149,7 @@ class TaskProvider with ChangeNotifier {
             })
             .whereType<Task>()
             .toList();
+        _updateFilteredTasks();
       } catch (e) {
         debugPrint('Error loading tasks: $e');
         _tasks = [];
@@ -203,6 +214,7 @@ class TaskProvider with ChangeNotifier {
         _selectedCategory = newName;
       }
 
+      _updateFilteredTasks();
       notifyListeners();
       await _saveCategories();
       await _saveTasks();
@@ -229,6 +241,7 @@ class TaskProvider with ChangeNotifier {
       _selectedCategory = 'All';
     }
 
+    _updateFilteredTasks();
     notifyListeners();
     await _saveCategories();
     await _saveTasks();
@@ -254,6 +267,7 @@ class TaskProvider with ChangeNotifier {
     );
     _tasks.insert(0, newTask);
     _selectedTask = newTask;
+    _updateFilteredTasks();
     notifyListeners();
     await _saveTasks();
   }
@@ -261,6 +275,7 @@ class TaskProvider with ChangeNotifier {
   Future<void> updateTask(Task task, String title, String description) async {
     task.title = title;
     task.description = description;
+    _updateFilteredTasks();
     notifyListeners();
     await _saveTasks();
   }
@@ -290,12 +305,14 @@ class TaskProvider with ChangeNotifier {
     task.category = category;
     task.color = _categoryColors[category] ?? Colors.blue;
     task.icon = _categoryIcons[category] ?? Icons.task_alt;
+    _updateFilteredTasks();
     notifyListeners();
     await _saveTasks();
   }
 
   Future<void> updateDueDate(Task task, DateTime? date) async {
     task.dueDate = date;
+    _updateFilteredTasks();
     notifyListeners();
     await _saveTasks();
   }
@@ -326,39 +343,54 @@ class TaskProvider with ChangeNotifier {
     if (headerIndexAfterRemove != -1) {
       if (oldIndex <= headerIndexAfterRemove && newIndex > headerIndexAfterRemove) {
         movedTask.isCompleted = true;
+        movedTask.completionDate = DateTime.now();
       } else if (oldIndex > headerIndexAfterRemove && newIndex <= headerIndexAfterRemove) {
         movedTask.isCompleted = false;
+        movedTask.completionDate = null;
       }
     }
 
     uiItems.insert(newIndex, movedTask);
 
-    // Global Re-indexing to preserve relative order of hidden tasks
+    // After reorder, we handle the starred status if moving between regions
+    final newlyOrderedVisible = uiItems.whereType<Task>().toList();
+    final idxInVisible = newlyOrderedVisible.indexOf(movedTask);
+    
+    // Simple heuristic: if moved to a position where neighbors have a different starred status,
+    // adopt that status to avoid jumping back due to the sort.
+    if (newlyOrderedVisible.length > 1) {
+      if (idxInVisible > 0) {
+        movedTask.isStarred = newlyOrderedVisible[idxInVisible - 1].isStarred;
+      } else {
+        movedTask.isStarred = newlyOrderedVisible[1].isStarred;
+      }
+    }
+
+    // Global Re-indexing to preserve relative order
     final List<Task> allTasksSorted = List.from(_tasks);
+    
+    // Sort logic that respects the NEW order of visible tasks but keeps non-visible ones relatively placed
     allTasksSorted.sort((a, b) {
       if (a.isStarred && !b.isStarred) return -1;
       if (!a.isStarred && b.isStarred) return 1;
-      int res = a.orderIndex.compareTo(b.orderIndex);
-      if (res != 0) return res;
-      return a.id.compareTo(b.id);
+      
+      int aIdx = newlyOrderedVisible.indexOf(a);
+      int bIdx = newlyOrderedVisible.indexOf(b);
+      
+      if (aIdx != -1 && bIdx != -1) return aIdx.compareTo(bIdx);
+      if (aIdx != -1) return -1; 
+      if (bIdx != -1) return 1;
+      
+      return a.orderIndex.compareTo(b.orderIndex);
     });
 
-    final List<Task> newlyOrderedVisible = uiItems.whereType<Task>().toList();
-    final Set<String> visibleIds = newlyOrderedVisible.map((t) => t.id).toSet();
-    
-    int visibleIdx = 0;
-    for (int i = 0; i < allTasksSorted.length; i++) {
-      if (visibleIds.contains(allTasksSorted[i].id)) {
-        allTasksSorted[i] = newlyOrderedVisible[visibleIdx++];
-      }
-    }
-    
     // Assign final indices and update global list
     for (int i = 0; i < allTasksSorted.length; i++) {
       allTasksSorted[i].orderIndex = i;
     }
     _tasks = allTasksSorted;
 
+    _updateFilteredTasks();
     notifyListeners();
     await _saveTasks();
   }
@@ -383,17 +415,21 @@ class TaskProvider with ChangeNotifier {
     }
     _tasks.removeWhere((t) => _selectedTaskIds.contains(t.id));
     _selectedTaskIds.clear();
+    _updateFilteredTasks();
     notifyListeners();
     await _saveTasks();
   }
 
   Future<void> markSelectedAsCompleted(bool completed) async {
+    final now = DateTime.now();
     for (var task in _tasks) {
       if (_selectedTaskIds.contains(task.id)) {
         task.isCompleted = completed;
+        task.completionDate = completed ? now : null;
       }
     }
     _selectedTaskIds.clear();
+    _updateFilteredTasks();
     notifyListeners();
     await _saveTasks();
   }
@@ -407,17 +443,20 @@ class TaskProvider with ChangeNotifier {
       }
     }
     _selectedTaskIds.clear();
+    _updateFilteredTasks();
     notifyListeners();
     await _saveTasks();
   }
 
   Future<void> toggleTask(Task task) async {
     task.isCompleted = !task.isCompleted;
+    task.completionDate = task.isCompleted ? DateTime.now() : null;
     if (task.isCompleted) {
       HapticFeedback.heavyImpact();
     } else {
       HapticFeedback.mediumImpact();
     }
+    _updateFilteredTasks();
     notifyListeners();
     await _saveTasks();
   }
@@ -425,6 +464,7 @@ class TaskProvider with ChangeNotifier {
   Future<void> toggleStarred(Task task) async {
     task.isStarred = !task.isStarred;
     HapticFeedback.selectionClick();
+    _updateFilteredTasks();
     notifyListeners();
     await _saveTasks();
   }
@@ -436,6 +476,7 @@ class TaskProvider with ChangeNotifier {
       _selectedTask = null;
     }
     HapticFeedback.vibrate();
+    _updateFilteredTasks();
     notifyListeners();
     await _saveTasks();
   }
@@ -458,6 +499,7 @@ class TaskProvider with ChangeNotifier {
     );
     _tasks.insert(0, newTask);
     HapticFeedback.mediumImpact();
+    _updateFilteredTasks();
     notifyListeners();
     await _saveTasks();
   }
@@ -467,9 +509,24 @@ class TaskProvider with ChangeNotifier {
     if (_selectedTask?.isCompleted == true) {
       _selectedTask = null;
     }
+    _updateFilteredTasks();
+    notifyListeners();
+    await _saveTasks();
+  }
+
+  Future<void> clearAllTasks() async {
+    _tasks.clear();
+    _selectedTask = null;
+    _selectedTaskIds.clear();
+    _updateFilteredTasks();
     notifyListeners();
     await _saveTasks();
   }
 
   bool get hasCompleted => _tasks.any((t) => t.isCompleted);
+
+  Future<String> exportTasksToJson() async {
+    final String encoded = json.encode(_tasks.map((t) => t.toMap()).toList());
+    return encoded;
+  }
 }
