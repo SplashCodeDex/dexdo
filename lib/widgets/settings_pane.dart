@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/task_provider.dart';
+import '../services/auth_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:io';
@@ -13,6 +14,7 @@ class SettingsPane extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final taskProvider = Provider.of<TaskProvider>(context);
+    final authService = Provider.of<AuthService>(context);
 
     return ListView(
       padding: const EdgeInsets.all(24),
@@ -40,19 +42,50 @@ class SettingsPane extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         _buildSectionHeader(context, 'Account'),
-        _buildSettingTile(
-          context,
-          title: 'Sign In / Sync Data',
-          subtitle: 'Bind to a permanent cloud account',
-          trailing: const Icon(Icons.cloud_sync_rounded),
-          icon: Icons.account_circle_rounded,
-          iconColor: Colors.orange,
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Firebase UI binding coming soon...')),
-            );
-          },
-        ),
+        if (authService.isAnonymous)
+          _buildSettingTile(
+            context,
+            title: 'Sign In / Sync Data',
+            subtitle: 'Bind to a permanent cloud account',
+            trailing: const Icon(Icons.cloud_sync_rounded),
+            icon: Icons.account_circle_rounded,
+            iconColor: Colors.orange,
+            onTap: () async {
+              final credential = await authService.linkWithGoogle();
+              if (context.mounted) {
+                if (credential != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Succesfully linked to ${credential.user?.email}')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Sign-in cancelled or failed.')),
+                  );
+                }
+              }
+            },
+          )
+        else
+          _buildSettingTile(
+            context,
+            title: 'Signed in via Google',
+            subtitle: authService.currentUser?.email ?? 'Bound Account',
+            trailing: IconButton(
+              icon: const Icon(Icons.logout_rounded),
+              onPressed: () async {
+                await authService.signOut();
+                if (context.mounted) {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Successfully signed out. Returning to anonymous.')),
+                  );
+                  // Rerun the anon init
+                  await authService.signInAnonymously();
+                }
+              },
+            ),
+            icon: Icons.verified_user_rounded,
+            iconColor: Colors.green,
+          ),
         const SizedBox(height: 24),
         _buildSectionHeader(context, 'Data Management'),
         _buildSettingTile(
