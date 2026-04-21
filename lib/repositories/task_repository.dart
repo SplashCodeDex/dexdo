@@ -9,6 +9,8 @@ abstract class TaskRepository {
   Future<void> saveTasks(List<Task> tasks);
   Future<void> saveTask(Task task);
   Future<void> deleteTask(String taskId);
+  Future<void> batchUpdateTasks(List<Task> tasks);
+  Future<void> batchDeleteTasks(List<String> taskIds);
   
   // Categories (Settings)
   Future<List<String>> loadCategories();

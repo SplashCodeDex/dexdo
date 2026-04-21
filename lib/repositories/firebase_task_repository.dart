@@ -103,6 +103,50 @@ class FirebaseTaskRepository implements TaskRepository {
   }
 
   @override
+  Future<void> batchUpdateTasks(List<Task> tasks) async {
+    if (_auth.currentUser == null || tasks.isEmpty) return;
+
+    var batch = _db.batch();
+    final tasksRef = _db.collection('users').doc(_userId).collection('tasks');
+    
+    int count = 0;
+    for (var task in tasks) {
+      batch.update(tasksRef.doc(task.id), task.toJson());
+      count++;
+      if (count >= 490) {
+        await batch.commit();
+        batch = _db.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) {
+      await batch.commit();
+    }
+  }
+
+  @override
+  Future<void> batchDeleteTasks(List<String> taskIds) async {
+    if (_auth.currentUser == null || taskIds.isEmpty) return;
+
+    var batch = _db.batch();
+    final tasksRef = _db.collection('users').doc(_userId).collection('tasks');
+    
+    int count = 0;
+    for (var id in taskIds) {
+      batch.delete(tasksRef.doc(id));
+      count++;
+      if (count >= 490) {
+        await batch.commit();
+        batch = _db.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) {
+      await batch.commit();
+    }
+  }
+
+  @override
   Future<List<String>> loadCategories() async {
     if (_auth.currentUser == null) return [];
     try {

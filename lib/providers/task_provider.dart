@@ -395,15 +395,21 @@ class TaskProvider with ChangeNotifier {
       return a.orderIndex.compareTo(b.orderIndex);
     });
 
-    // Assign final indices and update global list
+    // Assign final indices and track modified ones
+    final List<Task> affectedTasks = [];
     for (int i = 0; i < allTasksSorted.length; i++) {
-      allTasksSorted[i].orderIndex = i;
+      if (allTasksSorted[i].orderIndex != i) {
+        allTasksSorted[i].orderIndex = i;
+        affectedTasks.add(allTasksSorted[i]);
+      }
     }
     _tasks = allTasksSorted;
 
     _updateFilteredTasks();
     notifyListeners();
-    await _saveTasks();
+    if (affectedTasks.isNotEmpty) {
+      await _repository.batchUpdateTasks(affectedTasks);
+    }
   }
 
   void toggleTaskSelection(String taskId) {
@@ -424,14 +430,17 @@ class TaskProvider with ChangeNotifier {
     if (_selectedTask != null && _selectedTaskIds.contains(_selectedTask!.id)) {
       _selectedTask = null;
     }
-    final toDelete = _tasks.where((t) => _selectedTaskIds.contains(t.id)).toList();
-    for (var t in toDelete) {
-      await _removeTask(t);
-    }
+    final toDeleteIds = _selectedTaskIds.toList();
     _tasks.removeWhere((t) => _selectedTaskIds.contains(t.id));
     _selectedTaskIds.clear();
     _updateFilteredTasks();
     notifyListeners();
+    if (toDeleteIds.isNotEmpty) {
+      await _repository.batchDeleteTasks(toDeleteIds);
+      for (var id in toDeleteIds) {
+        _notifications.cancelTaskReminder(id);
+      }
+    }
   }
 
   Future<void> markSelectedAsCompleted(bool completed) async {
@@ -583,23 +592,34 @@ class TaskProvider with ChangeNotifier {
 
   Future<void> clearCompleted() async {
     final toDelete = _tasks.where((t) => t.isCompleted).toList();
-    for (var t in toDelete) await _removeTask(t);
+    final toDeleteIds = toDelete.map((t) => t.id).toList();
     _tasks.removeWhere((t) => t.isCompleted);
     if (_selectedTask?.isCompleted == true) {
       _selectedTask = null;
     }
     _updateFilteredTasks();
     notifyListeners();
+    if (toDeleteIds.isNotEmpty) {
+      await _repository.batchDeleteTasks(toDeleteIds);
+      for (var id in toDeleteIds) {
+        _notifications.cancelTaskReminder(id);
+      }
+    }
   }
 
   Future<void> clearAllTasks() async {
-    final toDelete = List<Task>.from(_tasks);
-    for (var t in toDelete) await _removeTask(t);
+    final toDeleteIds = _tasks.map((t) => t.id).toList();
     _tasks.clear();
     _selectedTask = null;
     _selectedTaskIds.clear();
     _updateFilteredTasks();
     notifyListeners();
+    if (toDeleteIds.isNotEmpty) {
+      await _repository.batchDeleteTasks(toDeleteIds);
+      for (var id in toDeleteIds) {
+         _notifications.cancelTaskReminder(id);
+      }
+    }
   }
 
   bool get hasCompleted => _tasks.any((t) => t.isCompleted);

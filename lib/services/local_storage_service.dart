@@ -58,6 +58,25 @@ class LocalStorageService implements TaskRepository {
   }
 
   @override
+  Future<void> batchUpdateTasks(List<Task> updatedTasks) async {
+    final tasks = await loadTasks();
+    for (var task in updatedTasks) {
+      final index = tasks.indexWhere((t) => t.id == task.id);
+      if (index >= 0) {
+        tasks[index] = task;
+      }
+    }
+    await saveTasks(tasks);
+  }
+
+  @override
+  Future<void> batchDeleteTasks(List<String> taskIds) async {
+    final tasks = await loadTasks();
+    tasks.removeWhere((t) => taskIds.contains(t.id));
+    await saveTasks(tasks);
+  }
+
+  @override
   Future<List<String>> loadCategories() async {
     return _prefs.getStringList('categories') ?? [];
   }
