@@ -23,7 +23,16 @@ As requested, here is the structured execution plan. I am currently running **Ph
 - [x] Implement Sign-In/Auth state UI (Google/Apple login UI to bind accounts natively).
 - [x] Implement Offline Persistence (Trivial with Firebase rules).
 
-## Phase 5: Hyper-Productivity (EXECUTED ✅)
-- [x] Implement Date/Time selection visualizers natively mapped to Alarms.
-- [x] Advanced Dashboard sorting & category chips filtering.
-- [x] Subtask progress arcs.
+## Phase 6: Core Infrastructure & Identity (EXECUTED ✅)
+- [x] Configure explicit OS notification perms in AndroidManifest.xml and Info.plist.
+- [x] Link Google Sign-In identity to fuse Anonymous UID and preserve user data.
+- [x] Enable Firestore Offline Persistence queue handling.
+
+## Phase 7: Recurring Habits (EXECUTED ✅)
+- [x] Extend `Task` model to support string recurrence types (Daily, Weekly, Monthly, Yearly).
+- [x] Inject Recurrence Dropdown picker directly into `TaskEditorPane` metadata block.
+- [x] Upgrade `TaskProvider`'s `toggleTask` logic to conditionally spawn a cloned advanced iteration if finished.
+
+## Phase 8: Chrono-Timeline UX (EXECUTED ✅)
+- [x] Revamp `CalendarPane` to sort daily hits by precise chronological due time.
+- [x] Render a connected native vertical timeline tree visualizer instead of basic Cards list.

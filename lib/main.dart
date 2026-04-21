@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'providers/task_provider.dart';
 import 'providers/theme_provider.dart';
+import 'services/auth_service.dart';
 import 'widgets/task_list_pane.dart';
 import 'widgets/task_editor_pane.dart';
 import 'widgets/home_pane.dart';
@@ -18,11 +20,15 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+  );
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => TaskProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => AuthService()),
       ],
       child: const DeXDoApp(),
     ),
