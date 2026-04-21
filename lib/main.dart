@@ -324,12 +324,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   : null,
               title: taskProvider.isSelectionMode
                   ? Text('${taskProvider.selectedTaskIds.length} Selected')
-                  : Image.asset(
-                      'assets/images/DexDo.png',
-                      height: 40,
-                      filterQuality: FilterQuality.high,
-                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white : null,
-                    ),
+                  : (_selectedIndex == 0
+                      ? null
+                      : Image.asset(
+                          'assets/images/DexDo.png',
+                          height: 40,
+                          filterQuality: FilterQuality.high,
+                          color: Theme.of(context).brightness == Brightness.dark ? Colors.white : null,
+                        )),
               actions: [
                 if (taskProvider.isSelectionMode) ...[
                   IconButton(
@@ -407,10 +409,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: const Icon(Icons.delete_sweep_outlined),
                       tooltip: 'Clear Done',
                     ),
-                  const CircleAvatar(
-                    radius: 18,
-                    backgroundImage: NetworkImage('https://api.dicebear.com/7.x/avataaars/png?seed=Felix'),
-                  ),
+                  if (_selectedIndex != 0)
+                    const CircleAvatar(
+                      radius: 18,
+                      backgroundImage: NetworkImage('https://api.dicebear.com/7.x/avataaars/png?seed=Felix'),
+                    ),
                 ],
                 const SizedBox(width: 16),
               ],

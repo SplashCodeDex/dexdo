@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "592587645836",
+    "project_id": "dexdo-21bc9",
+    "storage_bucket": "dexdo-21bc9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:592587645836:android:e4fb16e314689cf63eaca9",
+        "android_client_info": {
+          "package_name": "com.dexify.dexdo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKQp9oZyCcpL0QczMPjGeU3iD-Z4lLmYE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
