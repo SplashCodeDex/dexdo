@@ -327,12 +327,20 @@ class TaskProvider with ChangeNotifier {
     if (newIndex < 0) newIndex = 0;
     if (newIndex > uiItems.length) newIndex = uiItems.length;
 
+    // Global Re-indexing to preserve relative order
+    final List<Task> allTasksSorted = List.from(_tasks);
+
     // Detect if crossing header
     int headerIndexAfterRemove = uiItems.indexOf(null);
     if (headerIndexAfterRemove != -1) {
       if (oldIndex <= headerIndexAfterRemove && newIndex > headerIndexAfterRemove) {
         movedTask.isCompleted = true;
         movedTask.completionDate = DateTime.now();
+        List<Task> pendingClones = [];
+        _handleRecurrence(movedTask, DateTime.now(), pendingClones);
+        if (pendingClones.isNotEmpty) {
+          allTasksSorted.addAll(pendingClones);
+        }
       } else if (oldIndex > headerIndexAfterRemove && newIndex <= headerIndexAfterRemove) {
         movedTask.isCompleted = false;
         movedTask.completionDate = null;
@@ -354,9 +362,6 @@ class TaskProvider with ChangeNotifier {
         movedTask.isStarred = newlyOrderedVisible[1].isStarred;
       }
     }
-
-    // Global Re-indexing to preserve relative order
-    final List<Task> allTasksSorted = List.from(_tasks);
     
     // Sort logic that respects the NEW order of visible tasks but keeps non-visible ones relatively placed
     allTasksSorted.sort((a, b) {
