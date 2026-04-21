@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task.dart';
-import 'storage_service.dart';
+import '../repositories/task_repository.dart';
 
-class LocalStorageService implements StorageService {
+class LocalStorageService implements TaskRepository {
   late SharedPreferences _prefs;
 
   @override
