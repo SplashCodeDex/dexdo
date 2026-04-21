@@ -141,7 +141,7 @@ class TaskProvider with ChangeNotifier {
         _tasks = decoded
             .map((item) {
               try {
-                return Task.fromMap(item);
+                return Task.fromJson(item);
               } catch (e) {
                 debugPrint('Error parsing individual task: $e');
                 return null;
@@ -160,7 +160,7 @@ class TaskProvider with ChangeNotifier {
 
   Future<void> _saveTasks() async {
     final prefs = await SharedPreferences.getInstance();
-    final String encoded = json.encode(_tasks.map((t) => t.toMap()).toList());
+    final String encoded = json.encode(_tasks.map((t) => t.toJson()).toList());
     await prefs.setString('tasks', encoded);
   }
 
@@ -526,7 +526,7 @@ class TaskProvider with ChangeNotifier {
   bool get hasCompleted => _tasks.any((t) => t.isCompleted);
 
   Future<String> exportTasksToJson() async {
-    final String encoded = json.encode(_tasks.map((t) => t.toMap()).toList());
+    final String encoded = json.encode(_tasks.map((t) => t.toJson()).toList());
     return encoded;
   }
 }

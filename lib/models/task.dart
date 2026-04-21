@@ -11,7 +11,7 @@ class SubTask {
     this.isCompleted = false,
   });
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toJson() {
     return {
       'id': id,
       'title': title,
@@ -19,7 +19,7 @@ class SubTask {
     };
   }
 
-  factory SubTask.fromMap(Map<String, dynamic> map) {
+  factory SubTask.fromJson(Map<String, dynamic> map) {
     return SubTask(
       id: map['id'],
       title: map['title'],
@@ -95,7 +95,7 @@ class Task {
     );
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toJson() {
     return {
       'id': id,
       'title': title,
@@ -107,13 +107,13 @@ class Task {
       'color': color.toARGB32(),
       'category': category,
       'attachmentCount': attachmentCount,
-      'subtasks': subtasks.map((s) => s.toMap()).toList(),
+      'subtasks': subtasks.map((s) => s.toJson()).toList(),
       'dueDate': dueDate?.toIso8601String(),
       'orderIndex': orderIndex,
     };
   }
 
-  factory Task.fromMap(Map<String, dynamic> map) {
+  factory Task.fromJson(Map<String, dynamic> map) {
     return Task(
       id: map['id'],
       title: map['title'],
@@ -126,7 +126,7 @@ class Task {
       category: map['category'] ?? 'All',
       attachmentCount: map['attachmentCount'] ?? 0,
       subtasks: (map['subtasks'] as List<dynamic>?)
-          ?.map((s) => SubTask.fromMap(s))
+          ?.map((s) => SubTask.fromJson(s))
           .toList() ?? [],
       dueDate: map['dueDate'] != null ? DateTime.parse(map['dueDate']) : null,
       orderIndex: map['orderIndex'] ?? 0,

@@ -1,3 +1,4 @@
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'category_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -298,21 +299,47 @@ class _TaskListPaneState extends State<TaskListPane> {
     TaskProvider taskProvider,
     bool isLargeScreen,
   ) {
-    return Dismissible(
+    return Slidable(
       key: Key(task.id),
-      direction: DismissDirection.endToStart,
-      onDismissed: (_) {
-        FocusScope.of(context).unfocus();
-        taskProvider.deleteTask(task);
-      },
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 24),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE53935),
-          borderRadius: BorderRadius.circular(28),
-        ),
-        child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+      endActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        extentRatio: 0.25,
+        children: [
+          SlidableAction(
+            onPressed: (_) {
+              FocusScope.of(context).unfocus();
+              taskProvider.deleteTask(task);
+            },
+            backgroundColor: const Color(0xFFE53935),
+            foregroundColor: Colors.white,
+            icon: Icons.delete_outline,
+            label: 'Delete',
+            borderRadius: const BorderRadius.only(
+              topRight: Radius.circular(24),
+              bottomRight: Radius.circular(24),
+            ),
+          ),
+        ],
+      ),
+      startActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        extentRatio: 0.25,
+        children: [
+          SlidableAction(
+            onPressed: (_) {
+              FocusScope.of(context).unfocus();
+              taskProvider.toggleTask(task);
+            },
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+            icon: task.isCompleted ? Icons.undo_rounded : Icons.check_circle_outline,
+            label: task.isCompleted ? 'Undo' : 'Complete',
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              bottomLeft: Radius.circular(24),
+            ),
+          ),
+        ],
       ),
       child: GestureDetector(
         onLongPress: () {

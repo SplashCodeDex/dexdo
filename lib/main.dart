@@ -111,6 +111,14 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+class NewTaskIntent extends Intent {
+  const NewTaskIntent();
+}
+
+class DeleteSelectedIntent extends Intent {
+  const DeleteSelectedIntent();
+}
+
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 2; // Default to 'Tasks' icon
 
@@ -264,11 +272,42 @@ class _HomeScreenState extends State<HomeScreen> {
     final taskProvider = Provider.of<TaskProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isLargeScreen = constraints.maxWidth > 600;
+    return Shortcuts(
+      shortcuts: <LogicalKeySet, Intent>{
+        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyN): const NewTaskIntent(),
+        LogicalKeySet(LogicalKeyboardKey.meta, LogicalKeyboardKey.keyN): const NewTaskIntent(),
+        LogicalKeySet(LogicalKeyboardKey.delete): const DeleteSelectedIntent(),
+        LogicalKeySet(LogicalKeyboardKey.backspace): const DeleteSelectedIntent(),
+      },
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          NewTaskIntent: CallbackAction<NewTaskIntent>(
+            onInvoke: (NewTaskIntent intent) {
+              FocusScope.of(context).unfocus();
+              taskProvider.addTask();
+              if (_selectedIndex != 2) {
+                setState(() => _selectedIndex = 2);
+              }
+              return null;
+            },
+          ),
+          DeleteSelectedIntent: CallbackAction<DeleteSelectedIntent>(
+            onInvoke: (DeleteSelectedIntent intent) {
+              FocusScope.of(context).unfocus();
+              if (taskProvider.isSelectionMode) {
+                taskProvider.deleteSelectedTasks();
+              } else if (taskProvider.selectedTask != null) {
+                taskProvider.deleteTask(taskProvider.selectedTask!);
+              }
+              return null;
+            },
+          ),
+        },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isLargeScreen = constraints.maxWidth > 600;
 
-        return GestureDetector(
+            return GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
           behavior: HitTestBehavior.translucent,
           child: Scaffold(
@@ -398,7 +437,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildBottomNav() {
