@@ -16,4 +16,14 @@ As requested, here is the structured execution plan. I am currently running **Ph
 ## Phase 3: Firebase Auth & Cloud Sync (EXECUTED ✅)
 - [x] Create `lib/services/firebase_storage_service.dart` (Firestore alternative handler)
 - [x] Implement `lib/services/auth_service.dart` for Multi-device sync tracking.
-- [ ] **USER ACTION BLOCKER**: You will need to generate a Firebase Project online, run `flutterfire configure`, and bind the `google-services.json` manually in Android Studio.
+- [x] **USER ACTION**: Bound `google-services.json` and `firebase_options.dart`.
+
+## Phase 4: Data Migration & Identity (UP NEXT 🌟)
+- [ ] Migrate existing standard native `SharedPreferences` tasks -> `Firebase`.
+- [ ] Implement Sign-In/Auth state UI (Google/Apple login UI to bind accounts natively).
+- [ ] Implement Offline Persistence (Trivial with Firebase rules).
+
+## Phase 5: Hyper-Productivity ⚡
+- [ ] Implement Date/Time selection visualizers natively mapped to Alarms.
+- [ ] Advanced Dashboard sorting & category chips filtering.
+- [ ] Subtask progress arcs.

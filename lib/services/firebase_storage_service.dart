@@ -12,7 +12,14 @@ class FirebaseStorageService implements StorageService {
 
   @override
   Future<void> init() async {
-    // Firebase initialization happens in main.dart
+    // Automatically auth anonymously if no user is present
+    if (_auth.currentUser == null) {
+      try {
+        await _auth.signInAnonymously();
+      } catch (e) {
+        debugPrint('Failed to sign in anonymously: $e');
+      }
+    }
   }
 
   @override
