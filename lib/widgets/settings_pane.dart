@@ -181,6 +181,7 @@ class SettingsPane extends StatelessWidget {
       final file = File('${directory.path}/dexdo_tasks_export.json');
       await file.writeAsString(jsonString);
 
+      // ignore: deprecated_member_use
       await Share.shareXFiles([XFile(file.path)], text: 'My DeXDo Tasks Export');
     } catch (e) {
       if (context.mounted) {

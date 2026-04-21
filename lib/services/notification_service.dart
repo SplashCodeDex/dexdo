@@ -15,17 +15,17 @@ class NotificationService {
   Future<void> init() async {
     tz.initializeTimeZones();
 
-    const AndroidInitializationSettings initializationSettingsAndroid =
+    final AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const DarwinInitializationSettings initializationSettingsIOS =
+    final DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
 
-    const InitializationSettings initializationSettings = InitializationSettings(
+    final InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
     );
@@ -45,7 +45,7 @@ class NotificationService {
       'Task Reminder: ${task.title}',
       'Due in 30 minutes. Tap to view.',
       tz.TZDateTime.from(scheduledTime, tz.local),
-      const NotificationDetails(
+      NotificationDetails(
         android: AndroidNotificationDetails(
           'task_reminders',
           'Task Reminders',
