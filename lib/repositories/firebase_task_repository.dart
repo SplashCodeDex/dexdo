@@ -34,47 +34,16 @@ class FirebaseTaskRepository implements TaskRepository {
           .get();
 
       final List<Task> activeTasks = [];
-      final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
-      
-      var archiveBatch = _db.batch();
-      int archiveCount = 0;
-      final archiveRef = _db.collection('users').doc(_userId).collection('archived_tasks');
-      final tasksRef = _db.collection('users').doc(_userId).collection('tasks');
 
       for (var doc in snapshot.docs) {
         try {
           final data = doc.data();
           data['id'] = doc.id; // Force ID to match the document key
           final task = Task.fromJson(data);
-
-          // Auto-archiving logic for tasks older than 30 days
-          if (task.isCompleted && task.completionDate != null && task.completionDate!.isBefore(thirtyDaysAgo)) {
-             archiveBatch.set(archiveRef.doc(task.id), task.toJson());
-             archiveBatch.delete(tasksRef.doc(task.id));
-             archiveCount++;
-             
-             // 1 Task = 2 operations (set + delete). 
-             // Firestore limit is 500 ops per batch. Max tasks per batch = 250.
-             if (archiveCount >= 245) { 
-               await archiveBatch.commit();
-               archiveBatch = _db.batch();
-               archiveCount = 0;
-             }
-          } else {
-             activeTasks.add(task);
-          }
+          activeTasks.add(task);
         } catch (e) {
           debugPrint('Error parsing firestore task: $e');
         }
-      }
-
-      // Commit any remaining archives
-      if (archiveCount > 0) {
-         try {
-           await archiveBatch.commit();
-         } catch (e) {
-           debugPrint('Error committing archive batch: $e');
-         }
       }
 
       return activeTasks;
