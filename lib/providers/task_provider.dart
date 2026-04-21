@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task.dart';
+import '../services/storage_service.dart';
+import '../services/local_storage_service.dart';
+import '../services/notification_service.dart';
 import 'dart:convert';
 
 class TaskProvider with ChangeNotifier {
+  final StorageService _storage = LocalStorageService();
+  final NotificationService _notifications = NotificationService();
+
   List<Task> _tasks = [];
   List<Task> _filteredTasks = [];
   Task? _selectedTask;
@@ -99,82 +104,41 @@ class TaskProvider with ChangeNotifier {
   }
 
   Future<void> _loadData() async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    // Load Categories
-    final List<String>? savedCategories = prefs.getStringList('categories');
-    if (savedCategories != null) {
-      _categories = savedCategories;
-    }
+    await _storage.init();
+    await _notifications.init();
 
-    // Load Category Icons
-    final String? iconsJson = prefs.getString('category_icons');
-    if (iconsJson != null) {
-      try {
-        final Map<String, dynamic> decoded = json.decode(iconsJson);
-        decoded.forEach((key, value) {
-          _categoryIcons[key] = IconData(value, fontFamily: 'MaterialIcons');
-        });
-      } catch (e) {
-        debugPrint('Error loading category icons: $e');
-      }
-    }
+    final savedCategories = await _storage.loadCategories();
+    if (savedCategories.isNotEmpty) _categories = savedCategories;
 
-    // Load Category Colors
-    final String? colorsJson = prefs.getString('category_colors');
-    if (colorsJson != null) {
-      try {
-        final Map<String, dynamic> decoded = json.decode(colorsJson);
-        decoded.forEach((key, value) {
-          _categoryColors[key] = Color(value);
-        });
-      } catch (e) {
-        debugPrint('Error loading category colors: $e');
-      }
-    }
+    final savedIcons = await _storage.loadCategoryIcons();
+    if (savedIcons.isNotEmpty) _categoryIcons.addAll(savedIcons);
 
-    // Load Tasks
-    final String? tasksJson = prefs.getString('tasks');
-    if (tasksJson != null) {
-      try {
-        final List<dynamic> decoded = json.decode(tasksJson);
-        _tasks = decoded
-            .map((item) {
-              try {
-                return Task.fromJson(item);
-              } catch (e) {
-                debugPrint('Error parsing individual task: $e');
-                return null;
-              }
-            })
-            .whereType<Task>()
-            .toList();
-        _updateFilteredTasks();
-      } catch (e) {
-        debugPrint('Error loading tasks: $e');
-        _tasks = [];
-      }
-    }
+    final savedColors = await _storage.loadCategoryColors();
+    if (savedColors.isNotEmpty) _categoryColors.addAll(savedColors);
+
+    _tasks = await _storage.loadTasks();
+
+    _updateFilteredTasks();
     notifyListeners();
   }
 
   Future<void> _saveTasks() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String encoded = json.encode(_tasks.map((t) => t.toJson()).toList());
-    await prefs.setString('tasks', encoded);
+    await _storage.saveTasks(_tasks);
+    
+    // Sync notifications when saving tasks
+    for (var task in _tasks) {
+      if (task.isCompleted) {
+        _notifications.cancelTaskReminder(task.id);
+      } else {
+        _notifications.scheduleTaskReminder(task);
+      }
+    }
   }
 
   Future<void> _saveCategories() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('categories', _categories);
-
-    final Map<String, int> iconMap = {};
-    _categoryIcons.forEach((key, value) => iconMap[key] = value.codePoint);
-    await prefs.setString('category_icons', json.encode(iconMap));
-
-    final Map<String, int> colorMap = {};
-    _categoryColors.forEach((key, value) => colorMap[key] = value.toARGB32());
-    await prefs.setString('category_colors', json.encode(colorMap));
+    await _storage.saveCategories(_categories);
+    await _storage.saveCategoryIcons(_categoryIcons);
+    await _storage.saveCategoryColors(_categoryColors);
   }
 
   Future<void> addCategory(String name, IconData icon, Color color) async {
