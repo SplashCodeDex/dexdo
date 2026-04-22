@@ -40,71 +40,88 @@ class _TaskListPaneState extends State<TaskListPane> {
     final completedTasks = taskProvider.completedTasks;
     final isLargeScreen = MediaQuery.of(context).size.width > 600;
 
-    return Column(
-      children: [
-        _buildSearchBar(context, taskProvider),
-        _buildCategoryHeader(context, taskProvider),
-        Expanded(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 400),
-            child: (activeTasks.isEmpty && completedTasks.isEmpty)
-                ? _buildEmptyState(taskProvider)
-                : ReorderableListView(
-                    key: ValueKey('list_${taskProvider.selectedCategory}'),
-                    buildDefaultDragHandles: taskProvider.searchQuery.isEmpty,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    proxyDecorator: (Widget child, int index, Animation<double> animation) {
-                      return AnimatedBuilder(
-                        animation: animation,
-                        builder: (BuildContext context, Widget? child) {
-                          final double animValue = Curves.easeInOut.transform(animation.value);
-                          final double scale = Tween<double>(begin: 1.0, end: 1.02).transform(animValue);
-                          return Transform.scale(
-                            scale: scale,
-                            child: Material(
-                              elevation: Tween<double>(begin: 0, end: 12).transform(animValue),
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(20),
-                              shadowColor: Colors.black.withValues(alpha: 0.15),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: child,
+    return NestedScrollView(
+      headerSliverBuilder: (context, innerBoxIsScrolled) {
+        return [
+          SliverAppBar(
+            floating: true,
+            snap: true,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            elevation: innerBoxIsScrolled ? 2 : 0,
+            shadowColor: Colors.black.withValues(alpha: 0.1),
+            expandedHeight: 140,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _buildSearchBar(context, taskProvider),
+                  _buildCategoryHeader(context, taskProvider),
+                ],
+              ),
+            ),
+          ),
+        ];
+      },
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 400),
+        child: (activeTasks.isEmpty && completedTasks.isEmpty)
+            ? _buildEmptyState(taskProvider)
+            : ReorderableListView(
+                key: ValueKey('list_${taskProvider.selectedCategory}'),
+                buildDefaultDragHandles: false,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                proxyDecorator: (Widget child, int index, Animation<double> animation) {
+                  return AnimatedBuilder(
+                    animation: animation,
+                    builder: (BuildContext context, Widget? child) {
+                      final double animValue = Curves.easeInOut.transform(animation.value);
+                      final double scale = Tween<double>(begin: 1.0, end: 1.02).transform(animValue);
+                      return Transform.scale(
+                        scale: scale,
+                        child: Material(
+                          elevation: Tween<double>(begin: 0, end: 12).transform(animValue),
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
+                          shadowColor: Colors.black.withValues(alpha: 0.15),
+                          child: child,
+                        ),
                       );
                     },
-                    onReorder: (oldIndex, newIndex) {
-                      if (taskProvider.searchQuery.isEmpty) {
-                        taskProvider.reorderTasks(oldIndex, newIndex);
-                      }
-                    },
-                    children: [
-                      if (activeTasks.isNotEmpty) ...[
-                        ...activeTasks.asMap().entries.map((entry) {
-                          final task = entry.value;
-                          return Padding(
-                            key: ValueKey(task.id),
-                            padding: const EdgeInsets.only(bottom: 16.0),
-                            child: _buildTaskCard(context, task, task.id == taskProvider.selectedTask?.id, taskProvider, isLargeScreen),
-                          );
-                        }),
-                      ],
-                      if (completedTasks.isNotEmpty) ...[
-                        _buildSectionHeader('Completed', completedTasks.length),
-                        ...completedTasks.asMap().entries.map((entry) {
-                          final task = entry.value;
-                          return Padding(
-                            key: ValueKey(task.id),
-                            padding: const EdgeInsets.only(bottom: 16.0),
-                            child: _buildTaskCard(context, task, task.id == taskProvider.selectedTask?.id, taskProvider, isLargeScreen),
-                          );
-                        }),
-                      ],
-                    ],
-                  ),
-          ),
-        ),
-      ],
+                    child: child,
+                  );
+                },
+                onReorder: (oldIndex, newIndex) {
+                  if (taskProvider.searchQuery.isEmpty) {
+                    taskProvider.reorderTasks(oldIndex, newIndex);
+                  }
+                },
+                children: [
+                  if (activeTasks.isNotEmpty) ...[
+                    ...activeTasks.asMap().entries.map((entry) {
+                      final task = entry.value;
+                      return Padding(
+                        key: ValueKey(task.id),
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: _buildTaskCard(context, task, task.id == taskProvider.selectedTask?.id, taskProvider, isLargeScreen, entry.key),
+                      );
+                    }),
+                  ],
+                  if (completedTasks.isNotEmpty) ...[
+                    _buildSectionHeader('Completed', completedTasks.length),
+                    ...completedTasks.asMap().entries.map((entry) {
+                      final task = entry.value;
+                      final headerOffset = activeTasks.isEmpty ? 1 : 1;
+                      final absoluteIndex = activeTasks.length + headerOffset + entry.key;
+                      return Padding(
+                        key: ValueKey(task.id),
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: _buildTaskCard(context, task, task.id == taskProvider.selectedTask?.id, taskProvider, isLargeScreen, absoluteIndex),
+                      );
+                    }),
+                  ],
+                ],
+              ),
+      ),
     );
   }
 
@@ -346,11 +363,12 @@ class _TaskListPaneState extends State<TaskListPane> {
     bool isSelected,
     TaskProvider taskProvider,
     bool isLargeScreen,
+    int index,
   ) {
     return Slidable(
       key: Key(task.id),
       endActionPane: ActionPane(
-        motion: const DrawerMotion(),
+        motion: const StretchMotion(),
         extentRatio: 0.25,
         children: [
           SlidableAction(
@@ -370,7 +388,7 @@ class _TaskListPaneState extends State<TaskListPane> {
         ],
       ),
       startActionPane: ActionPane(
-        motion: const DrawerMotion(),
+        motion: const StretchMotion(),
         extentRatio: 0.25,
         children: [
           SlidableAction(
@@ -414,8 +432,11 @@ class _TaskListPaneState extends State<TaskListPane> {
             }
           }
         },
-        child: AnimatedContainer(
+        child: AnimatedOpacity(
+          opacity: task.isCompleted ? 0.6 : 1.0,
           duration: const Duration(milliseconds: 300),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
           decoration: BoxDecoration(
             color: taskProvider.selectedTaskIds.contains(task.id)
                 ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5)
@@ -601,9 +622,22 @@ class _TaskListPaneState extends State<TaskListPane> {
                     taskProvider.toggleStarred(task);
                   },
                 ),
+                if (taskProvider.searchQuery.isEmpty && !taskProvider.isSelectionMode)
+                  ReorderableDragStartListener(
+                    index: index,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 4.0),
+                      child: Icon(
+                        Icons.drag_indicator_rounded,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                        size: 26,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
+        ),
         ),
       ),
     );
