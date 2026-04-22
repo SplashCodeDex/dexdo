@@ -363,7 +363,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   : null,
               title: taskProvider.isSelectionMode
                   ? Text('${taskProvider.selectedTaskIds.length} Selected')
-                  : null,
+                  : RichText(
+                      text: TextSpan(
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -1.5,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: 'DeX',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'Do',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
               actions: [
                 if (taskProvider.isSelectionMode) ...[
                   IconButton(
