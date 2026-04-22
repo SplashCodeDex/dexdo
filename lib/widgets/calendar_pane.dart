@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:animations/animations.dart';
 import '../providers/task_provider.dart';
 import '../models/task.dart';
 import 'package:intl/intl.dart';
@@ -46,7 +47,19 @@ class _CalendarPaneState extends State<CalendarPane> {
         const SizedBox(height: 16),
         const Divider(height: 1),
         Expanded(
-          child: _buildTasksForSelectedDay(tasksWithDates),
+          child: PageTransitionSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (child, animation, secondaryAnimation) {
+              return SharedAxisTransition(
+                animation: animation,
+                secondaryAnimation: secondaryAnimation,
+                transitionType: SharedAxisTransitionType.vertical,
+                fillColor: Colors.transparent,
+                child: child,
+              );
+            },
+            child: _buildTasksForSelectedDay(tasksWithDates, _selectedDay),
+          ),
         ),
       ],
     );
@@ -266,22 +279,23 @@ class _CalendarPaneState extends State<CalendarPane> {
                   ),
                   if (hasTasks)
                     Positioned(
-                      bottom: 4,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: dayTasks.take(3).map((t) {
-                          return Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 1.5),
-                            width: 4,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: isSelected 
-                                ? Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8)
-                                : t.isCompleted ? Colors.green : t.color,
-                              shape: BoxShape.circle,
-                            ),
-                          );
-                        }).toList(),
+                      bottom: 8,
+                      left: 12,
+                      right: 12,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: completedTasks / dayTasks.length,
+                          minHeight: 4,
+                          backgroundColor: isSelected 
+                            ? Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.3) 
+                            : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            isSelected 
+                              ? Theme.of(context).colorScheme.onPrimary 
+                              : (completedTasks == dayTasks.length ? Colors.green : Theme.of(context).colorScheme.primary)
+                          ),
+                        ),
                       ),
                     ),
                 ],
@@ -325,24 +339,25 @@ class _CalendarPaneState extends State<CalendarPane> {
     );
   }
 
-  Widget _buildTasksForSelectedDay(List<Task> allTasks) {
-    if (_selectedDay == null) return const SizedBox.shrink();
+  Widget _buildTasksForSelectedDay(List<Task> allTasks, DateTime? selectedDay) {
+    if (selectedDay == null) return const SizedBox.shrink();
 
-    final dayTasks = allTasks.where((t) => DateUtils.isSameDay(t.dueDate, _selectedDay)).toList()
+    final dayTasks = allTasks.where((t) => DateUtils.isSameDay(t.dueDate, selectedDay)).toList()
       ..sort((a, b) => (a.dueDate ?? DateTime.now()).compareTo(b.dueDate ?? DateTime.now()));
 
     return Column(
+      key: ValueKey<String>(selectedDay.toIso8601String()),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                DateFormat('EEEE, MMM d').format(_selectedDay!),
+                DateFormat('EEEE, MMM d').format(selectedDay),
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
+              const Spacer(),
               if (dayTasks.isNotEmpty)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -359,6 +374,19 @@ class _CalendarPaneState extends State<CalendarPane> {
                     ),
                   ),
                 ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: () {
+                  final provider = Provider.of<TaskProvider>(context, listen: false);
+                  provider.addTask(dueDate: selectedDay);
+                  if (widget.onTaskTap != null && provider.selectedTask != null) {
+                    widget.onTaskTap!(provider.selectedTask!);
+                  }
+                },
+                icon: const Icon(Icons.add_circle),
+                color: Theme.of(context).colorScheme.primary,
+                tooltip: 'Add Task for this day',
+              ),
             ],
           ),
         ),

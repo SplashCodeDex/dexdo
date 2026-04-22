@@ -250,7 +250,7 @@ class TaskProvider with ChangeNotifier {
     await _saveTasks();
   }
 
-  Future<void> addTask() async {
+  Future<void> addTask({DateTime? dueDate}) async {
     String category = _selectedCategory == 'All' ? 'Personal' : _selectedCategory;
     
     for (var t in _tasks) {
@@ -266,6 +266,7 @@ class TaskProvider with ChangeNotifier {
       attachmentCount: 0,
       subtasks: [],
       orderIndex: 0,
+      dueDate: dueDate,
     );
     _tasks.insert(0, newTask);
     _selectedTask = newTask;
