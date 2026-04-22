@@ -415,9 +415,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       tooltip: 'Clear Done',
                     ),
                   if (_selectedIndex != 0)
-                    const CircleAvatar(
-                      radius: 18,
-                      backgroundImage: NetworkImage('https://api.dicebear.com/7.x/avataaars/png?seed=Felix'),
+                    Builder(
+                      builder: (context) {
+                        final authService = Provider.of<AuthService>(context);
+                        return CircleAvatar(
+                          radius: 18,
+                          backgroundImage: NetworkImage(authService.currentUser?.photoURL ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${authService.currentUser?.uid ?? "Felix"}'),
+                        );
+                      }
                     ),
                 ],
                 const SizedBox(width: 16),

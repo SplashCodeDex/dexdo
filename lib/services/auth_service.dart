@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -54,7 +55,34 @@ class AuthService extends ChangeNotifier {
          debugPrint("The provider is already linked to a user.");
       } else if (e.code == 'credential-already-in-use') {
          debugPrint("The credential is used by a different account - logging in directly.");
-         return await _auth.signInWithCredential(e.credential!);
+         final oldUid = _auth.currentUser?.uid;
+         final cred = await _auth.signInWithCredential(e.credential!);
+         final newUid = cred.user?.uid;
+         if (oldUid != null && newUid != null && oldUid != newUid) {
+             try {
+               final firestore = FirebaseFirestore.instance;
+               final oldTasks = await firestore.collection('users').doc(oldUid).collection('tasks').get();
+               var batch = firestore.batch();
+               var count = 0;
+               for(var doc in oldTasks.docs) {
+                  batch.set(firestore.collection('users').doc(newUid).collection('tasks').doc(doc.id), doc.data(), SetOptions(merge: true));
+                  count++;
+                  if(count >= 490) { await batch.commit(); batch = firestore.batch(); count = 0;}
+               }
+               if(count > 0) await batch.commit();
+               
+               final oldSettings = await firestore.collection('users').doc(oldUid).collection('settings').get();
+               var sBatch = firestore.batch();
+               for(var doc in oldSettings.docs) {
+                  sBatch.set(firestore.collection('users').doc(newUid).collection('settings').doc(doc.id), doc.data(), SetOptions(merge: true));
+               }
+               await sBatch.commit();
+               debugPrint("Merged data to new account.");
+             } catch(mergeErr) {
+               debugPrint("Merge err: $mergeErr");
+             }
+         }
+         return cred;
       }
       debugPrint("Firebase Auth Error: ${e.message}");
       return null;
