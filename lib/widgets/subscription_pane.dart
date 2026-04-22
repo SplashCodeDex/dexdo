@@ -124,7 +124,30 @@ class _SubscriptionPaneState extends State<SubscriptionPane> {
         title: const Text('Go Premium'),
       ),
       body: SafeArea(
-        child: Padding(
+        child: !_isAvailable
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.store_mall_directory_outlined, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Store Unavailable',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'In-app purchases are not available on this device. Please check your connection or device settings.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
