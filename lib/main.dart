@@ -476,63 +476,86 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(35),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
+              color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.15),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+              spreadRadius: 2,
             ),
           ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(35),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
             child: Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.6),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+                    Theme.of(context).colorScheme.surface.withValues(alpha: 0.6),
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(35),
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-                  width: 1.5,
+                  color: Colors.white.withValues(alpha: 0.2), // Inner light shine
+                  width: 1.2,
                 ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  IconButton(
-                    icon: Icon(Icons.home_outlined, color: _selectedIndex == 0 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
-                    onPressed: () {
-                      FocusScope.of(context).unfocus();
-                      setState(() => _selectedIndex = 0);
-                    },
-                    tooltip: 'Home',
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.calendar_month_outlined, color: _selectedIndex == 1 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
-                    onPressed: () {
-                      FocusScope.of(context).unfocus();
-                      setState(() => _selectedIndex = 1);
-                    },
-                    tooltip: 'Calendar',
-                  ),
-                  const SizedBox(width: 48), // Space for FAB
-                  IconButton(
-                    icon: Icon(Icons.list_alt_rounded, color: _selectedIndex == 2 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
-                    onPressed: () {
-                      FocusScope.of(context).unfocus();
-                      setState(() => _selectedIndex = 2);
-                    },
-                    tooltip: 'Tasks',
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.person_outline, color: _selectedIndex == 3 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
-                    onPressed: () {
-                      FocusScope.of(context).unfocus();
-                      setState(() => _selectedIndex = 3);
-                    },
-                    tooltip: 'Profile',
-                  ),
+                  _buildNavItem(Icons.home_outlined, Icons.home_rounded, 0, 'Home'),
+                  _buildNavItem(Icons.calendar_month_outlined, Icons.calendar_month_rounded, 1, 'Calendar'),
+                  const SizedBox(width: 56), // Space for FAB
+                  _buildNavItem(Icons.list_alt_rounded, Icons.list_alt_rounded, 2, 'Tasks'),
+                  _buildNavItem(Icons.settings_outlined, Icons.settings_rounded, 3, 'Settings'),
                 ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData unselectedIcon, IconData selectedIcon, int index, String tooltip) {
+    final isSelected = _selectedIndex == index;
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: () {
+          FocusScope.of(context).unfocus();
+          setState(() => _selectedIndex = index);
+          HapticFeedback.lightImpact();
+        },
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCirc,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected 
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15) 
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            transitionBuilder: (child, animation) {
+              return ScaleTransition(
+                scale: animation,
+                child: child,
+              );
+            },
+            child: Icon(
+              isSelected ? selectedIcon : unselectedIcon,
+              key: ValueKey(isSelected),
+              color: isSelected 
+                  ? Theme.of(context).colorScheme.primary 
+                  : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+              size: isSelected ? 26 : 24,
             ),
           ),
         ),

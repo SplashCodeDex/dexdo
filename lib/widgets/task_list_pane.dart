@@ -282,33 +282,60 @@ class _TaskListPaneState extends State<TaskListPane> {
   Widget _buildEmptyState(TaskProvider taskProvider) {
     return Center(
       key: const ValueKey('empty_state'),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SvgPicture.asset(
-            'assets/images/logo2DexDoNo.svg',
-            height: 180,
-            colorFilter: ColorFilter.mode(
-              Colors.blue.withValues(alpha: 0.1),
-              BlendMode.srcIn,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: const Duration(seconds: 2),
+        curve: Curves.easeInOutSine,
+        builder: (context, value, child) {
+          return Transform.translate(
+            offset: Offset(0, 10 * (0.5 - (0.5 - value).abs()) * 2 - 10),
+            child: child,
+          );
+        },
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.8, end: 1.0),
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeOutBack,
+              builder: (context, scale, child) {
+                return Transform.scale(
+                  scale: scale,
+                  child: child,
+                );
+              },
+              child: SvgPicture.asset(
+                'assets/images/logo2DexDoNo.svg',
+                height: 180,
+                colorFilter: ColorFilter.mode(
+                  Colors.blue.withValues(alpha: 0.15),
+                  BlendMode.srcIn,
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 32),
-          Text(
-            'No tasks in ${taskProvider.selectedCategory}',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
-              letterSpacing: 0.5,
+            const SizedBox(height: 32),
+            Text(
+              'All Caught Up!',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+                letterSpacing: -0.5,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tap + to create your first task',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2), fontSize: 14),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              'You have no tasks in ${taskProvider.selectedCategory}.\nTap + to plant a new one.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6), 
+                fontSize: 15,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -419,7 +446,7 @@ class _TaskListPaneState extends State<TaskListPane> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Selection Checkbox or Custom Checkbox
+                // Selection Checkbox with Progress Ring for Subtasks
                 GestureDetector(
                   onTap: () {
                     FocusScope.of(context).unfocus();
@@ -441,29 +468,48 @@ class _TaskListPaneState extends State<TaskListPane> {
                     scale: task.isCompleted || taskProvider.selectedTaskIds.contains(task.id) ? 1.05 : 1.0,
                     duration: const Duration(milliseconds: 150),
                     curve: Curves.easeOutBack,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: taskProvider.selectedTaskIds.contains(task.id)
-                            ? Theme.of(context).colorScheme.primary
-                            : (task.isCompleted ? task.color.withValues(alpha: 0.15) : Colors.transparent),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: taskProvider.selectedTaskIds.contains(task.id)
-                              ? Theme.of(context).colorScheme.primary
-                              : (task.isCompleted ? task.color : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4)),
-                          width: (taskProvider.selectedTaskIds.contains(task.id) || task.isCompleted) ? 0 : 1.5,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        if (task.subtasks.isNotEmpty && !task.isCompleted)
+                          SizedBox(
+                            width: 34,
+                            height: 34,
+                            child: CircularProgressIndicator(
+                              value: task.progress,
+                              strokeWidth: 2.5,
+                              backgroundColor: task.color.withValues(alpha: 0.15),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                task.progress == 1.0 ? Colors.green : task.color,
+                              ),
+                            ),
+                          ),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: taskProvider.selectedTaskIds.contains(task.id)
+                                ? Theme.of(context).colorScheme.primary
+                                : (task.isCompleted ? task.color.withValues(alpha: 0.15) : Colors.transparent),
+                            shape: task.subtasks.isNotEmpty ? BoxShape.circle : BoxShape.rectangle,
+                            borderRadius: task.subtasks.isNotEmpty ? null : BorderRadius.circular(8),
+                            border: Border.all(
+                              color: taskProvider.selectedTaskIds.contains(task.id)
+                                  ? Theme.of(context).colorScheme.primary
+                                  : (task.isCompleted ? task.color : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4)),
+                              width: (taskProvider.selectedTaskIds.contains(task.id) || task.isCompleted) ? 0 : 1.5,
+                            ),
+                          ),
+                          child: taskProvider.selectedTaskIds.contains(task.id)
+                              ? Icon(Icons.check, size: 16, color: Theme.of(context).colorScheme.onPrimary)
+                              : (task.isCompleted ? Icon(Icons.check, size: 16, color: task.color) : null),
                         ),
-                      ),
-                      child: taskProvider.selectedTaskIds.contains(task.id)
-                          ? Icon(Icons.check, size: 16, color: Theme.of(context).colorScheme.onPrimary)
-                          : (task.isCompleted ? Icon(Icons.check, size: 16, color: task.color) : null),
+                      ],
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 18),
                 // Text content
                 Expanded(
                   child: Column(
@@ -539,20 +585,6 @@ class _TaskListPaneState extends State<TaskListPane> {
                             ),
                         ],
                       ),
-                      if (task.subtasks.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: task.progress,
-                            backgroundColor: task.color.withValues(alpha: 0.1),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              task.isCompleted ? Colors.grey[300]! : task.color
-                            ),
-                            minHeight: 4,
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
