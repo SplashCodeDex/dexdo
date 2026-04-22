@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/task_provider.dart';
 import '../models/task.dart';
 import 'package:intl/intl.dart';
+import '../services/auth_service.dart';
 
 class HomePane extends StatelessWidget {
   final Function(Task)? onTaskTap;
@@ -25,10 +26,13 @@ class HomePane extends StatelessWidget {
 
     final activeToday = allTasks.where((t) {
       if (t.isCompleted) return false;
-      if (t.dueDate == null) return true; // Include tasks without dates as "general"
-      return t.dueDate!.year == now.year &&
-          t.dueDate!.month == now.month &&
-          t.dueDate!.day == now.day;
+      if (t.dueDate != null) {
+        final taskDate = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
+        final todayDate = DateTime(now.year, now.month, now.day);
+        return taskDate.isBefore(todayDate) || taskDate.isAtSameMomentAs(todayDate);
+      }
+      // If a task has no due date but is starred, we can consider it "in focus" for today
+      return t.isStarred;
     }).toList();
 
     final totalToday = completedToday.length + activeToday.length;
@@ -63,6 +67,11 @@ class HomePane extends StatelessWidget {
     if (hour >= 12 && hour < 17) greeting = 'Good Afternoon';
     if (hour >= 17) greeting = 'Good Evening';
 
+    final authService = Provider.of<AuthService>(context);
+    final userName = authService.currentUser?.displayName?.split(' ').first ?? 'Friend!';
+    final photoUrl = authService.currentUser?.photoURL;
+    final fallbackUrl = 'https://api.dicebear.com/7.x/avataaars/png?seed=${authService.currentUser?.uid ?? "Felix"}';
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -77,9 +86,9 @@ class HomePane extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const Text(
-              'Felix!',
-              style: TextStyle(
+            Text(
+              userName,
+              style: const TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.w900,
                 letterSpacing: -1,
@@ -87,9 +96,9 @@ class HomePane extends StatelessWidget {
             ),
           ],
         ),
-        const CircleAvatar(
+        CircleAvatar(
           radius: 28,
-          backgroundImage: NetworkImage('https://api.dicebear.com/7.x/avataaars/png?seed=Felix'),
+          backgroundImage: NetworkImage(photoUrl ?? fallbackUrl),
         ),
       ],
     );
@@ -230,7 +239,14 @@ class HomePane extends StatelessWidget {
   }
 
   Widget _buildUpcomingTasks(BuildContext context, List<Task> tasks) {
-    final upcoming = tasks.take(5).toList();
+    final sortedTasks = List<Task>.from(tasks)
+      ..sort((a, b) {
+        if (a.dueDate == null && b.dueDate == null) return 0;
+        if (a.dueDate == null) return 1;
+        if (b.dueDate == null) return -1;
+        return a.dueDate!.compareTo(b.dueDate!);
+      });
+    final upcoming = sortedTasks.take(5).toList();
     if (upcoming.isEmpty) {
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),

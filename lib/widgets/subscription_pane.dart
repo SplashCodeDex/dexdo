@@ -117,6 +117,8 @@ class _SubscriptionPaneState extends State<SubscriptionPane> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Go Premium'),
@@ -132,7 +134,7 @@ class _SubscriptionPaneState extends State<SubscriptionPane> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: -0.5,
+                  letterSpacing: -1,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -141,32 +143,33 @@ class _SubscriptionPaneState extends State<SubscriptionPane> {
               _buildPlanOption(
                 id: 'weekly',
                 title: 'Weekly Plan',
-                priceLabel: _getPriceFor(_kWeeklySubscriptionId, 'GH₵10.00 per week'),
+                priceLabel: _getPriceFor(_kWeeklySubscriptionId, '\$1.99 per week'),
               ),
               const SizedBox(height: 12),
               
               _buildPlanOption(
                 id: 'monthly',
                 title: 'Monthly Plan',
-                badgeText: 'Save 54%',
-                originalPrice: '₵43.30',
-                priceLabel: _getPriceFor(_kMonthlySubscriptionId, 'GH₵20.00 per month'),
+                badgeText: 'Save 50%',
+                originalPrice: '\$9.99',
+                priceLabel: _getPriceFor(_kMonthlySubscriptionId, '\$4.99 per month'),
               ),
               const SizedBox(height: 12),
               
               _buildPlanOption(
                 id: 'yearly',
                 title: 'Yearly Plan',
-                badgeText: 'Save 50%',
-                originalPrice: '₵240.00',
-                priceLabel: _getPriceFor(_kYearlySubscriptionId, 'GH₵120.00 per year'),
+                badgeText: 'Save 60%',
+                originalPrice: '\$119.88',
+                priceLabel: _getPriceFor(_kYearlySubscriptionId, '\$49.99 per year'),
               ),
               const SizedBox(height: 12),
               
               _buildPlanOption(
                 id: 'lifetime',
-                title: 'Lifetime - One-time payment',
-                priceLabel: _getPriceFor(_kLifetimeProductId, 'GH₵360.00'),
+                title: 'Lifetime',
+                badgeText: 'One-time',
+                priceLabel: _getPriceFor(_kLifetimeProductId, '\$149.99'),
               ),
               
               const Spacer(),
@@ -177,10 +180,11 @@ class _SubscriptionPaneState extends State<SubscriptionPane> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                  elevation: 2,
                 ),
-                child: const Text('Continue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: const Text('Continue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
               ),
             ],
           ),
@@ -192,7 +196,7 @@ class _SubscriptionPaneState extends State<SubscriptionPane> {
   String _getPriceFor(String productId, String fallbackPrice) {
     try {
       final p = _products.firstWhere((element) => element.id == productId);
-      return p.price; // This will return things like "$1.99" localized!
+      return p.price; 
     } catch (_) {
       return fallbackPrice;
     }
@@ -206,90 +210,96 @@ class _SubscriptionPaneState extends State<SubscriptionPane> {
     String? originalPrice,
   }) {
     final isSelected = _selectedPlan == id;
+    final colorScheme = Theme.of(context).colorScheme;
     
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedPlan = id;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
-            width: isSelected ? 2 : 1,
-          ),
-          color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.05) : Colors.transparent,
+    return Card(
+      elevation: isSelected ? 2 : 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: isSelected ? colorScheme.primary : colorScheme.outlineVariant.withValues(alpha: 0.3),
+          width: isSelected ? 2 : 1,
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      if (badgeText != null) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.red[500],
-                            borderRadius: BorderRadius.circular(12),
+      ),
+      color: isSelected ? colorScheme.primary.withValues(alpha: 0.08) : colorScheme.surface,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _selectedPlan = id;
+          });
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
-                          child: Text(
-                            badgeText,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                        ),
+                        if (badgeText != null) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primary,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              badgeText,
+                              style: TextStyle(
+                                color: colorScheme.onPrimary,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
-                      ]
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      if (originalPrice != null) ...[
+                        ]
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        if (originalPrice != null) ...[
+                          Text(
+                            originalPrice,
+                            style: TextStyle(
+                              fontSize: 14,
+                              decoration: TextDecoration.lineThrough,
+                              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
                         Text(
-                          originalPrice,
+                          priceLabel,
                           style: TextStyle(
                             fontSize: 14,
-                            decoration: TextDecoration.lineThrough,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
+                            fontWeight: FontWeight.w600,
+                            color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        const SizedBox(width: 4),
                       ],
-                      Text(
-                        priceLabel,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Icon(
-              isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-              color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
-            ),
-          ],
+              Icon(
+                isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -158,6 +158,19 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
+  Future<void> _syncTask(Task task) async {
+    await _repository.saveTask(task);
+    if (task.isCompleted) {
+      _notifications.cancelTaskReminder(task.id);
+    } else {
+      _notifications.scheduleTaskReminder(task);
+    }
+  }
+
+  Future<void> _removeTask(Task task) async {
+    await _repository.deleteTask(task.id);
+    _notifications.cancelTaskReminder(task.id);
+  }
   Future<void> _saveCategories() async {
     await _repository.saveCategories(_categories);
     await _repository.saveCategoryIcons(_categoryIcons);
@@ -237,9 +250,8 @@ class TaskProvider with ChangeNotifier {
   Future<void> addTask() async {
     String category = _selectedCategory == 'All' ? 'Personal' : _selectedCategory;
     
-    int minOrder = 0;
-    if (_tasks.isNotEmpty) {
-      minOrder = _tasks.map((t) => t.orderIndex).reduce((a, b) => a < b ? a : b);
+    for (var t in _tasks) {
+      t.orderIndex++;
     }
 
     final newTask = Task(
@@ -250,7 +262,7 @@ class TaskProvider with ChangeNotifier {
       icon: _categoryIcons[category] ?? Icons.task_alt,
       attachmentCount: 0,
       subtasks: [],
-      orderIndex: minOrder - 1,
+      orderIndex: 0,
     );
     _tasks.insert(0, newTask);
     _selectedTask = newTask;
@@ -264,13 +276,13 @@ class TaskProvider with ChangeNotifier {
     task.description = description;
     _updateFilteredTasks();
     notifyListeners();
-    await _saveTasks();
+    await _syncTask(task);
   }
 
   Future<void> addSubtask(Task task, String title) async {
     task.subtasks.add(SubTask(id: _uuid.v4(), title: title));
     notifyListeners();
-    await _saveTasks();
+    await _syncTask(task);
   }
 
   Future<void> toggleSubtask(Task task, SubTask subtask) async {
@@ -279,13 +291,13 @@ class TaskProvider with ChangeNotifier {
       HapticFeedback.lightImpact();
     }
     notifyListeners();
-    await _saveTasks();
+    await _syncTask(task);
   }
 
   Future<void> deleteSubtask(Task task, SubTask subtask) async {
     task.subtasks.removeWhere((s) => s.id == subtask.id);
     notifyListeners();
-    await _saveTasks();
+    await _syncTask(task);
   }
 
   Future<void> updateCategory(Task task, String category) async {
@@ -294,20 +306,20 @@ class TaskProvider with ChangeNotifier {
     task.icon = _categoryIcons[category] ?? Icons.task_alt;
     _updateFilteredTasks();
     notifyListeners();
-    await _saveTasks();
+    await _syncTask(task);
   }
 
   Future<void> updateDueDate(Task task, DateTime? date) async {
     task.dueDate = date;
     _updateFilteredTasks();
     notifyListeners();
-    await _saveTasks();
+    await _syncTask(task);
   }
 
   Future<void> updateRecurrence(Task task, String recurrence) async {
     task.recurrence = recurrence;
     notifyListeners();
-    await _saveTasks();
+    await _syncTask(task);
   }
 
   Future<void> reorderTasks(int oldIndex, int newIndex) async {
@@ -331,12 +343,20 @@ class TaskProvider with ChangeNotifier {
     if (newIndex < 0) newIndex = 0;
     if (newIndex > uiItems.length) newIndex = uiItems.length;
 
+    // Global Re-indexing to preserve relative order
+    final List<Task> allTasksSorted = List.from(_tasks);
+
     // Detect if crossing header
     int headerIndexAfterRemove = uiItems.indexOf(null);
     if (headerIndexAfterRemove != -1) {
       if (oldIndex <= headerIndexAfterRemove && newIndex > headerIndexAfterRemove) {
         movedTask.isCompleted = true;
         movedTask.completionDate = DateTime.now();
+        List<Task> pendingClones = [];
+        _handleRecurrence(movedTask, DateTime.now(), pendingClones);
+        if (pendingClones.isNotEmpty) {
+          allTasksSorted.addAll(pendingClones);
+        }
       } else if (oldIndex > headerIndexAfterRemove && newIndex <= headerIndexAfterRemove) {
         movedTask.isCompleted = false;
         movedTask.completionDate = null;
@@ -358,9 +378,6 @@ class TaskProvider with ChangeNotifier {
         movedTask.isStarred = newlyOrderedVisible[1].isStarred;
       }
     }
-
-    // Global Re-indexing to preserve relative order
-    final List<Task> allTasksSorted = List.from(_tasks);
     
     // Sort logic that respects the NEW order of visible tasks but keeps non-visible ones relatively placed
     allTasksSorted.sort((a, b) {
@@ -463,6 +480,8 @@ class TaskProvider with ChangeNotifier {
 
   void _handleRecurrence(Task task, DateTime now, List<Task> newTasksList) {
     if (task.recurrence != null && task.recurrence != 'none') {
+      bool exists = _tasks.any((t) => t.title == task.title && !t.isCompleted && t.dueDate != null && t.dueDate!.isAfter(now));
+      if (exists) return;
       DateTime nextDueDate = task.dueDate ?? now;
       if (task.recurrence == 'daily') {
         nextDueDate = nextDueDate.add(const Duration(days: 1));
@@ -516,7 +535,16 @@ class TaskProvider with ChangeNotifier {
     
     _updateFilteredTasks();
     notifyListeners();
-    await _saveTasks();
+    await _syncTask(task);
+    // Since we added clones to _tasks, we need to save the new ones too
+    if (isMarkingDone) {
+      final clones = _tasks.where((t) => t.isCompleted == false && t.title == task.title && t.dueDate != null && t.dueDate!.isAfter(DateTime.now().subtract(const Duration(days: 1)))).toList();
+      for(var clone in clones) {
+        if(clone.id != task.id) {
+           await _syncTask(clone);
+        }
+      }
+    }
   }
 
   Future<void> toggleStarred(Task task) async {
@@ -524,7 +552,7 @@ class TaskProvider with ChangeNotifier {
     HapticFeedback.selectionClick();
     _updateFilteredTasks();
     notifyListeners();
-    await _saveTasks();
+    await _syncTask(task);
   }
 
   Future<void> deleteTask(Task task) async {
@@ -534,15 +562,14 @@ class TaskProvider with ChangeNotifier {
       _selectedTask = null;
     }
     HapticFeedback.vibrate();
+    await _removeTask(task);
     _updateFilteredTasks();
     notifyListeners();
-    await _saveTasks();
   }
 
   Future<void> duplicateTask(Task task) async {
-    int minOrder = 0;
-    if (_tasks.isNotEmpty) {
-      minOrder = _tasks.map((t) => t.orderIndex).reduce((a, b) => a < b ? a : b);
+    for (var t in _tasks) {
+      t.orderIndex++;
     }
 
     final newTask = task.copyWith(
@@ -553,7 +580,7 @@ class TaskProvider with ChangeNotifier {
         title: s.title, 
         isCompleted: s.isCompleted
       )).toList(),
-      orderIndex: minOrder - 1,
+      orderIndex: 0,
     );
     _tasks.insert(0, newTask);
     HapticFeedback.mediumImpact();
