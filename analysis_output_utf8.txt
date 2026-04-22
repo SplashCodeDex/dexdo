@@ -1,0 +1,23 @@
+﻿Analyzing DeXDo...                                              
+
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\providers\task_provider.dart:297:22 - unawaited_futures
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\providers\task_provider.dart:528:22 - unawaited_futures
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\providers\task_provider.dart:539:22 - unawaited_futures
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\providers\task_provider.dart:558:20 - unawaited_futures
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\providers\task_provider.dart:570:20 - unawaited_futures
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\providers\task_provider.dart:592:20 - unawaited_futures
+  error - The method 'signIn' isn't defined for the type 'GoogleSignIn' - lib\services\auth_service.dart:48:69 - undefined_method
+  error - The method 'canAccessScopes' isn't defined for the type 'GoogleSignInAccount' - lib\services\auth_service.dart:52:44 - undefined_method
+  error - The getter 'accessToken' isn't defined for the type 'GoogleSignInAuthentication' - lib\services\auth_service.dart:61:36 - undefined_getter
+  error - A value of type 'PurchaseResult' can't be assigned to a variable of type 'CustomerInfo' - lib\services\subscription_service.dart:62:41 - invalid_assignment
+   info - 'purchasePackage' is deprecated and shouldn't be used. Use purchase(PurchaseParams) - lib\services\subscription_service.dart:62:57 - deprecated_member_use
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\widgets\animated_splash_screen.dart:75:29 - unawaited_futures
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\widgets\animated_splash_screen.dart:78:28 - unawaited_futures
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\widgets\animated_splash_screen.dart:81:28 - unawaited_futures
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\widgets\animated_splash_screen.dart:84:28 - unawaited_futures
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\widgets\animated_splash_screen.dart:85:27 - unawaited_futures
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\widgets\animated_splash_screen.dart:88:26 - unawaited_futures
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\widgets\animated_splash_screen.dart:91:26 - unawaited_futures
+   info - Don't use 'BuildContext's across async gaps - lib\widgets\subscription_pane.dart:91:50 - use_build_context_synchronously
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\widgets\task_editor_pane.dart:209:40 - unawaited_futures
+

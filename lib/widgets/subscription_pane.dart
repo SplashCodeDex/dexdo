@@ -88,6 +88,7 @@ class _SubscriptionPaneState extends State<SubscriptionPane> {
                         if (selectedPackage != null) {
                           final success = await subscriptionService.purchasePackage(selectedPackage);
                           if (success) {
+                            if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Welcome to Premium!')),
                             );
