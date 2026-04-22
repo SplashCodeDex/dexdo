@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../models/task.dart';
 import '../providers/task_provider.dart';
+import '../services/ai_service.dart';
 
 class TaskEditorPane extends StatefulWidget {
   final Task task;
@@ -23,6 +24,8 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
   late TextEditingController _descriptionController;
   late TextEditingController _subtaskController;
   Timer? _debounce;
+  final AIService _aiService = AIService();
+  bool _isAILoading = false;
 
   @override
   void initState() {
@@ -30,6 +33,20 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
     _titleController = TextEditingController(text: widget.task.title);
     _descriptionController = TextEditingController(text: widget.task.description);
     _subtaskController = TextEditingController();
+  }
+
+  void _handleAIBreakdown(TaskProvider provider) async {
+    if (_titleController.text.isEmpty) return;
+    
+    setState(() => _isAILoading = true);
+    try {
+      final subtasks = await _aiService.breakdownTask(_titleController.text);
+      for (var sub in subtasks) {
+        provider.addSubtask(widget.task, sub);
+      }
+    } finally {
+      setState(() => _isAILoading = false);
+    }
   }
 
   @override
@@ -219,7 +236,23 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
             const SizedBox(height: 32),
 
             // Subtasks Section
-            _buildSectionLabel('SUBTASKS (${widget.task.completedSubtaskCount}/${widget.task.subtaskCount})'),
+            Row(
+              children: [
+                _buildSectionLabel('SUBTASKS (${widget.task.completedSubtaskCount}/${widget.task.subtaskCount})'),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: _isAILoading ? null : () => _handleAIBreakdown(taskProvider),
+                  icon: _isAILoading 
+                    ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.auto_awesome_rounded, size: 16),
+                  label: Text(_isAILoading ? 'Thinking...' : 'AI Breakdown', style: const TextStyle(fontSize: 12)),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    foregroundColor: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             ...widget.task.subtasks.map((subtask) => _buildSubtaskItem(taskProvider, subtask)),
             _buildAddSubtaskField(taskProvider),

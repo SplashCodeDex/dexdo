@@ -7,9 +7,33 @@ class AIService {
   final GenerativeModel _model;
 
   AIService() : _model = GenerativeModel(
-    model: 'gemini-1.5-flash',
+    model: 'gemini-1.5-pro',
     apiKey: _apiKey,
   );
+
+  /// Breakdown task with streaming support for better UX
+  Stream<String> breakdownTaskStream(String taskTitle) async* {
+    if (_apiKey.isEmpty) {
+      debugPrint('AI Service: GEMINI_API_KEY is not set.');
+      return;
+    }
+
+    final prompt = 'Break down the following task into a list of actionable subtasks (max 5). '
+        'Provide only the subtask names, one per line, without any numbering or extra text: "$taskTitle"';
+
+    try {
+      final content = [Content.text(prompt)];
+      final responseStream = _model.generateContentStream(content);
+      
+      await for (final chunk in responseStream) {
+        if (chunk.text != null) {
+          yield chunk.text!;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error streaming task breakdown with AI: $e');
+    }
+  }
 
   Future<List<String>> breakdownTask(String taskTitle) async {
     if (_apiKey.isEmpty) {

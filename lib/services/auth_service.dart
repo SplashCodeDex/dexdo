@@ -45,15 +45,26 @@ class AuthService extends ChangeNotifier {
           return await _auth.signInWithPopup(googleProvider);
         }
       } else {
-        final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
-        if (googleUser == null) return null; // The user canceled the sign-in
+        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) return null;
 
-        // NEW 2026 API: Explicitly authorize scopes to obtain tokens
-        final authorizedUser = await googleUser.authorizationClient.authorizeScopes(['email', 'profile', 'openid']);
-        final googleAuth = googleUser.authentication;
+        const scopes = ['email', 'profile', 'openid'];
+        final hasAccess = await googleUser.canAccessScopes(scopes);
+        
+        String? accessToken;
+        if (!hasAccess) {
+          // Trigger granular consent UI if scopes are not yet authorized
+          final authResult = await googleUser.authorizationClient.authorizeScopes(scopes);
+          accessToken = authResult.accessToken;
+        } else {
+          final googleAuth = await googleUser.authentication;
+          accessToken = googleAuth.accessToken;
+        }
+
+        final googleAuth = await googleUser.authentication;
         
         final AuthCredential credential = GoogleAuthProvider.credential(
-          accessToken: authorizedUser?.accessToken,
+          accessToken: accessToken,
           idToken: googleAuth.idToken,
         );
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
-import 'dart:async';
+import 'package:provider/provider.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import '../services/subscription_service.dart';
 
 class SubscriptionPane extends StatefulWidget {
   const SubscriptionPane({super.key});
@@ -10,300 +11,173 @@ class SubscriptionPane extends StatefulWidget {
 }
 
 class _SubscriptionPaneState extends State<SubscriptionPane> {
-  final InAppPurchase _inAppPurchase = InAppPurchase.instance;
-  late StreamSubscription<List<PurchaseDetails>> _subscription;
-  
-  List<ProductDetails> _products = [];
-  bool _isAvailable = false;
-  String _selectedPlan = 'monthly'; // 'weekly', 'monthly', 'yearly', 'lifetime'
-
-  // Replace these with your actual Play Store product IDs
-  static const String _kWeeklySubscriptionId = 'premium_weekly';
-  static const String _kMonthlySubscriptionId = 'premium_monthly';
-  static const String _kYearlySubscriptionId = 'premium_yearly';
-  static const String _kLifetimeProductId = 'premium_lifetime';
-
-  @override
-  void initState() {
-    super.initState();
-    final purchaseUpdated = _inAppPurchase.purchaseStream;
-    _subscription = purchaseUpdated.listen((purchaseDetailsList) {
-      _listenToPurchaseUpdated(purchaseDetailsList);
-    }, onDone: () {
-      _subscription.cancel();
-    }, onError: (error) {
-      // handle error
-    });
-    initStoreInfo();
-  }
-
-  Future<void> initStoreInfo() async {
-    final bool isAvailable = await _inAppPurchase.isAvailable();
-    if (!isAvailable) {
-      setState(() {
-        _isAvailable = isAvailable;
-        _products = [];
-      });
-      return;
-    }
-
-    const Set<String> kIds = <String>{
-      _kWeeklySubscriptionId,
-      _kMonthlySubscriptionId,
-      _kYearlySubscriptionId,
-      _kLifetimeProductId,
-    };
-    final ProductDetailsResponse productDetailResponse =
-        await _inAppPurchase.queryProductDetails(kIds);
-
-    setState(() {
-      _isAvailable = isAvailable;
-      _products = productDetailResponse.productDetails;
-    });
-  }
-
-  void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) {
-    for (var purchaseDetails in purchaseDetailsList) {
-      if (purchaseDetails.status == PurchaseStatus.pending) {
-        // show pending UI
-      } else {
-        if (purchaseDetails.status == PurchaseStatus.error) {
-          // handle error
-        } else if (purchaseDetails.status == PurchaseStatus.purchased ||
-                   purchaseDetails.status == PurchaseStatus.restored) {
-          // Grant entitlement
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Purchase Successful!')),
-          );
-        }
-        if (purchaseDetails.pendingCompletePurchase) {
-          _inAppPurchase.completePurchase(purchaseDetails);
-        }
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _subscription.cancel();
-    super.dispose();
-  }
-
-  void _buySelectedPlan() {
-    String productId;
-    switch (_selectedPlan) {
-      case 'weekly': productId = _kWeeklySubscriptionId; break;
-      case 'monthly': productId = _kMonthlySubscriptionId; break;
-      case 'yearly': productId = _kYearlySubscriptionId; break;
-      case 'lifetime': productId = _kLifetimeProductId; break;
-      default: return;
-    }
-
-    try {
-      final productDetails = _products.firstWhere((p) => p.id == productId);
-      final purchaseParam = PurchaseParam(productDetails: productDetails);
-      if (_selectedPlan == 'lifetime') {
-        _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
-      } else {
-        _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam); // Subscriptions also use buyNonConsumable logic currently unless handled via specific APIs, RevenueCat highly recommended though.
-      }
-    } catch (e) {
-      // Product not found natively yet, just show generic tap
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please upload to Play Console first to enable real purchases.')),
-      );
-    }
-  }
+  String _selectedPackageType = 'monthly'; // 'weekly', 'monthly', 'yearly', 'lifetime'
 
   @override
   Widget build(BuildContext context) {
+    final subscriptionService = Provider.of<SubscriptionService>(context);
     final colorScheme = Theme.of(context).colorScheme;
+    final offerings = subscriptionService.offerings;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Go Premium'),
       ),
       body: SafeArea(
-        child: !_isAvailable 
-          ? const Center(child: Text('Store unavailable. Please check your connection.'))
+        child: offerings == null
+          ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Choose Your Plan',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -1,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              
-              _buildPlanOption(
-                id: 'weekly',
-                title: 'Weekly Plan',
-                priceLabel: _getPriceFor(_kWeeklySubscriptionId, '\$1.99 per week'),
-              ),
-              const SizedBox(height: 12),
-              
-              _buildPlanOption(
-                id: 'monthly',
-                title: 'Monthly Plan',
-                badgeText: 'Save 50%',
-                originalPrice: '\$9.99',
-                priceLabel: _getPriceFor(_kMonthlySubscriptionId, '\$4.99 per month'),
-              ),
-              const SizedBox(height: 12),
-              
-              _buildPlanOption(
-                id: 'yearly',
-                title: 'Yearly Plan',
-                badgeText: 'Save 60%',
-                originalPrice: '\$119.88',
-                priceLabel: _getPriceFor(_kYearlySubscriptionId, '\$49.99 per year'),
-              ),
-              const SizedBox(height: 12),
-              
-              _buildPlanOption(
-                id: 'lifetime',
-                title: 'Lifetime',
-                badgeText: 'One-time',
-                priceLabel: _getPriceFor(_kLifetimeProductId, '\$149.99'),
-              ),
-              
-              const Spacer(),
-              ElevatedButton(
-                onPressed: _buySelectedPlan,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Choose Your Plan',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -1,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  elevation: 2,
-                ),
-                child: const Text('Continue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                  const SizedBox(height: 32),
+                  
+                  if (offerings.current != null) ...[
+                    ...offerings.current!.availablePackages.map((package) {
+                      String title = package.packageType.toString().split('.').last;
+                      // Mapping package types to readable titles
+                      if (package.packageType == PackageType.weekly) title = 'Weekly Plan';
+                      if (package.packageType == PackageType.monthly) title = 'Monthly Plan';
+                      if (package.packageType == PackageType.annual) title = 'Yearly Plan';
+                      if (package.packageType == PackageType.lifetime) title = 'Lifetime';
+
+                      return _buildPackageOption(
+                        package: package,
+                        title: title,
+                        isSelected: _selectedPackageType == package.packageType.toString(),
+                        onTap: () => setState(() => _selectedPackageType = package.packageType.toString()),
+                      );
+                    }),
+                  ] else 
+                    const Center(child: Text('No active offerings found.')),
+                  
+                  const Spacer(),
+                  if (subscriptionService.isPremium)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green),
+                          SizedBox(width: 12),
+                          Text('You have an active Premium subscription!', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                        ],
+                      ),
+                    )
+                  else
+                    ElevatedButton(
+                      onPressed: () async {
+                        final selectedPackage = offerings.current?.availablePackages.firstWhere(
+                          (p) => p.packageType.toString() == _selectedPackageType,
+                          orElse: () => offerings.current!.availablePackages.first,
+                        );
+                        if (selectedPackage != null) {
+                          final success = await subscriptionService.purchasePackage(selectedPackage);
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Welcome to Premium!')),
+                            );
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                        elevation: 2,
+                      ),
+                      child: const Text('Continue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () => subscriptionService.restorePurchases(),
+                    child: const Text('Restore Purchases'),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
       ),
     );
   }
 
-  String _getPriceFor(String productId, String fallbackPrice) {
-    try {
-      final p = _products.firstWhere((element) => element.id == productId);
-      return p.price; 
-    } catch (_) {
-      return fallbackPrice;
-    }
-  }
-
-  Widget _buildPlanOption({
-    required String id,
+  Widget _buildPackageOption({
+    required Package package,
     required String title,
-    required String priceLabel,
-    String? badgeText,
-    String? originalPrice,
+    required bool isSelected,
+    required VoidCallback onTap,
   }) {
-    final isSelected = _selectedPlan == id;
     final colorScheme = Theme.of(context).colorScheme;
     
-    return Card(
-      elevation: isSelected ? 2 : 0,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: isSelected ? colorScheme.primary : colorScheme.outlineVariant.withValues(alpha: 0.3),
-          width: isSelected ? 2 : 1,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Card(
+        elevation: isSelected ? 2 : 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: isSelected ? colorScheme.primary : colorScheme.outlineVariant.withValues(alpha: 0.3),
+            width: isSelected ? 2 : 1,
+          ),
         ),
-      ),
-      color: isSelected ? colorScheme.primary.withValues(alpha: 0.08) : colorScheme.surface,
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            _selectedPlan = id;
-          });
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+        color: isSelected ? colorScheme.primary.withValues(alpha: 0.08) : colorScheme.surface,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
-                        if (badgeText != null) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Text(
-                              badgeText,
-                              style: TextStyle(
-                                color: colorScheme.onPrimary,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ]
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        if (originalPrice != null) ...[
-                          Text(
-                            originalPrice,
-                            style: TextStyle(
-                              fontSize: 14,
-                              decoration: TextDecoration.lineThrough,
-                              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
-                        Text(
-                          priceLabel,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                          ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        package.storeProduct.priceString,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
                         ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Icon(
-                isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-              ),
-            ],
+                Icon(
+                  isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                  color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+

@@ -44,8 +44,9 @@ dependencies:
   share_plus: ^13.1.0
   google_sign_in: ^7.2.0
   in_app_purchase: ^3.2.3
+  purchases_flutter: ^9.16.1
   google_fonts: ^8.0.2
-  google_generative_ai: ^0.4.6
+  google_generative_ai: ^0.8.6
   flutter_staggered_animations: ^1.1.1
 
 dev_dependencies:

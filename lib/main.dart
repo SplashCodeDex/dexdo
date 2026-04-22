@@ -13,6 +13,7 @@ import 'firebase_options.dart';
 import 'providers/task_provider.dart';
 import 'providers/theme_provider.dart';
 import 'services/auth_service.dart';
+import 'services/subscription_service.dart';
 import 'widgets/calendar_pane.dart';
 import 'widgets/home_pane.dart';
 import 'widgets/settings_pane.dart';
@@ -43,6 +44,7 @@ void main() async {
         ChangeNotifierProvider(create: (context) => TaskProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => AuthService()),
+        ChangeNotifierProvider(create: (context) => SubscriptionService()),
       ],
       child: const DeXDoApp(),
     ),
