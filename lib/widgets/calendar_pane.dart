@@ -40,10 +40,20 @@ class _CalendarPaneState extends State<CalendarPane> {
     final taskProvider = Provider.of<TaskProvider>(context);
     final tasksWithDates = taskProvider.allTasks.where((t) => t.dueDate != null).toList();
 
+    // PERFORMANCE OPTIMIZATION: 
+    // Group tasks into an O(1) lookup map to prevent O(N * 42) iterations 
+    // per month when rendering the swiping PagerView grid.
+    final Map<DateTime, List<Task>> tasksByDate = {};
+    for (var task in tasksWithDates) {
+      final date = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+      if (!tasksByDate.containsKey(date)) tasksByDate[date] = [];
+      tasksByDate[date]!.add(task);
+    }
+
     return Column(
       children: [
         _buildCalendarHeader(),
-        _buildCalendarPageView(tasksWithDates),
+        _buildCalendarPageView(tasksByDate),
         const SizedBox(height: 16),
         const Divider(height: 1),
         Expanded(
@@ -58,7 +68,7 @@ class _CalendarPaneState extends State<CalendarPane> {
                 child: child,
               );
             },
-            child: _buildTasksForSelectedDay(tasksWithDates, _selectedDay),
+            child: _buildTasksForSelectedDay(tasksByDate, _selectedDay),
           ),
         ),
       ],
@@ -146,7 +156,7 @@ class _CalendarPaneState extends State<CalendarPane> {
     );
   }
 
-  Widget _buildCalendarPageView(List<Task> allTasks) {
+  Widget _buildCalendarPageView(Map<DateTime, List<Task>> tasksByDate) {
     return SizedBox(
       height: 380, // Fixed height for 6 rows + headers
       child: PageView.builder(
@@ -162,13 +172,13 @@ class _CalendarPaneState extends State<CalendarPane> {
           final monthOffset = index - _initialPage;
           final now = DateTime.now();
           final monthDate = DateTime(now.year, now.month + monthOffset, 1);
-          return _buildCalendarMonthGrid(monthDate, allTasks);
+          return _buildCalendarMonthGrid(monthDate, tasksByDate);
         },
       ),
     );
   }
 
-  Widget _buildCalendarMonthGrid(DateTime monthDate, List<Task> allTasks) {
+  Widget _buildCalendarMonthGrid(DateTime monthDate, Map<DateTime, List<Task>> tasksByDate) {
     final firstDayOfMonth = DateTime(monthDate.year, monthDate.month, 1);
     final daysInMonth = DateUtils.getDaysInMonth(monthDate.year, monthDate.month);
     final firstDayOffset = firstDayOfMonth.weekday % 7; // Sunday = 0
@@ -233,7 +243,8 @@ class _CalendarPaneState extends State<CalendarPane> {
           final isSelected = _selectedDay != null && DateUtils.isSameDay(_selectedDay, cellDate);
           final isToday = DateUtils.isSameDay(cellDate, DateTime.now());
           
-          final dayTasks = allTasks.where((t) => DateUtils.isSameDay(t.dueDate, cellDate)).toList();
+          final normalizedCellDate = DateTime(cellDate.year, cellDate.month, cellDate.day);
+          final dayTasks = tasksByDate[normalizedCellDate] ?? const [];
           final hasTasks = dayTasks.isNotEmpty;
           final completedTasks = dayTasks.where((t) => t.isCompleted).length;
 
@@ -339,10 +350,11 @@ class _CalendarPaneState extends State<CalendarPane> {
     );
   }
 
-  Widget _buildTasksForSelectedDay(List<Task> allTasks, DateTime? selectedDay) {
+  Widget _buildTasksForSelectedDay(Map<DateTime, List<Task>> tasksByDate, DateTime? selectedDay) {
     if (selectedDay == null) return const SizedBox.shrink();
 
-    final dayTasks = allTasks.where((t) => DateUtils.isSameDay(t.dueDate, selectedDay)).toList()
+    final normalizedSelected = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    final dayTasks = List<Task>.from(tasksByDate[normalizedSelected] ?? [])
       ..sort((a, b) => (a.dueDate ?? DateTime.now()).compareTo(b.dueDate ?? DateTime.now()));
 
     return Column(
