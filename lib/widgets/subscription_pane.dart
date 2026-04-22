@@ -14,7 +14,6 @@ class _SubscriptionPaneState extends State<SubscriptionPane> {
   late StreamSubscription<List<PurchaseDetails>> _subscription;
   
   List<ProductDetails> _products = [];
-  bool _isAvailable = false;
   String _selectedPlan = 'monthly'; // 'weekly', 'monthly', 'yearly', 'lifetime'
 
   // Replace these with your actual Play Store product IDs
@@ -41,7 +40,6 @@ class _SubscriptionPaneState extends State<SubscriptionPane> {
     final bool isAvailable = await _inAppPurchase.isAvailable();
     if (!isAvailable) {
       setState(() {
-        _isAvailable = isAvailable;
         _products = [];
       });
       return;
@@ -57,7 +55,6 @@ class _SubscriptionPaneState extends State<SubscriptionPane> {
         await _inAppPurchase.queryProductDetails(kIds);
 
     setState(() {
-      _isAvailable = isAvailable;
       _products = productDetailResponse.productDetails;
     });
   }
