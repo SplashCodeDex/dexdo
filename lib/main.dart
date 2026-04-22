@@ -42,7 +42,6 @@ class DeXDoApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final textTheme = GoogleFonts.plusJakartaSansTextTheme(Theme.of(context).textTheme);
 
     return MaterialApp(
       title: 'DeXDo',
@@ -50,18 +49,21 @@ class DeXDoApp extends StatelessWidget {
       themeMode: themeProvider.themeMode,
       theme: ThemeData(
         useMaterial3: true,
-        textTheme: textTheme.copyWith(
-          titleLarge: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          bodyLarge: textTheme.bodyLarge?.copyWith(letterSpacing: -0.2),
-          bodyMedium: textTheme.bodyMedium?.copyWith(letterSpacing: -0.2),
+        textTheme: GoogleFonts.plusJakartaSansTextTheme(
+          ThemeData.light().textTheme,
+        ).copyWith(
+          titleLarge: GoogleFonts.plusJakartaSans(
+            textStyle: ThemeData.light().textTheme.titleLarge,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2563EB), // A more vibrant "DeX Blue"
+          seedColor: const Color(0xFF2563EB),
           brightness: Brightness.light,
-          surface: const Color(0xFFF8FAFC), // Slate 50
+          surface: const Color(0xFFF8FAFC),
         ),
         scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-        dividerColor: const Color(0xFFE2E8F0), // Slate 200
+        dividerColor: const Color(0xFFE2E8F0),
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFFF8FAFC),
           surfaceTintColor: Colors.transparent,
@@ -69,7 +71,7 @@ class DeXDoApp extends StatelessWidget {
           centerTitle: false,
           elevation: 0,
           titleTextStyle: TextStyle(
-            color: Color(0xFF1E293B), // Slate 800
+            color: Color(0xFF1E293B),
             fontSize: 24,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
@@ -86,21 +88,24 @@ class DeXDoApp extends StatelessWidget {
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        textTheme: GoogleFonts.plusJakartaSansTextTheme(ThemeData(brightness: Brightness.dark).textTheme).copyWith(
-          titleLarge: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          bodyLarge: textTheme.bodyLarge?.copyWith(letterSpacing: -0.2),
-          bodyMedium: textTheme.bodyMedium?.copyWith(letterSpacing: -0.2),
+        textTheme: GoogleFonts.plusJakartaSansTextTheme(
+          ThemeData.dark().textTheme,
+        ).copyWith(
+          titleLarge: GoogleFonts.plusJakartaSans(
+            textStyle: ThemeData.dark().textTheme.titleLarge,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF3B82F6),
           brightness: Brightness.dark,
-          surface: const Color(0xFF0F172A), // Slate 900 (Deep Navy)
+          surface: const Color(0xFF0F172A),
           onSurface: const Color(0xFFF1F5F9),
           primaryContainer: const Color(0xFF1E293B),
           onPrimaryContainer: const Color(0xFF3B82F6),
         ),
         scaffoldBackgroundColor: const Color(0xFF0F172A),
-        dividerColor: const Color(0xFF1E293B), // Slate 800
+        dividerColor: const Color(0xFF1E293B),
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF0F172A),
           surfaceTintColor: Colors.transparent,
@@ -115,11 +120,11 @@ class DeXDoApp extends StatelessWidget {
           ),
         ),
         cardTheme: CardThemeData(
-          color: const Color(0xFF1E293B), // Slate 800
+          color: const Color(0xFF1E293B),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: Color(0xFF334155), width: 1), // Slate 700
+            side: const BorderSide(color: Color(0xFF334155), width: 1),
           ),
         ),
       ),
@@ -304,7 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
         LogicalKeySet(LogicalKeyboardKey.backspace): const DeleteSelectedIntent(),
       },
       child: Actions(
-        actions: <Type, Action<Intent>>{
+        actions: {
           NewTaskIntent: CallbackAction<NewTaskIntent>(
             onInvoke: (NewTaskIntent intent) {
               FocusScope.of(context).unfocus();
