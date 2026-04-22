@@ -6,12 +6,14 @@ import '../repositories/task_repository.dart';
 import '../repositories/firebase_task_repository.dart';
 import '../services/data_migration_service.dart';
 import '../services/notification_service.dart';
+import '../services/ai_service.dart';
 import 'dart:convert';
 import 'dart:async';
 
 class TaskProvider with ChangeNotifier {
   final TaskRepository _repository = FirebaseTaskRepository();
   final NotificationService _notifications = NotificationService();
+  final AIService _aiService = AIService();
 
   Timer? _searchDebounce;
 
@@ -278,6 +280,19 @@ class TaskProvider with ChangeNotifier {
     _updateFilteredTasks();
     notifyListeners();
     await _syncTask(task);
+  }
+
+  Future<void> breakdownWithAI(Task task) async {
+    if (task.title.isEmpty) return;
+    
+    final subtaskTitles = await _aiService.breakdownTask(task.title);
+    if (subtaskTitles.isNotEmpty) {
+      for (var title in subtaskTitles) {
+        task.subtasks.add(SubTask(id: _uuid.v4(), title: title));
+      }
+      notifyListeners();
+      await _syncTask(task);
+    }
   }
 
   Future<void> addSubtask(Task task, String title) async {

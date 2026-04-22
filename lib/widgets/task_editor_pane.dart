@@ -22,6 +22,8 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
   late TextEditingController _subtaskController;
   Timer? _debounce;
 
+  bool _isBreakingDown = false;
+
   @override
   void initState() {
     super.initState();
@@ -217,7 +219,34 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
             const SizedBox(height: 32),
 
             // Subtasks Section
-            _buildSectionLabel('SUBTASKS (${widget.task.completedSubtaskCount}/${widget.task.subtaskCount})'),
+            Row(
+              children: [
+                _buildSectionLabel('SUBTASKS (${widget.task.completedSubtaskCount}/${widget.task.subtaskCount})'),
+                const Spacer(),
+                if (widget.task.title.isNotEmpty)
+                  TextButton.icon(
+                    onPressed: _isBreakingDown
+                        ? null
+                        : () async {
+                            setState(() => _isBreakingDown = true);
+                            await taskProvider.breakdownWithAI(widget.task);
+                            setState(() => _isBreakingDown = false);
+                          },
+                    icon: _isBreakingDown
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.auto_awesome_rounded, size: 16),
+                    label: const Text('Breakdown'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(height: 12),
             ...widget.task.subtasks.map((subtask) => _buildSubtaskItem(taskProvider, subtask)),
             _buildAddSubtaskField(taskProvider),

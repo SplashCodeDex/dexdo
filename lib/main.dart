@@ -160,6 +160,33 @@ class DeleteSelectedIntent extends Intent {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 2; // Default to 'Tasks' icon
+  late ScrollController _homeScrollController;
+  bool _showHomeHeaderAvatar = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _homeScrollController = ScrollController();
+    _homeScrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _homeScrollController.removeListener(_onScroll);
+    _homeScrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_selectedIndex == 0 && _homeScrollController.hasClients) {
+      final bool shouldShow = _homeScrollController.offset > 80;
+      if (shouldShow != _showHomeHeaderAvatar) {
+        setState(() {
+          _showHomeHeaderAvatar = shouldShow;
+        });
+      }
+    }
+  }
 
   Widget _buildBody(bool isLargeScreen, TaskProvider taskProvider) {
     if (isLargeScreen) {
@@ -220,11 +247,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMainContent(bool isLargeScreen, TaskProvider taskProvider) {
+    // Spacer for the floating header
+    final topPadding = MediaQuery.of(context).padding.top + 80;
+
     if (_selectedIndex != 2) {
       Widget content;
       switch (_selectedIndex) {
         case 0:
           content = HomePane(
+            scrollController: _homeScrollController,
             onTaskTap: (task) => setState(() => _selectedIndex = 2),
           );
           break;
@@ -251,65 +282,96 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         child: KeyedSubtree(
           key: ValueKey(_selectedIndex),
-          child: content,
+          child: Padding(
+            padding: EdgeInsets.only(top: topPadding),
+            child: content,
+          ),
         ),
       );
     }
 
     if (isLargeScreen) {
-      return Row(
-        children: [
-          const Expanded(
-            flex: 2,
-            child: TaskListPane(),
-          ),
-          VerticalDivider(width: 1, color: Theme.of(context).dividerColor),
-          Expanded(
-            flex: 3,
-            child: Container(
-              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
-              child: PageTransitionSwitcher(
-                transitionBuilder: (child, primaryAnimation, secondaryAnimation) {
-                  return SharedAxisTransition(
-                    animation: primaryAnimation,
-                    secondaryAnimation: secondaryAnimation,
-                    transitionType: SharedAxisTransitionType.horizontal,
-                    child: child,
-                  );
-                },
-                child: taskProvider.selectedTask != null
-                    ? TaskEditorPane(
-                        key: ValueKey(taskProvider.selectedTask!.id),
-                        task: taskProvider.selectedTask!,
-                      )
-                    : Center(
-                        key: const ValueKey('empty_editor'),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.edit_note_rounded, size: 64, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Select a task to view details',
-                              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5), fontSize: 16),
-                            ),
-                          ],
+      return Padding(
+        padding: EdgeInsets.only(top: topPadding),
+        child: Row(
+          children: [
+            const Expanded(
+              flex: 2,
+              child: TaskListPane(),
+            ),
+            VerticalDivider(width: 1, color: Theme.of(context).dividerColor),
+            Expanded(
+              flex: 3,
+              child: Container(
+                color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
+                child: PageTransitionSwitcher(
+                  transitionBuilder: (child, primaryAnimation, secondaryAnimation) {
+                    return SharedAxisTransition(
+                      animation: primaryAnimation,
+                      secondaryAnimation: secondaryAnimation,
+                      transitionType: SharedAxisTransitionType.horizontal,
+                      child: child,
+                    );
+                  },
+                  child: taskProvider.selectedTask != null
+                      ? TaskEditorPane(
+                          key: ValueKey(taskProvider.selectedTask!.id),
+                          task: taskProvider.selectedTask!,
+                        )
+                      : Center(
+                          key: const ValueKey('empty_editor'),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.edit_note_rounded, size: 64, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Select a task to view details',
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5), fontSize: 16),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
-    return const TaskListPane();
+    return Padding(
+      padding: EdgeInsets.only(top: topPadding),
+      child: const TaskListPane(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final taskProvider = Provider.of<TaskProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+
+    // Calculate daily progress for the header ring
+    final now = DateTime.now();
+    final completedToday = taskProvider.allTasks.where((t) {
+      if (t.isCompleted && t.completionDate != null) {
+        return t.completionDate!.year == now.year &&
+            t.completionDate!.month == now.month &&
+            t.completionDate!.day == now.day;
+      }
+      return false;
+    }).length;
+    final activeToday = taskProvider.allTasks.where((t) {
+      if (t.isCompleted) return false;
+      if (t.dueDate != null) {
+        final taskDate = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
+        final todayDate = DateTime(now.year, now.month, now.day);
+        return taskDate.isBefore(todayDate) || taskDate.isAtSameMomentAs(todayDate);
+      }
+      return t.isStarred;
+    }).length;
+    final totalToday = completedToday + activeToday;
+    final progressToday = totalToday == 0 ? 0.0 : completedToday / totalToday;
 
     return Shortcuts(
       shortcuts: <LogicalKeySet, Intent>{
@@ -361,26 +423,27 @@ class _HomeScreenState extends State<HomeScreen> {
                   right: 0,
                   child: SafeArea(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(32),
                         child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
                           child: Container(
                             height: 64,
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.surface.withValues(alpha: themeProvider.isDarkMode ? 0.7 : 0.8),
                               borderRadius: BorderRadius.circular(32),
                               border: Border.all(
-                                color: (themeProvider.isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.1),
-                                width: 1,
+                                color: (themeProvider.isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.08),
+                                width: 1.5,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                                  color: Colors.black.withValues(alpha: 0.12),
+                                  blurRadius: 20,
+                                  spreadRadius: -5,
+                                  offset: const Offset(0, 10),
                                 ),
                               ],
                             ),
@@ -393,7 +456,47 @@ class _HomeScreenState extends State<HomeScreen> {
                                       FocusScope.of(context).unfocus();
                                       taskProvider.clearSelection();
                                     },
+                                  )
+                                else
+                                  // Brand Logo (Bolt icon with optional Progress Ring)
+                                  Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      // Progress Ring: Only visible when NOT on the home screen
+                                      // It animates in/out as the user navigates
+                                      AnimatedScale(
+                                        scale: _selectedIndex == 0 ? 0.0 : 1.0,
+                                        duration: const Duration(milliseconds: 600),
+                                        curve: Curves.elasticOut,
+                                        child: AnimatedOpacity(
+                                          opacity: _selectedIndex == 0 ? 0.0 : 1.0,
+                                          duration: const Duration(milliseconds: 300),
+                                          child: SizedBox(
+                                            width: 40,
+                                            height: 40,
+                                            child: CircularProgressIndicator(
+                                              value: progressToday,
+                                              strokeWidth: 3.5,
+                                              backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                              valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+                                              strokeCap: StrokeCap.round,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      // Brand Bolt Icon: Always visible in the header
+                                      // We use a different tag on Home screen to avoid Hero conflict with the banner
+                                      Hero(
+                                        tag: _selectedIndex == 0 ? 'header_bolt_home' : 'brand_bolt',
+                                        child: Icon(
+                                          Icons.bolt_rounded,
+                                          color: Theme.of(context).colorScheme.primary,
+                                          size: 24,
+                                        ),
+                                      ),
+                                    ],
                                   ),
+                                  const SizedBox(width: 12),
                                 Expanded(
                                   child: taskProvider.isSelectionMode
                                       ? Text(
@@ -403,7 +506,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       : RichText(
                                           text: TextSpan(
                                             style: GoogleFonts.plusJakartaSans(
-                                              fontSize: 28,
+                                              fontSize: 26,
                                               fontWeight: FontWeight.w900,
                                               letterSpacing: -1.2,
                                             ),
@@ -442,53 +545,51 @@ class _HomeScreenState extends State<HomeScreen> {
                                     tooltip: 'Mark Completed',
                                   ),
                                 ] else ...[
-                                  // Premium Theme Toggle
-                                  GestureDetector(
-                                    onTap: () => themeProvider.toggleTheme(!themeProvider.isDarkMode),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 400),
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: themeProvider.isDarkMode 
-                                            ? Colors.amber.withValues(alpha: 0.1) 
-                                            : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      child: AnimatedSwitcher(
-                                        duration: const Duration(milliseconds: 400),
-                                        transitionBuilder: (Widget child, Animation<double> animation) {
-                                          return ScaleTransition(
-                                            scale: animation,
-                                            child: RotationTransition(
-                                              turns: animation,
-                                              child: FadeTransition(opacity: animation, child: child),
-                                            ),
-                                          );
-                                        },
-                                        child: Icon(
-                                          themeProvider.isDarkMode 
-                                              ? Icons.wb_sunny_rounded 
-                                              : Icons.nightlight_round,
-                                          key: ValueKey(themeProvider.isDarkMode),
-                                          size: 18,
-                                          color: themeProvider.isDarkMode 
-                                              ? Colors.amber[400] 
-                                              : Theme.of(context).colorScheme.primary,
-                                        ),
-                                      ),
+                                  // Theme Toggle
+                                  IconButton(
+                                    onPressed: () => themeProvider.toggleTheme(!themeProvider.isDarkMode),
+                                    icon: Icon(
+                                      themeProvider.isDarkMode ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+                                      size: 20,
+                                      color: themeProvider.isDarkMode ? Colors.amber[400] : Theme.of(context).colorScheme.primary,
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  if (_selectedIndex != 0)
-                                    Builder(
-                                      builder: (context) {
-                                        final authService = Provider.of<AuthService>(context);
-                                        return CircleAvatar(
-                                          radius: 16,
-                                          backgroundImage: NetworkImage(authService.currentUser?.photoURL ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${authService.currentUser?.uid ?? "Felix"}'),
-                                        );
-                                      }
-                                    ),
+                                  // Profile Avatar: Only visible when NOT on the home screen or when scrolled down
+                                  AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 500),
+                                    reverseDuration: const Duration(milliseconds: 300),
+                                    transitionBuilder: (Widget child, Animation<double> animation) {
+                                      return ScaleTransition(
+                                        scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+                                        child: FadeTransition(opacity: animation, child: child),
+                                      );
+                                    },
+                                    child: (_selectedIndex == 0 && !_showHomeHeaderAvatar)
+                                        ? const SizedBox.shrink(key: ValueKey('empty_header_avatar'))
+                                        : Builder(
+                                            key: const ValueKey('header_avatar'),
+                                            builder: (context) {
+                                              final authService = Provider.of<AuthService>(context);
+                                              final avatar = Padding(
+                                                padding: const EdgeInsets.only(left: 8),
+                                                child: CircleAvatar(
+                                                  radius: 16,
+                                                  backgroundImage: NetworkImage(authService.currentUser?.photoURL ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${authService.currentUser?.uid ?? "Felix"}'),
+                                                ),
+                                              );
+                                              
+                                              // Only use Hero tag when NOT on Home screen to avoid duplicate tags
+                                              // with the HomePane avatar during scroll. On navigation, 
+                                              // the change in _selectedIndex will trigger the Hero flight.
+                                              if (_selectedIndex == 0) return avatar;
+                                              
+                                              return Hero(
+                                                tag: 'user_avatar',
+                                                child: avatar,
+                                              );
+                                            }
+                                          ),
+                                  ),
                                 ],
                               ],
                             ),
