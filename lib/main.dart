@@ -351,133 +351,155 @@ class _HomeScreenState extends State<HomeScreen> {
           behavior: HitTestBehavior.translucent,
           child: Scaffold(
             extendBody: true,
-            appBar: AppBar(
-              leading: taskProvider.isSelectionMode
-                  ? IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () {
-                        FocusScope.of(context).unfocus();
-                        taskProvider.clearSelection();
-                      },
-                    )
-                  : null,
-              title: taskProvider.isSelectionMode
-                  ? Text('${taskProvider.selectedTaskIds.length} Selected')
-                  : RichText(
-                      text: TextSpan(
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -1.5,
-                        ),
-                        children: [
-                          TextSpan(
-                            text: 'DeX',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
+            body: Stack(
+              children: [
+                _buildBody(isLargeScreen, taskProvider),
+                // Floating Glassmorphic Header
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(32),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                          child: Container(
+                            height: 64,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface.withValues(alpha: themeProvider.isDarkMode ? 0.7 : 0.8),
+                              borderRadius: BorderRadius.circular(32),
+                              border: Border.all(
+                                color: (themeProvider.isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.1),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                if (taskProvider.isSelectionMode)
+                                  IconButton(
+                                    icon: const Icon(Icons.close),
+                                    onPressed: () {
+                                      FocusScope.of(context).unfocus();
+                                      taskProvider.clearSelection();
+                                    },
+                                  ),
+                                Expanded(
+                                  child: taskProvider.isSelectionMode
+                                      ? Text(
+                                          '${taskProvider.selectedTaskIds.length} Selected',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                                        )
+                                      : RichText(
+                                          text: TextSpan(
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 28,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: -1.2,
+                                            ),
+                                            children: [
+                                              TextSpan(
+                                                text: 'DeX',
+                                                style: TextStyle(
+                                                  color: Theme.of(context).colorScheme.onSurface,
+                                                ),
+                                              ),
+                                              TextSpan(
+                                                text: 'Do',
+                                                style: TextStyle(
+                                                  color: Theme.of(context).colorScheme.primary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                ),
+                                if (taskProvider.isSelectionMode) ...[
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline),
+                                    onPressed: () {
+                                      FocusScope.of(context).unfocus();
+                                      taskProvider.deleteSelectedTasks();
+                                    },
+                                    tooltip: 'Delete Selected',
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.check_circle_outline),
+                                    onPressed: () {
+                                      FocusScope.of(context).unfocus();
+                                      taskProvider.markSelectedAsCompleted(true);
+                                    },
+                                    tooltip: 'Mark Completed',
+                                  ),
+                                ] else ...[
+                                  // Premium Theme Toggle
+                                  GestureDetector(
+                                    onTap: () => themeProvider.toggleTheme(!themeProvider.isDarkMode),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 400),
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: themeProvider.isDarkMode 
+                                            ? Colors.amber.withValues(alpha: 0.1) 
+                                            : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: AnimatedSwitcher(
+                                        duration: const Duration(milliseconds: 400),
+                                        transitionBuilder: (Widget child, Animation<double> animation) {
+                                          return ScaleTransition(
+                                            scale: animation,
+                                            child: RotationTransition(
+                                              turns: animation,
+                                              child: FadeTransition(opacity: animation, child: child),
+                                            ),
+                                          );
+                                        },
+                                        child: Icon(
+                                          themeProvider.isDarkMode 
+                                              ? Icons.wb_sunny_rounded 
+                                              : Icons.nightlight_round,
+                                          key: ValueKey(themeProvider.isDarkMode),
+                                          size: 18,
+                                          color: themeProvider.isDarkMode 
+                                              ? Colors.amber[400] 
+                                              : Theme.of(context).colorScheme.primary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  if (_selectedIndex != 0)
+                                    Builder(
+                                      builder: (context) {
+                                        final authService = Provider.of<AuthService>(context);
+                                        return CircleAvatar(
+                                          radius: 16,
+                                          backgroundImage: NetworkImage(authService.currentUser?.photoURL ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${authService.currentUser?.uid ?? "Felix"}'),
+                                        );
+                                      }
+                                    ),
+                                ],
+                              ],
                             ),
                           ),
-                          TextSpan(
-                            text: 'Do',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-              actions: [
-                if (taskProvider.isSelectionMode) ...[
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: () {
-                      FocusScope.of(context).unfocus();
-                      taskProvider.deleteSelectedTasks();
-                    },
-                    tooltip: 'Delete Selected',
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.check_circle_outline),
-                    onPressed: () {
-                      FocusScope.of(context).unfocus();
-                      taskProvider.markSelectedAsCompleted(true);
-                    },
-                    tooltip: 'Mark Completed',
-                  ),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.move_to_inbox_outlined),
-                    tooltip: 'Move to Category',
-                    onSelected: (category) {
-                      FocusScope.of(context).unfocus();
-                      taskProvider.moveSelectedToCategory(category);
-                    },
-                    itemBuilder: (context) => taskProvider.categories
-                        .where((c) => c != 'All')
-                        .map((c) => PopupMenuItem(value: c, child: Text(c)))
-                        .toList(),
-                  ),
-                ] else ...[
-                  // Premium Theme Toggle
-                  GestureDetector(
-                    onTap: () => themeProvider.toggleTheme(!themeProvider.isDarkMode),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 400),
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: themeProvider.isDarkMode 
-                            ? Colors.amber.withValues(alpha: 0.1) 
-                            : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 400),
-                        transitionBuilder: (Widget child, Animation<double> animation) {
-                          return ScaleTransition(
-                            scale: animation,
-                            child: RotationTransition(
-                              turns: animation,
-                              child: FadeTransition(opacity: animation, child: child),
-                            ),
-                          );
-                        },
-                        child: Icon(
-                          themeProvider.isDarkMode 
-                              ? Icons.wb_sunny_rounded 
-                              : Icons.nightlight_round,
-                          key: ValueKey(themeProvider.isDarkMode),
-                          size: 20,
-                          color: themeProvider.isDarkMode 
-                              ? Colors.amber[400] 
-                              : Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  if (taskProvider.hasCompleted && _selectedIndex == 2)
-                    IconButton(
-                      onPressed: () {
-                        FocusScope.of(context).unfocus();
-                        taskProvider.clearCompleted();
-                      },
-                      icon: const Icon(Icons.delete_sweep_outlined),
-                      tooltip: 'Clear Done',
-                    ),
-                  if (_selectedIndex != 0)
-                    Builder(
-                      builder: (context) {
-                        final authService = Provider.of<AuthService>(context);
-                        return CircleAvatar(
-                          radius: 18,
-                          backgroundImage: NetworkImage(authService.currentUser?.photoURL ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${authService.currentUser?.uid ?? "Felix"}'),
-                        );
-                      }
-                    ),
-                ],
-                const SizedBox(width: 16),
+                ),
               ],
             ),
-            body: _buildBody(isLargeScreen, taskProvider),
             bottomNavigationBar: !isLargeScreen ? _buildBottomNav() : null,
             floatingActionButton: FloatingActionButton(
               onPressed: () {
