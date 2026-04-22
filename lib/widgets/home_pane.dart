@@ -6,7 +6,9 @@ import 'package:provider/provider.dart';
 
 import '../models/task.dart';
 import '../providers/task_provider.dart';
+import '../providers/theme_provider.dart';
 import '../services/auth_service.dart';
+import '../utils/design_system.dart';
 
 class HomePane extends StatelessWidget {
   final Function(Task)? onTaskTap;
@@ -78,30 +80,80 @@ class HomePane extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              greeting,
-              style: TextStyle(
-                fontSize: 16,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'DeX',
+                    style: AppTypography.logoStyle(context).copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  Text(
+                    'Do',
+                    style: AppTypography.logoStyle(context).copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '|',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                      fontSize: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    greeting,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  // Inline Theme Toggle
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Provider.of<ThemeProvider>(context, listen: false).toggleTheme(!Theme.of(context).brightness.name.contains('dark'));
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 400),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark 
+                            ? Colors.amber.withValues(alpha: 0.1) 
+                            : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Theme.of(context).brightness == Brightness.dark 
+                            ? Icons.wb_sunny_rounded 
+                            : Icons.nightlight_round,
+                        size: 18,
+                        color: Theme.of(context).brightness == Brightness.dark 
+                            ? Colors.amber[400] 
+                            : Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            Text(
-              userName,
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -1,
+              Text(
+                userName,
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -1,
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(
-          width: 56,
-          height: 56,
+            ],
+          ),
         ),
       ],
     );
@@ -305,6 +357,9 @@ class HomePane extends StatelessWidget {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Theme.of(context).dividerColor),
+            boxShadow: task.isStarred 
+                ? AppShadows.priority(context, color: task.color) 
+                : AppShadows.standard(context),
           ),
           child: Row(
             children: [
@@ -408,13 +463,7 @@ class HomePane extends StatelessWidget {
                       color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: Theme.of(context).dividerColor),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      boxShadow: AppShadows.glow(context, provider.categoryColors[category]!),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
