@@ -59,8 +59,10 @@ class SubscriptionService extends ChangeNotifier {
 
   Future<bool> purchasePackage(Package package) async {
     try {
-      final CustomerInfo customerInfo = await Purchases.purchasePackage(package);
-      _updateEntitlementStatus(customerInfo);
+      final PurchaseResult result = await Purchases.purchase(
+        PurchaseParams.package(package),
+      );
+      _updateEntitlementStatus(result.customerInfo);
       return _isPremium;
     } catch (e) {
       debugPrint('Purchase error: $e');

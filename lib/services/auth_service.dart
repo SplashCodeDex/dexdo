@@ -45,20 +45,20 @@ class AuthService extends ChangeNotifier {
           return await _auth.signInWithPopup(googleProvider);
         }
       } else {
-        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-        if (googleUser == null) return null;
+        final googleUser = await _googleSignIn.authenticate();
 
         const scopes = ['email', 'profile', 'openid'];
-        final hasAccess = await googleUser.canAccessScopes(scopes);
+        
+        // Check if user has already granted required scopes
+        final currentAuth = await googleUser.authorizationClient.authorizationForScopes(scopes);
         
         String? accessToken;
-        if (!hasAccess) {
+        if (currentAuth == null) {
           // Trigger granular consent UI if scopes are not yet authorized
           final authResult = await googleUser.authorizationClient.authorizeScopes(scopes);
           accessToken = authResult.accessToken;
         } else {
-          final googleAuth = googleUser.authentication;
-          accessToken = googleAuth.accessToken;
+          accessToken = currentAuth.accessToken;
         }
 
         final googleAuth = googleUser.authentication;
