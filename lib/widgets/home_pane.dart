@@ -7,7 +7,8 @@ import '../services/auth_service.dart';
 
 class HomePane extends StatelessWidget {
   final Function(Task)? onTaskTap;
-  const HomePane({super.key, this.onTaskTap});
+  final ScrollController? scrollController;
+  const HomePane({super.key, this.onTaskTap, this.scrollController});
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +40,7 @@ class HomePane extends StatelessWidget {
     final progressToday = totalToday == 0 ? 0.0 : completedToday.length / totalToday;
 
     return SingleChildScrollView(
+      controller: scrollController,
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

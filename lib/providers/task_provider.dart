@@ -516,7 +516,7 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
-  Future<void> toggleTask(Task task) async {
+  Future<void> toggleTaskCompletion(Task task) async {
     bool isMarkingDone = !task.isCompleted;
     task.isCompleted = isMarkingDone;
     task.completionDate = isMarkingDone ? DateTime.now() : null;
