@@ -174,7 +174,7 @@ class _DeXDoLogoPainter extends CustomPainter {
     canvas.scale(scale);
 
     // --- 1. Background Circle ---
-    final circleCenter = const Offset(512, 512);
+    const circleCenter = Offset(512, 512);
     const circleRadius = 485.52;
 
     // Fill (gradient)

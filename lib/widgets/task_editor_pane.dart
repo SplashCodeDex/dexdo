@@ -35,7 +35,7 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
     _subtaskController = TextEditingController();
   }
 
-  void _handleAIBreakdown(TaskProvider provider) async {
+  Future<void> _handleAIBreakdown(TaskProvider provider) async {
     if (_titleController.text.isEmpty) return;
     
     setState(() => _isAILoading = true);

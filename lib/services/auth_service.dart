@@ -57,11 +57,11 @@ class AuthService extends ChangeNotifier {
           final authResult = await googleUser.authorizationClient.authorizeScopes(scopes);
           accessToken = authResult.accessToken;
         } else {
-          final googleAuth = await googleUser.authentication;
+          final googleAuth = googleUser.authentication;
           accessToken = googleAuth.accessToken;
         }
 
-        final googleAuth = await googleUser.authentication;
+        final googleAuth = googleUser.authentication;
         
         final AuthCredential credential = GoogleAuthProvider.credential(
           accessToken: accessToken,
@@ -99,7 +99,7 @@ class AuthService extends ChangeNotifier {
                if(count > 0) await batch.commit();
                
                final oldSettings = await firestore.collection('users').doc(oldUid).collection('settings').get();
-               var sBatch = firestore.batch();
+               final sBatch = firestore.batch();
                for(var doc in oldSettings.docs) {
                   sBatch.set(firestore.collection('users').doc(newUid).collection('settings').doc(doc.id), doc.data(), SetOptions(merge: true));
                }
