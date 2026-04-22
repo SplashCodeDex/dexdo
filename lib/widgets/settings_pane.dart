@@ -71,6 +71,7 @@ class SettingsPane extends StatelessWidget {
               if (context.mounted) {
                 if (credential != null) {
                   await taskProvider.reloadFromStorage();
+                  if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Succesfully linked to ${credential.user?.email}')),
                   );

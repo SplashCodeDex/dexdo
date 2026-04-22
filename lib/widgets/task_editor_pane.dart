@@ -172,11 +172,13 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
                         firstDate: DateTime(2000),
                         lastDate: DateTime(2100),
                       );
+                      if (!context.mounted) return;
                       if (pickedDate != null) {
                         final pickedTime = await showTimePicker(
                           context: context,
                           initialTime: TimeOfDay.fromDateTime(widget.task.dueDate ?? DateTime.now()),
                         );
+                        if (!context.mounted) return;
                         if (pickedTime != null) {
                           final finalDateTime = DateTime(
                             pickedDate.year,

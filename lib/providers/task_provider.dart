@@ -123,7 +123,7 @@ class TaskProvider with ChangeNotifier {
 
     // Ensure migration from Local -> Firebase happens on first boot
     if (_repository is FirebaseTaskRepository) {
-      await DataMigrationService.performMigrationIfNeeded(_repository as FirebaseTaskRepository);
+      await DataMigrationService.performMigrationIfNeeded(_repository);
     }
 
     await reloadFromStorage();

@@ -124,8 +124,10 @@ class _SubscriptionPaneState extends State<SubscriptionPane> {
         title: const Text('Go Premium'),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: !_isAvailable 
+          ? const Center(child: Text('Store unavailable. Please check your connection.'))
+          : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
