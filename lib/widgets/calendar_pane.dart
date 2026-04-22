@@ -463,7 +463,7 @@ class _CalendarPaneState extends State<CalendarPane> {
                                 borderRadius: BorderRadius.circular(16),
                                 onPressed: (context) {
                                   final provider = Provider.of<TaskProvider>(context, listen: false);
-                                  provider.toggleTaskCompletion(task);
+                                  provider.toggleTask(task);
                                 },
                                 backgroundColor: task.isCompleted ? Colors.orange : Colors.green,
                                 foregroundColor: Colors.white,
@@ -480,7 +480,7 @@ class _CalendarPaneState extends State<CalendarPane> {
                                 borderRadius: BorderRadius.circular(16),
                                 onPressed: (context) {
                                   final provider = Provider.of<TaskProvider>(context, listen: false);
-                                  provider.deleteTask(task.id);
+                                  provider.deleteTask(task);
                                 },
                                 backgroundColor: Colors.red,
                                 foregroundColor: Colors.white,

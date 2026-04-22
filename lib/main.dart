@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
+// Unused import removed
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -171,50 +171,8 @@ class DeleteSelectedIntent extends Intent {
   const DeleteSelectedIntent();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 2; // Default to 'Tasks' icon
-  final ScrollController _homeScrollController = ScrollController();
-  late AnimationController _avatarAnimationController;
-
-  @override
-  void initState() {
-    super.initState();
-    _avatarAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-    // If not on Home initially, set animation to completed (small avatar state)
-    if (_selectedIndex != 0) {
-      _avatarAnimationController.value = 1.0;
-    }
-    
-    _homeScrollController.addListener(() {
-      // Trigger a rebuild of the overlay when scrolling
-      // (The AnimatedBuilder handles the actual rebuild, but we just need to poke the notifier if we were using one,
-      // here AnimatedBuilder listens to the controller, but scrolling doesn't automatically notify it.
-      // So we use setState or listenable merge. Actually, let's use an AnimatedBuilder on the ScrollController itself).
-    });
-  }
-
-  @override
-  void dispose() {
-    _homeScrollController.dispose();
-    _avatarAnimationController.dispose();
-    super.dispose();
-  }
-
-  void _onTabTapped(int index) {
-    if (_selectedIndex == index) return;
-    
-    FocusScope.of(context).unfocus();
-    setState(() => _selectedIndex = index);
-    
-    if (index == 0) {
-      _avatarAnimationController.reverse();
-    } else {
-      _avatarAnimationController.forward();
-    }
-  }
 
   Widget _buildBody(bool isLargeScreen, TaskProvider taskProvider) {
     if (isLargeScreen) {
@@ -238,7 +196,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget _buildDesktopNavigationRail() {
     return NavigationRail(
       selectedIndex: _selectedIndex,
-      onDestinationSelected: _onTabTapped,
+      onDestinationSelected: (index) {
+        FocusScope.of(context).unfocus();
+        setState(() => _selectedIndex = index);
+      },
       labelType: NavigationRailLabelType.selected,
       backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
       indicatorColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
@@ -277,13 +238,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       switch (_selectedIndex) {
         case 0:
           content = HomePane(
-            scrollController: _homeScrollController,
-            onTaskTap: (task) => _onTabTapped(2),
+            onTaskTap: (task) => setState(() => _selectedIndex = 2),
           );
           break;
         case 1:
           content = CalendarPane(
-            onTaskTap: (task) => _onTabTapped(2),
+            onTaskTap: (task) => setState(() => _selectedIndex = 2),
           );
           break;
         case 3:
@@ -378,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               FocusScope.of(context).unfocus();
               taskProvider.addTask();
               if (_selectedIndex != 2) {
-                _onTabTapped(2);
+                setState(() => _selectedIndex = 2);
               }
               return null;
             },
@@ -399,12 +359,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           builder: (context, constraints) {
             final isLargeScreen = constraints.maxWidth > 600;
 
-            return Stack(
-              children: [
-                GestureDetector(
-                  onTap: () => FocusScope.of(context).unfocus(),
-                  behavior: HitTestBehavior.translucent,
-                  child: Scaffold(
+            return GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          behavior: HitTestBehavior.translucent,
+          child: Scaffold(
             extendBody: true,
             appBar: AppBar(
               leading: taskProvider.isSelectionMode
@@ -499,7 +457,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   if (_selectedIndex != 0)
                     Builder(
                       builder: (context) {
-                        return const SizedBox(width: 36, height: 36);
+                        final authService = Provider.of<AuthService>(context);
+                        return CircleAvatar(
+                          radius: 18,
+                          backgroundImage: NetworkImage(authService.currentUser?.photoURL ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${authService.currentUser?.uid ?? "Felix"}'),
+                        );
                       }
                     ),
                 ],
@@ -513,7 +475,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 FocusScope.of(context).unfocus();
                 taskProvider.addTask();
                 if (_selectedIndex != 2) {
-                  _onTabTapped(2);
+                  setState(() => _selectedIndex = 2);
                 }
               },
               backgroundColor: Theme.of(context).colorScheme.primary,
@@ -524,77 +486,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               child: const Icon(Icons.add, size: 32),
             ),
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-            ),
           ),
-        
-        // GLOBAL AVATAR OVERLAY
-        // This ensures the avatar is always on top (higher z-index than AppBar)
-        // and animates smoothly without being bound by specific page routes.
-        AnimatedBuilder(
-          animation: Listenable.merge([_avatarAnimationController, _homeScrollController]),
-          builder: (context, child) {
-            final authService = Provider.of<AuthService>(context, listen: false);
-            final photoUrl = authService.currentUser?.photoURL;
-            final fallbackUrl = 'https://api.dicebear.com/7.x/avataaars/png?seed=${authService.currentUser?.uid ?? "Felix"}';
-
-            // Constants for Big Avatar (HomePane)
-            const double bigRadius = 28.0;
-            const double bigSize = bigRadius * 2;
-            final double homePaddingTop = MediaQuery.of(context).padding.top + kToolbarHeight + 24.0;
-            final double bigX = constraints.maxWidth - 24.0 - bigSize;
-            
-            // Calculate scroll offset factor
-            double scrollOffset = 0.0;
-            if (_homeScrollController.hasClients) {
-              scrollOffset = _homeScrollController.offset;
-            }
-            final double bigY = homePaddingTop - scrollOffset;
-
-            // Constants for Small Avatar (AppBar)
-            const double smallRadius = 18.0;
-            const double smallSize = smallRadius * 2;
-            final double appBarCenterY = MediaQuery.of(context).padding.top + (kToolbarHeight - smallSize) / 2.0;
-            final double smallX = constraints.maxWidth - 16.0 - smallSize;
-            final double smallY = appBarCenterY;
-
-            // Determine if the scroll is pushing the avatar past the small position
-            double scrollProgress = 0.0;
-            if (scrollOffset > 0) {
-               // When scrollOffset reaches (homePaddingTop - appBarCenterY), the Y positions match.
-               final maxScrollForTransition = homePaddingTop - appBarCenterY;
-               scrollProgress = (scrollOffset / maxScrollForTransition).clamp(0.0, 1.0);
-            }
-
-            // The final animation progress is the maximum of the tab transition controller or the scroll progress.
-            final double t = Curves.easeInOutCubic.transform(
-              (_avatarAnimationController.value > scrollProgress) ? _avatarAnimationController.value : scrollProgress
-            );
-
-            // Interpolate values
-            final double currentSize = lerpDouble(bigSize, smallSize, t)!;
-            final double currentX = lerpDouble(bigX, smallX, t)!;
-            // For Y, we need to transition from the scrolled bigY to the fixed smallY
-            // Actually, if we are scrolling, bigY naturally approaches smallY.
-            final double currentY = lerpDouble(bigY, smallY, t)!;
-
-            return Positioned(
-              left: currentX,
-              top: currentY,
-              width: currentSize,
-              height: currentSize,
-              child: Opacity(
-                // Fade out slightly if scrolling past the top, but we clamp so it's fine.
-                // We keep it fully opaque during standard transitions.
-                opacity: 1.0, 
-                child: CircleAvatar(
-                  radius: currentSize / 2,
-                  backgroundImage: NetworkImage(photoUrl ?? fallbackUrl),
-                ),
-              ),
-            );
-          },
-        ),
-          ],
         );
       },
     ),
@@ -655,7 +547,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget _buildNavItem(IconData unselectedIcon, IconData selectedIcon, int index, String label) {
     final isSelected = _selectedIndex == index;
     return GestureDetector(
-      onTap: () => _onTabTapped(index),
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        setState(() => _selectedIndex = index);
+        HapticFeedback.lightImpact();
+      },
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 350),

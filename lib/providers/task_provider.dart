@@ -153,9 +153,9 @@ class TaskProvider with ChangeNotifier {
     // Sync notifications when saving tasks
     for (var task in _tasks) {
       if (task.isCompleted) {
-        _notifications.cancelTaskReminder(task.id);
+        await _notifications.cancelTaskReminder(task.id);
       } else {
-        _notifications.scheduleTaskReminder(task);
+        await _notifications.scheduleTaskReminder(task);
       }
     }
   }
@@ -163,15 +163,15 @@ class TaskProvider with ChangeNotifier {
   Future<void> _syncTask(Task task) async {
     await _repository.saveTask(task);
     if (task.isCompleted) {
-      _notifications.cancelTaskReminder(task.id);
+      await _notifications.cancelTaskReminder(task.id);
     } else {
-      _notifications.scheduleTaskReminder(task);
+      await _notifications.scheduleTaskReminder(task);
     }
   }
 
   Future<void> _removeTask(Task task) async {
     await _repository.deleteTask(task.id);
-    _notifications.cancelTaskReminder(task.id);
+    await _notifications.cancelTaskReminder(task.id);
   }
 
   Future<void> _saveCategories() async {
@@ -441,7 +441,7 @@ class TaskProvider with ChangeNotifier {
     if (toDeleteIds.isNotEmpty) {
       await _repository.batchDeleteTasks(toDeleteIds);
       for (var id in toDeleteIds) {
-        _notifications.cancelTaskReminder(id);
+        await _notifications.cancelTaskReminder(id);
       }
     }
   }
@@ -517,7 +517,7 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
-  Future<void> toggleTaskCompletion(Task task) async {
+  Future<void> toggleTask(Task task) async {
     bool isMarkingDone = !task.isCompleted;
     task.isCompleted = isMarkingDone;
     task.completionDate = isMarkingDone ? DateTime.now() : null;
@@ -605,7 +605,7 @@ class TaskProvider with ChangeNotifier {
     if (toDeleteIds.isNotEmpty) {
       await _repository.batchDeleteTasks(toDeleteIds);
       for (var id in toDeleteIds) {
-        _notifications.cancelTaskReminder(id);
+        await _notifications.cancelTaskReminder(id);
       }
     }
   }
@@ -620,7 +620,7 @@ class TaskProvider with ChangeNotifier {
     if (toDeleteIds.isNotEmpty) {
       await _repository.batchDeleteTasks(toDeleteIds);
       for (var id in toDeleteIds) {
-         _notifications.cancelTaskReminder(id);
+         await _notifications.cancelTaskReminder(id);
       }
     }
   }

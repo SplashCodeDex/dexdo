@@ -1,6 +1,5 @@
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'category_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -100,19 +99,10 @@ class _TaskListPaneState extends State<TaskListPane> {
                   if (activeTasks.isNotEmpty) ...[
                     ...activeTasks.asMap().entries.map((entry) {
                       final task = entry.value;
-                      return AnimationConfiguration.staggeredList(
+                      return Padding(
                         key: ValueKey(task.id),
-                        position: entry.key,
-                        duration: const Duration(milliseconds: 375),
-                        child: SlideAnimation(
-                          verticalOffset: 50.0,
-                          child: FadeInAnimation(
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 16.0),
-                              child: _buildTaskCard(context, task, task.id == taskProvider.selectedTask?.id, taskProvider, isLargeScreen, entry.key),
-                            ),
-                          ),
-                        ),
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: _buildTaskCard(context, task, task.id == taskProvider.selectedTask?.id, taskProvider, isLargeScreen, entry.key),
                       );
                     }),
                   ],
@@ -122,19 +112,10 @@ class _TaskListPaneState extends State<TaskListPane> {
                       final task = entry.value;
                       final headerOffset = activeTasks.isEmpty ? 1 : 1;
                       final absoluteIndex = activeTasks.length + headerOffset + entry.key;
-                      return AnimationConfiguration.staggeredList(
+                      return Padding(
                         key: ValueKey(task.id),
-                        position: absoluteIndex,
-                        duration: const Duration(milliseconds: 375),
-                        child: SlideAnimation(
-                          verticalOffset: 50.0,
-                          child: FadeInAnimation(
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 16.0),
-                              child: _buildTaskCard(context, task, task.id == taskProvider.selectedTask?.id, taskProvider, isLargeScreen, absoluteIndex),
-                            ),
-                          ),
-                        ),
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: _buildTaskCard(context, task, task.id == taskProvider.selectedTask?.id, taskProvider, isLargeScreen, absoluteIndex),
                       );
                     }),
                   ],
