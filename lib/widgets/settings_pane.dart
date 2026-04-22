@@ -67,17 +67,18 @@ class SettingsPane extends StatelessWidget {
             icon: Icons.account_circle_rounded,
             iconColor: Colors.orange,
             onTap: () async {
-              final messenger = ScaffoldMessenger.of(context);
               final credential = await authService.linkWithGoogle();
-              if (credential != null) {
-                await taskProvider.reloadFromStorage();
-                messenger.showSnackBar(
-                  SnackBar(content: Text('Succesfully linked to ${credential.user?.email}')),
-                );
-              } else {
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('Sign-in cancelled or failed.')),
-                );
+              if (context.mounted) {
+                if (credential != null) {
+                  await taskProvider.reloadFromStorage();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Succesfully linked to ${credential.user?.email}')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Sign-in cancelled or failed.')),
+                  );
+                }
               }
             },
           )
@@ -91,14 +92,15 @@ class SettingsPane extends StatelessWidget {
             trailing: IconButton(
               icon: const Icon(Icons.logout_rounded),
               onPressed: () async {
-                final messenger = ScaffoldMessenger.of(context);
                 await authService.signOut();
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('Successfully signed out. Returning to anonymous.')),
-                );
-                // Rerun the anon init
-                await authService.signInAnonymously();
-                await taskProvider.reloadFromStorage();
+                if (context.mounted) {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Successfully signed out. Returning to anonymous.')),
+                  );
+                  // Rerun the anon init
+                  await authService.signInAnonymously();
+                  await taskProvider.reloadFromStorage();
+                }
               },
             ),
           ),
@@ -224,10 +226,9 @@ class SettingsPane extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              final messenger = ScaffoldMessenger.of(context);
               provider.clearAllTasks();
               Navigator.pop(context);
-              messenger.showSnackBar(
+              ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('All tasks cleared')),
               );
             },

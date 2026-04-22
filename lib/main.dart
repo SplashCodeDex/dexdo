@@ -13,9 +13,7 @@ import 'widgets/home_pane.dart';
 import 'widgets/calendar_pane.dart';
 import 'widgets/settings_pane.dart';
 import 'package:animations/animations.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, TargetPlatform, defaultTargetPlatform;
 import 'firebase_options.dart';
-import 'widgets/animated_splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -113,41 +111,8 @@ class DeXDoApp extends StatelessWidget {
           ),
         ),
       ),
-      home: _shouldShowFlutterSplash() ? const _SplashWrapper() : const HomeScreen(),
+      home: const HomeScreen(),
     );
-  }
-}
-
-/// Only show the Flutter-level splash on Web and iOS.
-/// Android uses the native SplashScreen API with the AVD animation.
-bool _shouldShowFlutterSplash() {
-  if (kIsWeb) return true;
-  // On mobile, only iOS needs it (Android has the native AVD)
-  return defaultTargetPlatform == TargetPlatform.iOS;
-}
-
-class _SplashWrapper extends StatefulWidget {
-  const _SplashWrapper();
-
-  @override
-  State<_SplashWrapper> createState() => _SplashWrapperState();
-}
-
-class _SplashWrapperState extends State<_SplashWrapper> {
-  bool _showSplash = true;
-
-  @override
-  Widget build(BuildContext context) {
-    if (_showSplash) {
-      return AnimatedSplashScreen(
-        onComplete: () {
-          if (mounted) {
-            setState(() => _showSplash = false);
-          }
-        },
-      );
-    }
-    return const HomeScreen();
   }
 }
 

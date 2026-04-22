@@ -373,30 +373,31 @@ class _TaskListPaneState extends State<TaskListPane> {
             color: taskProvider.selectedTaskIds.contains(task.id)
                 ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5)
                 : (isSelected 
-                    ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.2) 
+                    ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.15) 
                     : Theme.of(context).colorScheme.surface),
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: taskProvider.selectedTaskIds.contains(task.id)
-                  ? Theme.of(context).colorScheme.primary
+                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
                   : (isSelected 
                       ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3) 
-                      : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
-              width: 1.5,
+                      : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2)),
+              width: 1,
             ),
             boxShadow: [
               BoxShadow(
                 color: isSelected 
                     ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.08) 
-                    : Colors.black.withValues(alpha: 0.03),
-                blurRadius: isSelected ? 20 : 15,
-                offset: const Offset(0, 8),
+                    : Colors.black.withValues(alpha: 0.02),
+                blurRadius: isSelected ? 15 : 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // Selection Checkbox or Custom Checkbox
                 GestureDetector(
@@ -417,23 +418,23 @@ class _TaskListPaneState extends State<TaskListPane> {
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    width: 26,
-                    height: 26,
+                    width: 24,
+                    height: 24,
                     decoration: BoxDecoration(
                       color: taskProvider.selectedTaskIds.contains(task.id)
                           ? Theme.of(context).colorScheme.primary
-                          : (task.isCompleted ? task.color : Colors.transparent),
+                          : (task.isCompleted ? task.color.withValues(alpha: 0.1) : Colors.transparent),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: taskProvider.selectedTaskIds.contains(task.id)
                             ? Theme.of(context).colorScheme.primary
-                            : (task.isCompleted ? task.color : Theme.of(context).colorScheme.outline),
-                        width: 2,
+                            : (task.isCompleted ? task.color : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4)),
+                        width: taskProvider.selectedTaskIds.contains(task.id) ? 0 : 1.5,
                       ),
                     ),
                     child: taskProvider.selectedTaskIds.contains(task.id)
-                        ? Icon(Icons.check, size: 18, color: Theme.of(context).colorScheme.onPrimary)
-                        : (task.isCompleted ? const Icon(Icons.check, size: 18, color: Colors.white) : null),
+                        ? Icon(Icons.check, size: 16, color: Theme.of(context).colorScheme.onPrimary)
+                        : (task.isCompleted ? Icon(Icons.check, size: 16, color: task.color) : null),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -441,78 +442,88 @@ class _TaskListPaneState extends State<TaskListPane> {
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         task.title.isEmpty ? 'New Task' : task.title,
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
                           color: task.isCompleted 
                               ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) 
                               : Theme.of(context).colorScheme.onSurface,
                           decoration: task.isCompleted ? TextDecoration.lineThrough : null,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Row(
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          Icon(task.icon, size: 14, color: task.color.withValues(alpha: 0.7)),
-                          const SizedBox(width: 4),
-                          Text(
-                            task.category,
-                            style: TextStyle(
-                              color: task.color.withValues(alpha: 0.7),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: task.isCompleted 
+                                  ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.1) 
+                                  : task.color.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  task.icon, 
+                                  size: 12, 
+                                  color: task.isCompleted 
+                                      ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) 
+                                      : task.color
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  task.category,
+                                  style: TextStyle(
+                                    color: task.isCompleted 
+                                        ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) 
+                                        : task.color,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          if (task.attachmentCount > 0 || task.subtasks.isNotEmpty || task.dueDate != null) ...[
-                            const SizedBox(width: 12),
-                            Text('•', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.2))),
-                            const SizedBox(width: 12),
-                            if (task.dueDate != null) ...[
-                              _buildDueDateBadge(task.dueDate!),
-                              const SizedBox(width: 12),
-                            ],
-                            if (task.attachmentCount > 0) ...[
-                              Icon(Icons.attach_file_rounded, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
-                              Text(' ${task.attachmentCount} ', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5))),
-                            ],
-                            if (task.subtasks.isNotEmpty) ...[
-                              SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                  value: task.progress,
-                                  strokeWidth: 2,
-                                  backgroundColor: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
-                                  color: task.progress == 1.0 ? Colors.green : Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${task.completedSubtaskCount}/${task.subtasks.length}', 
-                                style: TextStyle(
-                                  fontSize: 11, 
-                                  color: task.progress == 1.0 ? Colors.green : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                                  fontWeight: task.progress == 1.0 ? FontWeight.bold : FontWeight.normal,
-                                )
-                              ),
-                            ],
-                          ],
+                          if (task.subtasks.isNotEmpty)
+                            _buildInfoChip(
+                              context,
+                              Icons.checklist_rounded,
+                              '${task.completedSubtaskCount}/${task.subtasks.length}',
+                              task.progress == 1.0 
+                                  ? Colors.green 
+                                  : (task.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.primary),
+                            ),
+                          if (task.dueDate != null) 
+                            _buildDueDateChip(context, task.dueDate!, task.isCompleted),
+                          if (task.attachmentCount > 0)
+                            _buildInfoChip(
+                              context,
+                              Icons.attach_file_rounded,
+                              '${task.attachmentCount}',
+                              Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                            ),
                         ],
                       ),
                       if (task.subtasks.isNotEmpty) ...[
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(2),
+                          borderRadius: BorderRadius.circular(4),
                           child: LinearProgressIndicator(
                             value: task.progress,
                             backgroundColor: task.color.withValues(alpha: 0.1),
                             valueColor: AlwaysStoppedAnimation<Color>(
                               task.isCompleted ? Colors.grey[300]! : task.color
                             ),
-                            minHeight: 3,
+                            minHeight: 4,
                           ),
                         ),
                       ],
@@ -524,8 +535,8 @@ class _TaskListPaneState extends State<TaskListPane> {
                   visualDensity: VisualDensity.compact,
                   icon: Icon(
                     task.isStarred ? Icons.star_rounded : Icons.star_outline_rounded,
-                    color: task.isStarred ? const Color(0xFFFFB300) : Colors.grey[200],
-                    size: 26,
+                    color: task.isStarred ? const Color(0xFFFFB300) : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                    size: 24,
                   ),
                   onPressed: () {
                     FocusScope.of(context).unfocus();
@@ -627,38 +638,44 @@ class _TaskListPaneState extends State<TaskListPane> {
     );
   }
 
-  Widget _buildDueDateBadge(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final taskDate = DateTime(date.year, date.month, date.day);
-    final isOverdue = taskDate.isBefore(today);
-    final isToday = taskDate.isAtSameMomentAs(today);
-
-    Color color = Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5);
-    String label = '${date.day}/${date.month}';
-
-    if (isOverdue) {
-      color = Theme.of(context).colorScheme.error;
-      label = 'Overdue';
-    } else if (isToday) {
-      color = Theme.of(context).colorScheme.primary;
-      label = 'Today';
-    }
-
+  Widget _buildInfoChip(BuildContext context, IconData icon, String label, Color color) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.calendar_today_rounded, size: 12, color: color),
+        Icon(icon, size: 14, color: color),
         const SizedBox(width: 4),
         Text(
           label,
           style: TextStyle(
             fontSize: 11,
             color: color,
-            fontWeight: isOverdue || isToday ? FontWeight.bold : FontWeight.normal,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
     );
+  }
+
+  Widget _buildDueDateChip(BuildContext context, DateTime date, bool isCompleted) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final taskDate = DateTime(date.year, date.month, date.day);
+    final isOverdue = taskDate.isBefore(today);
+    final isToday = taskDate.isAtSameMomentAs(today);
+
+    Color color = Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6);
+    String label = '${date.day}/${date.month}';
+
+    if (!isCompleted) {
+      if (isOverdue) {
+        color = Theme.of(context).colorScheme.error;
+        label = 'Overdue';
+      } else if (isToday) {
+        color = Theme.of(context).colorScheme.primary;
+        label = 'Today';
+      }
+    }
+
+    return _buildInfoChip(context, Icons.calendar_today_rounded, label, color);
   }
 }

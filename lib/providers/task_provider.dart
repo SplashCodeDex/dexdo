@@ -123,7 +123,7 @@ class TaskProvider with ChangeNotifier {
 
     // Ensure migration from Local -> Firebase happens on first boot
     if (_repository is FirebaseTaskRepository) {
-      await DataMigrationService.performMigrationIfNeeded(_repository);
+      await DataMigrationService.performMigrationIfNeeded(_repository as FirebaseTaskRepository);
     }
 
     await reloadFromStorage();
@@ -171,6 +171,7 @@ class TaskProvider with ChangeNotifier {
     await _repository.deleteTask(task.id);
     _notifications.cancelTaskReminder(task.id);
   }
+
   Future<void> _saveCategories() async {
     await _repository.saveCategories(_categories);
     await _repository.saveCategoryIcons(_categoryIcons);
@@ -616,7 +617,7 @@ class TaskProvider with ChangeNotifier {
     if (toDeleteIds.isNotEmpty) {
       await _repository.batchDeleteTasks(toDeleteIds);
       for (var id in toDeleteIds) {
-        _notifications.cancelTaskReminder(id);
+         _notifications.cancelTaskReminder(id);
       }
     }
   }

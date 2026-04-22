@@ -27,38 +27,26 @@ class FirebaseTaskRepository implements TaskRepository {
     if (_auth.currentUser == null) return [];
     
     try {
-      final tasksRef = _db.collection('users').doc(_userId).collection('tasks');
-
-      // Fetch active tasks (isCompleted == 0)
-      final activeSnapshot = await tasksRef.where('isCompleted', isEqualTo: 0).get();
-
-      // Fetch recently completed tasks (Limit to 50 to avoid massive read costs)
-      // Note: This requires a composite index in Firestore: isCompleted (ASC) + completionDate (DESC)
-      final completedSnapshot = await tasksRef
-          .where('isCompleted', isEqualTo: 1)
-          .orderBy('completionDate', descending: true)
-          .limit(50)
+      final snapshot = await _db
+          .collection('users')
+          .doc(_userId)
+          .collection('tasks')
           .get();
 
-      final List<Task> loadedTasks = [];
+      final List<Task> activeTasks = [];
 
-      void parseAndAdd(QuerySnapshot snapshot) {
-        for (var doc in snapshot.docs) {
-          try {
-            final data = doc.data() as Map<String, dynamic>;
-            data['id'] = doc.id; // Force ID to match the document key
-            final task = Task.fromJson(data);
-            loadedTasks.add(task);
-          } catch (e) {
-            debugPrint('Error parsing firestore task: $e');
-          }
+      for (var doc in snapshot.docs) {
+        try {
+          final data = doc.data();
+          data['id'] = doc.id; // Force ID to match the document key
+          final task = Task.fromJson(data);
+          activeTasks.add(task);
+        } catch (e) {
+          debugPrint('Error parsing firestore task: $e');
         }
       }
 
-      parseAndAdd(activeSnapshot);
-      parseAndAdd(completedSnapshot);
-
-      return loadedTasks;
+      return activeTasks;
     } catch (e) {
       debugPrint('Firestore loadTasks Error: $e');
       return [];

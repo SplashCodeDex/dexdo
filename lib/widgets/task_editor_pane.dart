@@ -166,19 +166,17 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
                     label: 'Due Date',
                     onTap: () async {
                       FocusScope.of(context).unfocus();
-                      final messenger = ScaffoldMessenger.of(context);
-                    final pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: widget.task.dueDate ?? DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                    );
-                    if (pickedDate != null) {
-                      if (!context.mounted) return;
-                      final pickedTime = await showTimePicker(
+                      final pickedDate = await showDatePicker(
                         context: context,
-                        initialTime: TimeOfDay.fromDateTime(widget.task.dueDate ?? DateTime.now()),
+                        initialDate: widget.task.dueDate ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
                       );
+                      if (pickedDate != null) {
+                        final pickedTime = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.fromDateTime(widget.task.dueDate ?? DateTime.now()),
+                        );
                         if (pickedTime != null) {
                           final finalDateTime = DateTime(
                             pickedDate.year,
