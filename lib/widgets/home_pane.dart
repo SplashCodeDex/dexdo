@@ -7,14 +7,7 @@ import '../services/auth_service.dart';
 
 class HomePane extends StatelessWidget {
   final Function(Task)? onTaskTap;
-  final ScrollController? scrollController;
-  final bool showAvatarHero;
-  const HomePane({
-    super.key, 
-    this.onTaskTap, 
-    this.scrollController,
-    this.showAvatarHero = true,
-  });
+  const HomePane({super.key, this.onTaskTap});
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +39,6 @@ class HomePane extends StatelessWidget {
     final progressToday = totalToday == 0 ? 0.0 : completedToday.length / totalToday;
 
     return SingleChildScrollView(
-      controller: scrollController,
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,12 +96,9 @@ class HomePane extends StatelessWidget {
             ),
           ],
         ),
-        Hero(
-          tag: 'user_avatar',
-          child: CircleAvatar(
-            radius: 28,
-            backgroundImage: NetworkImage(photoUrl ?? fallbackUrl),
-          ),
+        CircleAvatar(
+          radius: 28,
+          backgroundImage: NetworkImage(photoUrl ?? fallbackUrl),
         ),
       ],
     );
@@ -173,29 +162,26 @@ class HomePane extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 24),
-          Hero(
-            tag: 'progress_bolt',
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 80,
-                  height: 80,
-                  child: CircularProgressIndicator(
-                    value: progress,
-                    strokeWidth: 10,
-                    backgroundColor: Colors.white.withValues(alpha: 0.2),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                    strokeCap: StrokeCap.round,
-                  ),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                width: 80,
+                height: 80,
+                child: CircularProgressIndicator(
+                  value: progress,
+                  strokeWidth: 10,
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                  strokeCap: StrokeCap.round,
                 ),
-                Icon(
-                  progress == 1.0 ? Icons.celebration_rounded : Icons.bolt_rounded,
-                  color: Colors.white,
-                  size: 32,
-                ),
-              ],
-            ),
+              ),
+              Icon(
+                progress == 1.0 ? Icons.celebration_rounded : Icons.bolt_rounded,
+                color: Colors.white,
+                size: 32,
+              ),
+            ],
           ),
         ],
       ),

@@ -6,14 +6,12 @@ import '../repositories/task_repository.dart';
 import '../repositories/firebase_task_repository.dart';
 import '../services/data_migration_service.dart';
 import '../services/notification_service.dart';
-import '../services/ai_service.dart';
 import 'dart:convert';
 import 'dart:async';
 
 class TaskProvider with ChangeNotifier {
-  final TaskRepository _repository = FirebaseTaskRepository();
-  final NotificationService _notifications = NotificationService();
-  final AIService _aiService = AIService();
+  final TaskRepository _repository;
+  final NotificationService _notifications;
 
   Timer? _searchDebounce;
 
@@ -86,7 +84,9 @@ class TaskProvider with ChangeNotifier {
   Set<String> get selectedTaskIds => _selectedTaskIds;
   bool get isSelectionMode => _selectedTaskIds.isNotEmpty;
 
-  TaskProvider() {
+  TaskProvider({TaskRepository? repository, NotificationService? notifications}) 
+      : _repository = repository ?? FirebaseTaskRepository(),
+        _notifications = notifications ?? NotificationService() {
     _loadData();
   }
 
@@ -280,19 +280,6 @@ class TaskProvider with ChangeNotifier {
     _updateFilteredTasks();
     notifyListeners();
     await _syncTask(task);
-  }
-
-  Future<void> breakdownWithAI(Task task) async {
-    if (task.title.isEmpty) return;
-    
-    final subtaskTitles = await _aiService.breakdownTask(task.title);
-    if (subtaskTitles.isNotEmpty) {
-      for (var title in subtaskTitles) {
-        task.subtasks.add(SubTask(id: _uuid.v4(), title: title));
-      }
-      notifyListeners();
-      await _syncTask(task);
-    }
   }
 
   Future<void> addSubtask(Task task, String title) async {

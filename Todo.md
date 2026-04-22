@@ -1,5 +1,3 @@
-# DeXDo
-
 1. AI & "Smart" Integrations
 Since you are leveraging Google's AI Studio, we can integrate Gemini directly into the app (via REST API or a Dart package) for power features:
 Smart Task Breakdown (Subtasks): If a user enters a complex task (e.g., "Plan my trip to Japan"), they can tap a "Breakdown with AI" button. Gemini parses the prompt and generates an actionable checklist (e.g., "Book flights", "Get JR Pass", "Book hotels in Tokyo") as subtasks.
@@ -14,4 +12,3 @@ Shared Lists / Collaboration: Since you use Firestore, we could easily add a sha
 Hero Animations: You are using the animations package for PageTransitionSwitcher, which is great. We could add Hero transitions when a user taps a task from the list, seamlessly expanding the list tile into the TaskEditorPane.
 Advanced Swipe Actions: You have flutter_slidable installed. We can ensure that a half-swipe right marks as "Done," a full-swipe right moves it to "Tomorrow" (Reschedule), and a swipe left deletes it.
 Sliver App Bars with Progress Metrics: Instead of a static app bar, the Home/Tasks screen could feature a dynamically collapsing SliverAppBar that shows a beautiful circular progress indicator for their daily task completion percentage.
-
