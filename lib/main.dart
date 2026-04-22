@@ -508,10 +508,10 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildNavItem(Icons.home_outlined, Icons.home_rounded, 0, 'Home'),
-                  _buildNavItem(Icons.calendar_month_outlined, Icons.calendar_month_rounded, 1, 'Calendar'),
-                  _buildNavItem(Icons.list_alt_rounded, Icons.list_alt_rounded, 2, 'Tasks'),
-                  _buildNavItem(Icons.settings_outlined, Icons.settings_rounded, 3, 'Settings'),
+                  _buildNavItem(Icons.space_dashboard_outlined, Icons.space_dashboard_rounded, 0, 'Home'),
+                  _buildNavItem(Icons.calendar_today_outlined, Icons.calendar_today_rounded, 1, 'Schedule'),
+                  _buildNavItem(Icons.check_circle_outline_rounded, Icons.check_circle_rounded, 2, 'Tasks'),
+                  _buildNavItem(Icons.tune_outlined, Icons.tune_rounded, 3, 'Settings'),
                 ],
               ),
             ),
@@ -531,40 +531,51 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutQuint,
-        padding: EdgeInsets.symmetric(horizontal: isSelected ? 16 : 12, vertical: 8),
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.symmetric(horizontal: isSelected ? 18 : 12, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected 
-              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15) 
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12) 
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(100), // Perfect pill shape
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
+              duration: const Duration(milliseconds: 250),
+              transitionBuilder: (child, animation) {
+                return ScaleTransition(scale: animation, child: child);
+              },
               child: Icon(
                 isSelected ? selectedIcon : unselectedIcon,
                 key: ValueKey(isSelected),
                 color: isSelected 
                     ? Theme.of(context).colorScheme.primary 
-                    : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                    : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                 size: 24,
               ),
             ),
-            if (isSelected) ...[
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                ),
-              ),
-            ],
+            AnimatedSize(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.centerLeft,
+              child: isSelected 
+                ? Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        letterSpacing: -0.2, // Tighter typography for pills
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+            ),
           ],
         ),
       ),
