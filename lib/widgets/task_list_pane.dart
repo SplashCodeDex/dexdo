@@ -53,6 +53,26 @@ class _TaskListPaneState extends State<TaskListPane> {
                     key: ValueKey('list_${taskProvider.selectedCategory}'),
                     buildDefaultDragHandles: taskProvider.searchQuery.isEmpty,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    proxyDecorator: (Widget child, int index, Animation<double> animation) {
+                      return AnimatedBuilder(
+                        animation: animation,
+                        builder: (BuildContext context, Widget? child) {
+                          final double animValue = Curves.easeInOut.transform(animation.value);
+                          final double scale = Tween<double>(begin: 1.0, end: 1.02).transform(animValue);
+                          return Transform.scale(
+                            scale: scale,
+                            child: Material(
+                              elevation: Tween<double>(begin: 0, end: 12).transform(animValue),
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(20),
+                              shadowColor: Colors.black.withValues(alpha: 0.15),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: child,
+                      );
+                    },
                     onReorder: (oldIndex, newIndex) {
                       if (taskProvider.searchQuery.isEmpty) {
                         taskProvider.reorderTasks(oldIndex, newIndex);
@@ -406,6 +426,7 @@ class _TaskListPaneState extends State<TaskListPane> {
                     if (taskProvider.isSelectionMode) {
                       taskProvider.toggleTaskSelection(task.id);
                     } else {
+                      HapticFeedback.lightImpact();
                       taskProvider.toggleTask(task);
                     }
                   },
@@ -416,25 +437,30 @@ class _TaskListPaneState extends State<TaskListPane> {
                       taskProvider.toggleTaskSelection(task.id);
                     }
                   },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: taskProvider.selectedTaskIds.contains(task.id)
-                          ? Theme.of(context).colorScheme.primary
-                          : (task.isCompleted ? task.color.withValues(alpha: 0.1) : Colors.transparent),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
+                  child: AnimatedScale(
+                    scale: task.isCompleted || taskProvider.selectedTaskIds.contains(task.id) ? 1.05 : 1.0,
+                    duration: const Duration(milliseconds: 150),
+                    curve: Curves.easeOutBack,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
                         color: taskProvider.selectedTaskIds.contains(task.id)
                             ? Theme.of(context).colorScheme.primary
-                            : (task.isCompleted ? task.color : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4)),
-                        width: taskProvider.selectedTaskIds.contains(task.id) ? 0 : 1.5,
+                            : (task.isCompleted ? task.color.withValues(alpha: 0.15) : Colors.transparent),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: taskProvider.selectedTaskIds.contains(task.id)
+                              ? Theme.of(context).colorScheme.primary
+                              : (task.isCompleted ? task.color : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4)),
+                          width: (taskProvider.selectedTaskIds.contains(task.id) || task.isCompleted) ? 0 : 1.5,
+                        ),
                       ),
+                      child: taskProvider.selectedTaskIds.contains(task.id)
+                          ? Icon(Icons.check, size: 16, color: Theme.of(context).colorScheme.onPrimary)
+                          : (task.isCompleted ? Icon(Icons.check, size: 16, color: task.color) : null),
                     ),
-                    child: taskProvider.selectedTaskIds.contains(task.id)
-                        ? Icon(Icons.check, size: 16, color: Theme.of(context).colorScheme.onPrimary)
-                        : (task.isCompleted ? Icon(Icons.check, size: 16, color: task.color) : null),
                   ),
                 ),
                 const SizedBox(width: 16),

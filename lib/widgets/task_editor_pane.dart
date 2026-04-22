@@ -165,33 +165,30 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
                     icon: Icons.calendar_today_rounded,
                     label: 'Due Date',
                     onTap: () async {
-                      // Capture context before async gap to avoid BuildContext-across-async-gap warning
-                      final ctx = context;
-                      FocusScope.of(ctx).unfocus();
+                      FocusScope.of(context).unfocus();
                       final pickedDate = await showDatePicker(
-                        context: ctx,
+                        context: context,
                         initialDate: widget.task.dueDate ?? DateTime.now(),
                         firstDate: DateTime(2000),
                         lastDate: DateTime(2100),
                       );
-                      if (pickedDate == null || !mounted) return;
-                      final pickedTime = await showTimePicker(
-                        // ignore: use_build_context_synchronously
-                        context: ctx,
-                        initialTime: TimeOfDay.fromDateTime(widget.task.dueDate ?? DateTime.now()),
-                      );
-                      if (!mounted) return;
-                      if (pickedTime != null) {
-                        final finalDateTime = DateTime(
-                          pickedDate.year,
-                          pickedDate.month,
-                          pickedDate.day,
-                          pickedTime.hour,
-                          pickedTime.minute,
+                      if (pickedDate != null) {
+                        final pickedTime = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.fromDateTime(widget.task.dueDate ?? DateTime.now()),
                         );
-                        taskProvider.updateDueDate(widget.task, finalDateTime);
-                      } else {
-                        taskProvider.updateDueDate(widget.task, pickedDate);
+                        if (pickedTime != null) {
+                          final finalDateTime = DateTime(
+                            pickedDate.year,
+                            pickedDate.month,
+                            pickedDate.day,
+                            pickedTime.hour,
+                            pickedTime.minute,
+                          );
+                          taskProvider.updateDueDate(widget.task, finalDateTime);
+                        } else {
+                          taskProvider.updateDueDate(widget.task, pickedDate);
+                        }
                       }
                     },
                     child: Text(

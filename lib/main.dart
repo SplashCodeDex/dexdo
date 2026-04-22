@@ -1,9 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart' hide Type;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'providers/task_provider.dart';
 import 'providers/theme_provider.dart';
 import 'services/auth_service.dart';
@@ -41,6 +42,7 @@ class DeXDoApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final textTheme = GoogleFonts.plusJakartaSansTextTheme(Theme.of(context).textTheme);
 
     return MaterialApp(
       title: 'DeXDo',
@@ -48,6 +50,11 @@ class DeXDoApp extends StatelessWidget {
       themeMode: themeProvider.themeMode,
       theme: ThemeData(
         useMaterial3: true,
+        textTheme: textTheme.copyWith(
+          titleLarge: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          bodyLarge: textTheme.bodyLarge?.copyWith(letterSpacing: -0.2),
+          bodyMedium: textTheme.bodyMedium?.copyWith(letterSpacing: -0.2),
+        ),
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF2563EB), // A more vibrant "DeX Blue"
           brightness: Brightness.light,
@@ -79,6 +86,11 @@ class DeXDoApp extends StatelessWidget {
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
+        textTheme: GoogleFonts.plusJakartaSansTextTheme(ThemeData(brightness: Brightness.dark).textTheme).copyWith(
+          titleLarge: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          bodyLarge: textTheme.bodyLarge?.copyWith(letterSpacing: -0.2),
+          bodyMedium: textTheme.bodyMedium?.copyWith(letterSpacing: -0.2),
+        ),
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF3B82F6),
           brightness: Brightness.dark,
