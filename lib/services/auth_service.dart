@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -30,25 +31,36 @@ class AuthService extends ChangeNotifier {
   /// Links the anonymous account with Google Credentials
   Future<UserCredential?> linkWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null; // The user canceled the sign-in
-
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      final user = _auth.currentUser;
-      if (user != null && user.isAnonymous) {
-        // Link the anonymous account to Google so we don't lose the local tasks
-        debugPrint("Linking anonymous account with Google...");
-        return await user.linkWithCredential(credential);
+      if (kIsWeb) {
+        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+        
+        final user = _auth.currentUser;
+        if (user != null && user.isAnonymous) {
+          debugPrint("Linking anonymous account with Google (Web)...");
+          return await user.linkWithPopup(googleProvider);
+        } else {
+          debugPrint("Signing in with Google directly (Web)...");
+          return await _auth.signInWithPopup(googleProvider);
+        }
       } else {
-        // If they aren't anonymous or aren't logged in, log them in standardly
-        debugPrint("Signing in with Google directly...");
-        return await _auth.signInWithCredential(credential);
+        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) return null; // The user canceled the sign-in
+
+        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+        final AuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        final user = _auth.currentUser;
+        if (user != null && user.isAnonymous) {
+          debugPrint("Linking anonymous account with Google...");
+          return await user.linkWithCredential(credential);
+        } else {
+          debugPrint("Signing in with Google directly...");
+          return await _auth.signInWithCredential(credential);
+        }
       }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'provider-already-linked') {
