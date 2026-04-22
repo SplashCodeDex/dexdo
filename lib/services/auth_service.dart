@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   User? get currentUser => _auth.currentUser;
 
@@ -16,6 +16,8 @@ class AuthService extends ChangeNotifier {
     _auth.authStateChanges().listen((User? user) {
       notifyListeners();
     });
+    // Mandatory initialization for v7.2.0
+    _googleSignIn.initialize();
   }
 
   /// Logs in silently. Good for tasks app before they explicitly attach an email.
@@ -43,13 +45,15 @@ class AuthService extends ChangeNotifier {
           return await _auth.signInWithPopup(googleProvider);
         }
       } else {
-        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+        final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
         if (googleUser == null) return null; // The user canceled the sign-in
 
-        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
+        // NEW 2026 API: Explicitly authorize scopes to obtain tokens
+        final authorizedUser = await googleUser.authorizationClient.authorizeScopes(['email', 'profile', 'openid']);
+        final googleAuth = await googleUser.authentication;
+        
         final AuthCredential credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
+          accessToken: authorizedUser?.accessToken,
           idToken: googleAuth.idToken,
         );
 

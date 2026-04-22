@@ -198,6 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
       selectedIndex: _selectedIndex,
       onDestinationSelected: (index) {
         FocusScope.of(context).unfocus();
+        HapticFeedback.selectionClick();
         setState(() => _selectedIndex = index);
       },
       labelType: NavigationRailLabelType.selected,
@@ -336,6 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
           NewTaskIntent: CallbackAction<NewTaskIntent>(
             onInvoke: (NewTaskIntent intent) {
               FocusScope.of(context).unfocus();
+              HapticFeedback.mediumImpact();
               taskProvider.addTask();
               if (_selectedIndex != 2) {
                 setState(() => _selectedIndex = 2);
@@ -383,6 +385,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: const Icon(Icons.delete_outline),
                     onPressed: () {
                       FocusScope.of(context).unfocus();
+                      HapticFeedback.heavyImpact();
                       taskProvider.deleteSelectedTasks();
                     },
                     tooltip: 'Delete Selected',
@@ -391,6 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: const Icon(Icons.check_circle_outline),
                     onPressed: () {
                       FocusScope.of(context).unfocus();
+                      HapticFeedback.mediumImpact();
                       taskProvider.markSelectedAsCompleted(true);
                     },
                     tooltip: 'Mark Completed',
@@ -410,7 +414,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ] else ...[
                   // Premium Theme Toggle
                   GestureDetector(
-                    onTap: () => themeProvider.toggleTheme(!themeProvider.isDarkMode),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      themeProvider.toggleTheme(!themeProvider.isDarkMode);
+                    },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 400),
                       padding: const EdgeInsets.all(8),
@@ -473,6 +480,7 @@ class _HomeScreenState extends State<HomeScreen> {
             floatingActionButton: FloatingActionButton(
               onPressed: () {
                 FocusScope.of(context).unfocus();
+                HapticFeedback.mediumImpact();
                 taskProvider.addTask();
                 if (_selectedIndex != 2) {
                   setState(() => _selectedIndex = 2);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../providers/task_provider.dart';
@@ -8,7 +9,8 @@ import '../services/auth_service.dart';
 
 class HomePane extends StatelessWidget {
   final Function(Task)? onTaskTap;
-  const HomePane({super.key, this.onTaskTap});
+  final ScrollController? scrollController;
+  const HomePane({super.key, this.onTaskTap, this.scrollController});
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +42,7 @@ class HomePane extends StatelessWidget {
     final progressToday = totalToday == 0 ? 0.0 : completedToday.length / totalToday;
 
     return SingleChildScrollView(
+      controller: scrollController,
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,8 +73,6 @@ class HomePane extends StatelessWidget {
 
     final authService = Provider.of<AuthService>(context);
     final userName = authService.currentUser?.displayName?.split(' ').first ?? 'Friend!';
-    final photoUrl = authService.currentUser?.photoURL;
-    final fallbackUrl = 'https://api.dicebear.com/7.x/avataaars/png?seed=${authService.currentUser?.uid ?? "Felix"}';
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -97,9 +98,9 @@ class HomePane extends StatelessWidget {
             ),
           ],
         ),
-        CircleAvatar(
-          radius: 28,
-          backgroundImage: NetworkImage(photoUrl ?? fallbackUrl),
+        const SizedBox(
+          width: 56,
+          height: 56,
         ),
       ],
     );
@@ -203,6 +204,7 @@ class HomePane extends StatelessWidget {
               selected: isSelected,
               onSelected: (selected) {
                 if (selected) {
+                  HapticFeedback.selectionClick();
                   provider.setCategory(category);
                 }
               },
@@ -290,6 +292,7 @@ class HomePane extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () {
+          HapticFeedback.lightImpact();
           final provider = Provider.of<TaskProvider>(context, listen: false);
           provider.setSelectedTask(task);
           if (onTaskTap != null) onTaskTap!(task);
@@ -392,72 +395,79 @@ class HomePane extends StatelessWidget {
             columnCount: 2,
             child: ScaleAnimation(
               child: FadeInAnimation(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Theme.of(context).dividerColor),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: provider.categoryColors[category]!.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Icon(
-                              provider.categoryIcons[category],
-                              color: provider.categoryColors[category],
-                              size: 20,
-                            ),
-                          ),
-                          Text(
-                            '${(progress * 100).toInt()}%',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: provider.categoryColors[category],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Text(
-                        category,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      const SizedBox(height: 4),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          minHeight: 6,
-                          backgroundColor: provider.categoryColors[category]!.withValues(alpha: 0.1),
-                          valueColor: AlwaysStoppedAnimation<Color>(provider.categoryColors[category]!),
+                child: InkWell(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    provider.setCategory(category);
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Theme.of(context).dividerColor),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$activeCount active tasks',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: provider.categoryColors[category]!.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Icon(
+                                provider.categoryIcons[category],
+                                color: provider.categoryColors[category],
+                                size: 20,
+                              ),
+                            ),
+                            Text(
+                              '${(progress * 100).toInt()}%',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: provider.categoryColors[category],
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        const Spacer(),
+                        Text(
+                          category,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        const SizedBox(height: 4),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            minHeight: 6,
+                            backgroundColor: provider.categoryColors[category]!.withValues(alpha: 0.1),
+                            valueColor: AlwaysStoppedAnimation<Color>(provider.categoryColors[category]!),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '$activeCount active tasks',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -465,75 +475,6 @@ class HomePane extends StatelessWidget {
           );
         },
       ),
-    );
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Theme.of(context).dividerColor),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: provider.categoryColors[category]!.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(
-                      provider.categoryIcons[category],
-                      color: provider.categoryColors[category],
-                      size: 20,
-                    ),
-                  ),
-                  Text(
-                    '${(progress * 100).toInt()}%',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: provider.categoryColors[category],
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Text(
-                category,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 4),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 6,
-                  backgroundColor: provider.categoryColors[category]!.withValues(alpha: 0.1),
-                  valueColor: AlwaysStoppedAnimation<Color>(provider.categoryColors[category]!),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '$activeCount active tasks',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

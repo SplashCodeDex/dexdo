@@ -19,39 +19,34 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.11.5 <4.0.0'
+  sdk: ^3.11.0
 
-# Dependencies specify other packages that your package needs in order to work.
-# To automatically upgrade your package dependencies to the latest versions
-# consider running `flutter pub upgrade --major-versions`. Alternatively,
-# dependencies can be manually updated by changing the version numbers below to
-# the latest version available on pub.dev. To see which dependencies have newer
-# versions available, run `flutter pub outdated`.
 dependencies:
   flutter:
     sdk: flutter
 
-  provider: ^6.1.1
-  shared_preferences: ^2.2.2
-  uuid: ^4.3.3
-  animations: ^2.0.11
-  cupertino_icons: ^1.0.8
-  flutter_svg: ^2.0.10+1
+  provider: ^6.1.2
+  shared_preferences: ^2.5.5
+  uuid: ^4.5.3
+  animations: ^2.1.2
+  cupertino_icons: ^1.0.9
+  flutter_svg: ^2.2.4
   flutter_slidable: ^4.0.3
   flutter_local_notifications: ^21.0.0
   timezone: ^0.11.0
   firebase_core: ^4.7.0
   cloud_firestore: ^6.3.0
   firebase_auth: ^6.4.0
-  firebase_crashlytics: any
-  firebase_analytics: any
+  firebase_crashlytics: ^5.2.0
+  firebase_analytics: ^12.3.0
   intl: ^0.20.2
   path_provider: ^2.1.5
   share_plus: ^13.1.0
   google_sign_in: ^7.2.0
-  in_app_purchase: ^3.2.0
+  in_app_purchase: ^3.2.3
   google_fonts: ^8.0.2
   google_generative_ai: ^0.4.6
+  flutter_staggered_animations: ^1.1.1
 
 dev_dependencies:
   flutter_test:

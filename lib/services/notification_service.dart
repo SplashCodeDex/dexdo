@@ -30,7 +30,9 @@ class NotificationService {
       iOS: initializationSettingsIOS,
     );
 
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    await flutterLocalNotificationsPlugin.initialize(
+      settings: initializationSettings,
+    );
   }
 
   Future<void> scheduleTaskReminder(Task task) async {
@@ -41,11 +43,11 @@ class NotificationService {
     if (scheduledTime.isBefore(DateTime.now())) return;
 
     await flutterLocalNotificationsPlugin.zonedSchedule(
-      task.id.hashCode,
-      'Task Reminder: ${task.title}',
-      'Due in 30 minutes. Tap to view.',
-      tz.TZDateTime.from(scheduledTime, tz.local),
-      NotificationDetails(
+      id: task.id.hashCode,
+      title: 'Task Reminder: ${task.title}',
+      body: 'Due in 30 minutes. Tap to view.',
+      scheduledDate: tz.TZDateTime.from(scheduledTime, tz.local),
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           'task_reminders',
           'Task Reminders',
@@ -53,16 +55,14 @@ class NotificationService {
           importance: Importance.max,
           priority: Priority.high,
         ),
-        iOS: DarwinNotificationDetails(),
+        iOS: const DarwinNotificationDetails(),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
     );
   }
 
   Future<void> cancelTaskReminder(String taskId) async {
-    await flutterLocalNotificationsPlugin.cancel(taskId.hashCode);
+    await flutterLocalNotificationsPlugin.cancel(id: taskId.hashCode);
   }
 }
