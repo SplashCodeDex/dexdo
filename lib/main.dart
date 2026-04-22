@@ -458,12 +458,11 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Theme.of(context).colorScheme.onPrimary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              elevation: 4,
+              elevation: 0,
+              highlightElevation: 0,
               child: const Icon(Icons.add, size: 32),
             ),
-            floatingActionButtonLocation: !isLargeScreen 
-                ? FloatingActionButtonLocation.centerDocked 
-                : FloatingActionButtonLocation.endFloat,
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           ),
         );
       },
@@ -473,47 +472,44 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBottomNav() {
+    final Brightness brightness = Theme.of(context).brightness;
+    final bool isDark = brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       child: Container(
-        height: 70,
+        height: 64,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(35),
+          borderRadius: BorderRadius.circular(32),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.15),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-              spreadRadius: 2,
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(35),
+          borderRadius: BorderRadius.circular(32),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
-                    Theme.of(context).colorScheme.surface.withValues(alpha: 0.6),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(35),
+                color: Theme.of(context).colorScheme.surface.withValues(alpha: isDark ? 0.7 : 0.8),
+                borderRadius: BorderRadius.circular(32),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.2), // Inner light shine
-                  width: 1.2,
+                  color: isDark 
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.black.withValues(alpha: 0.05),
+                  width: 1,
                 ),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _buildNavItem(Icons.home_outlined, Icons.home_rounded, 0, 'Home'),
                   _buildNavItem(Icons.calendar_month_outlined, Icons.calendar_month_rounded, 1, 'Calendar'),
-                  const SizedBox(width: 56), // Space for FAB
                   _buildNavItem(Icons.list_alt_rounded, Icons.list_alt_rounded, 2, 'Tasks'),
                   _buildNavItem(Icons.settings_outlined, Icons.settings_rounded, 3, 'Settings'),
                 ],
@@ -525,44 +521,51 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNavItem(IconData unselectedIcon, IconData selectedIcon, int index, String tooltip) {
+  Widget _buildNavItem(IconData unselectedIcon, IconData selectedIcon, int index, String label) {
     final isSelected = _selectedIndex == index;
-    return Tooltip(
-      message: tooltip,
-      child: GestureDetector(
-        onTap: () {
-          FocusScope.of(context).unfocus();
-          setState(() => _selectedIndex = index);
-          HapticFeedback.lightImpact();
-        },
-        behavior: HitTestBehavior.opaque,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOutCirc,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected 
-                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15) 
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            transitionBuilder: (child, animation) {
-              return ScaleTransition(
-                scale: animation,
-                child: child,
-              );
-            },
-            child: Icon(
-              isSelected ? selectedIcon : unselectedIcon,
-              key: ValueKey(isSelected),
-              color: isSelected 
-                  ? Theme.of(context).colorScheme.primary 
-                  : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-              size: isSelected ? 26 : 24,
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        setState(() => _selectedIndex = index);
+        HapticFeedback.lightImpact();
+      },
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutQuint,
+        padding: EdgeInsets.symmetric(horizontal: isSelected ? 16 : 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15) 
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                isSelected ? selectedIcon : unselectedIcon,
+                key: ValueKey(isSelected),
+                color: isSelected 
+                    ? Theme.of(context).colorScheme.primary 
+                    : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                size: 24,
+              ),
             ),
-          ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
