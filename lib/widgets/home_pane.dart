@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../providers/task_provider.dart';
 import '../models/task.dart';
 import 'package:intl/intl.dart';
@@ -264,8 +265,23 @@ class HomePane extends StatelessWidget {
       );
     }
 
-    return Column(
-      children: upcoming.map((task) => _buildSimpleTaskTile(context, task)).toList(),
+    return AnimationLimiter(
+      child: Column(
+        children: upcoming.asMap().entries.map((entry) {
+          final index = entry.key;
+          final task = entry.value;
+          return AnimationConfiguration.staggeredList(
+            position: index,
+            duration: const Duration(milliseconds: 375),
+            child: SlideAnimation(
+              verticalOffset: 50.0,
+              child: FadeInAnimation(
+                child: _buildSimpleTaskTile(context, task),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -352,24 +368,104 @@ class HomePane extends StatelessWidget {
   Widget _buildCategoryOverview(BuildContext context, TaskProvider provider) {
     final activeCategories = provider.categories.where((c) => c != 'All').toList();
     
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.3,
+    return AnimationLimiter(
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 1.3,
+        ),
+        itemCount: activeCategories.length,
+        itemBuilder: (context, index) {
+          final category = activeCategories[index];
+          final tasks = provider.tasks.where((t) => t.category == category).toList();
+          final activeCount = tasks.where((t) => !t.isCompleted).length;
+          final totalCount = tasks.length;
+          final progress = totalCount == 0 ? 0.0 : (totalCount - activeCount) / totalCount;
+  
+          return AnimationConfiguration.staggeredGrid(
+            position: index,
+            duration: const Duration(milliseconds: 375),
+            columnCount: 2,
+            child: ScaleAnimation(
+              child: FadeInAnimation(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Theme.of(context).dividerColor),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: provider.categoryColors[category]!.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Icon(
+                              provider.categoryIcons[category],
+                              color: provider.categoryColors[category],
+                              size: 20,
+                            ),
+                          ),
+                          Text(
+                            '${(progress * 100).toInt()}%',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: provider.categoryColors[category],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Text(
+                        category,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 6,
+                          backgroundColor: provider.categoryColors[category]!.withValues(alpha: 0.1),
+                          valueColor: AlwaysStoppedAnimation<Color>(provider.categoryColors[category]!),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$activeCount active tasks',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
-      itemCount: activeCategories.length,
-      itemBuilder: (context, index) {
-        final category = activeCategories[index];
-        final tasks = provider.tasks.where((t) => t.category == category).toList();
-        final activeCount = tasks.where((t) => !t.isCompleted).length;
-        final totalCount = tasks.length;
-        final progress = totalCount == 0 ? 0.0 : (totalCount - activeCount) / totalCount;
-
-        return Container(
+    );
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Theme.of(context).cardTheme.color,
