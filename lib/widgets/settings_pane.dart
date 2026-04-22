@@ -18,7 +18,7 @@ class SettingsPane extends StatelessWidget {
     final authService = Provider.of<AuthService>(context);
 
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       children: [
         const Text(
           'Settings',
@@ -187,6 +187,7 @@ class SettingsPane extends StatelessWidget {
   }) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ListTile(
         onTap: onTap,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -194,7 +195,7 @@ class SettingsPane extends StatelessWidget {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: iconColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(icon, color: iconColor),
         ),
@@ -218,6 +219,8 @@ class SettingsPane extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text('Clear All Tasks?'),
         content: const Text('This action cannot be undone. All your tasks will be permanently deleted.'),
         actions: [

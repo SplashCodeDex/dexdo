@@ -42,7 +42,7 @@ class _CalendarPaneState extends State<CalendarPane> {
 
   Widget _buildCalendarHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 16, 16),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -98,7 +98,7 @@ class _CalendarPaneState extends State<CalendarPane> {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: IconButton(
         icon: Icon(icon, size: 20),
@@ -115,8 +115,8 @@ class _CalendarPaneState extends State<CalendarPane> {
     final firstDayOffset = DateTime(_focusedDay.year, _focusedDay.month, 1).weekday % 7;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
@@ -164,17 +164,17 @@ class _CalendarPaneState extends State<CalendarPane> {
               HapticFeedback.lightImpact();
               setState(() => _selectedDay = date);
             },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              decoration: BoxDecoration(
-                color: isSelected 
-                    ? Theme.of(context).colorScheme.primary 
-                    : isToday ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05) : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-                border: isToday && !isSelected 
-                    ? Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5), width: 1.5) 
-                    : Border.all(color: Colors.transparent),
-              ),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            color: isSelected 
+                ? Theme.of(context).colorScheme.primary 
+                : isToday ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05) : Colors.transparent,
+            borderRadius: BorderRadius.circular(16), // Unified 16px geometry
+            border: isToday && !isSelected 
+                ? Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5), width: 1.5) 
+                : Border.all(color: Colors.transparent),
+          ),
               child: Stack(
                 alignment: Alignment.center,
                 children: [
@@ -225,7 +225,7 @@ class _CalendarPaneState extends State<CalendarPane> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
           child: Text(
             DateFormat('EEEE, MMM d').format(_selectedDay!),
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -240,7 +240,7 @@ class _CalendarPaneState extends State<CalendarPane> {
         else
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               itemCount: dayTasks.length,
               itemBuilder: (context, index) {
                 final task = dayTasks[index];
@@ -262,9 +262,6 @@ class _CalendarPaneState extends State<CalendarPane> {
                               color: Theme.of(context).colorScheme.surface,
                               width: 3,
                             ),
-                            boxShadow: [
-                              BoxShadow(color: (task.isCompleted ? Colors.green : Theme.of(context).colorScheme.primary).withValues(alpha: 0.3), blurRadius: 4),
-                            ]
                           ),
                         ),
                         if (!isLast)
@@ -303,7 +300,7 @@ class _CalendarPaneState extends State<CalendarPane> {
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
                                     color: task.color.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
                                   child: Icon(task.icon, color: task.color, size: 20),
                                 ),

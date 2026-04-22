@@ -165,7 +165,7 @@ class _CategoryDialogState extends State<CategoryDialog> {
                           color: isSelected ? _selectedColor : Colors.transparent,
                           width: 2,
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
                         icon,
@@ -207,14 +207,6 @@ class _CategoryDialogState extends State<CategoryDialog> {
                         color: color,
                         shape: BoxShape.circle,
                         border: isSelected ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 3) : null,
-                        boxShadow: [
-                          if (isSelected)
-                            BoxShadow(
-                              color: color.withValues(alpha: 0.4),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                        ],
                       ),
                       child: isSelected ? const Icon(Icons.check, size: 20, color: Colors.white) : null,
                     ),

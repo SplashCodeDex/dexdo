@@ -69,7 +69,7 @@ class _TaskListPaneState extends State<TaskListPane> {
             : ReorderableListView(
                 key: ValueKey('list_${taskProvider.selectedCategory}'),
                 buildDefaultDragHandles: false,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                 proxyDecorator: (Widget child, int index, Animation<double> animation) {
                   return AnimatedBuilder(
                     animation: animation,
@@ -127,7 +127,7 @@ class _TaskListPaneState extends State<TaskListPane> {
 
   Widget _buildSearchBar(BuildContext context, TaskProvider provider) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+      padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
       child: TextField(
         controller: _searchController,
         focusNode: _searchFocusNode,
@@ -151,7 +151,7 @@ class _TaskListPaneState extends State<TaskListPane> {
           fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
           contentPadding: const EdgeInsets.symmetric(vertical: 0),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
           ),
         ),
@@ -179,7 +179,7 @@ class _TaskListPaneState extends State<TaskListPane> {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
               count.toString(),
@@ -196,7 +196,7 @@ class _TaskListPaneState extends State<TaskListPane> {
   Widget _buildCategoryHeader(BuildContext context, TaskProvider provider) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
       child: Row(
         children: [
           for (var category in provider.categories)
@@ -231,7 +231,7 @@ class _TaskListPaneState extends State<TaskListPane> {
                         color: isSelected 
                             ? Theme.of(context).colorScheme.primaryContainer 
                             : Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(30),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isSelected 
                               ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) 
@@ -381,8 +381,8 @@ class _TaskListPaneState extends State<TaskListPane> {
             icon: Icons.delete_outline,
             label: 'Delete',
             borderRadius: const BorderRadius.only(
-              topRight: Radius.circular(24),
-              bottomRight: Radius.circular(24),
+              topRight: Radius.circular(16),
+              bottomRight: Radius.circular(16),
             ),
           ),
         ],
@@ -401,8 +401,8 @@ class _TaskListPaneState extends State<TaskListPane> {
             icon: task.isCompleted ? Icons.undo_rounded : Icons.check_circle_outline,
             label: task.isCompleted ? 'Undo' : 'Complete',
             borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(24),
-              bottomLeft: Radius.circular(24),
+              topLeft: Radius.circular(16),
+              bottomLeft: Radius.circular(16),
             ),
           ),
         ],
@@ -443,7 +443,7 @@ class _TaskListPaneState extends State<TaskListPane> {
                 : (isSelected 
                     ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.15) 
                     : Theme.of(context).colorScheme.surface),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: taskProvider.selectedTaskIds.contains(task.id)
                   ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
@@ -560,7 +560,7 @@ class _TaskListPaneState extends State<TaskListPane> {
                               color: task.isCompleted 
                                   ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.1) 
                                   : task.color.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(16),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
