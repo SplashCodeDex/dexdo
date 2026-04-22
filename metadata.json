@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "description": "",
+  "name": "DexDo",
+  "description": "A Flutter-based To-Do List application.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }
