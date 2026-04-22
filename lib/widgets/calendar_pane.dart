@@ -1,11 +1,12 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:animations/animations.dart';
-import '../providers/task_provider.dart';
-import '../models/task.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
+import '../models/task.dart';
+import '../providers/task_provider.dart';
 
 class CalendarPane extends StatefulWidget {
   final Function(Task)? onTaskTap;

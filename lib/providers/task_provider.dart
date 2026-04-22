@@ -1,13 +1,15 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
+
 import '../models/task.dart';
-import '../repositories/task_repository.dart';
 import '../repositories/firebase_task_repository.dart';
+import '../repositories/task_repository.dart';
 import '../services/data_migration_service.dart';
 import '../services/notification_service.dart';
-import 'dart:convert';
-import 'dart:async';
 
 class TaskProvider with ChangeNotifier {
   final TaskRepository _repository;

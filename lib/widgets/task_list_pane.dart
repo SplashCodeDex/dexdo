@@ -1,13 +1,14 @@
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'category_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import '../providers/task_provider.dart';
-import 'task_editor_pane.dart';
+
 import '../models/task.dart';
+import '../providers/task_provider.dart';
+import 'category_dialog.dart';
+import 'task_editor_pane.dart';
 
 class TaskListPane extends StatefulWidget {
   const TaskListPane({super.key});

@@ -1,8 +1,10 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/task_provider.dart';
+
 import '../models/task.dart';
+import '../providers/task_provider.dart';
 
 class TaskEditorPane extends StatefulWidget {
   final Task task;

@@ -1,8 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -50,7 +50,7 @@ class AuthService extends ChangeNotifier {
 
         // NEW 2026 API: Explicitly authorize scopes to obtain tokens
         final authorizedUser = await googleUser.authorizationClient.authorizeScopes(['email', 'profile', 'openid']);
-        final googleAuth = await googleUser.authentication;
+        final googleAuth = googleUser.authentication;
         
         final AuthCredential credential = GoogleAuthProvider.credential(
           accessToken: authorizedUser?.accessToken,

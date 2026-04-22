@@ -8,10 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:dexdo/providers/task_provider.dart';
 import 'package:dexdo/providers/theme_provider.dart';
-import 'package:dexdo/services/auth_service.dart';
-import 'package:dexdo/main.dart';
 // Note: In a true CI environment, you would mock the Firebase Initialization
 // and Providers using mockito. For this baseline smoke test, we ensure the Widget
 // tree renders without crashing when provided necessary mocked scopes.

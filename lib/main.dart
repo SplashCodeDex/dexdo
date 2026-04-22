@@ -1,23 +1,23 @@
+import 'dart:ui';
+import 'package:animations/animations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-// Unused import removed
-import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
-import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
+import 'firebase_options.dart';
 import 'providers/task_provider.dart';
 import 'providers/theme_provider.dart';
 import 'services/auth_service.dart';
-import 'widgets/task_list_pane.dart';
-import 'widgets/task_editor_pane.dart';
-import 'widgets/home_pane.dart';
 import 'widgets/calendar_pane.dart';
+import 'widgets/home_pane.dart';
 import 'widgets/settings_pane.dart';
-import 'package:animations/animations.dart';
-import 'firebase_options.dart';
+import 'widgets/task_editor_pane.dart';
+import 'widgets/task_list_pane.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
