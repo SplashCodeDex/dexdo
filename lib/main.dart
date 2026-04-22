@@ -86,7 +86,7 @@ class DeXDoApp extends StatelessWidget {
           color: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
           ),
         ),
@@ -133,7 +133,7 @@ class DeXDoApp extends StatelessWidget {
           color: const Color(0xFF1E293B),
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             side: const BorderSide(color: Color(0xFF334155), width: 1),
           ),
         ),
@@ -405,7 +405,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: themeProvider.isDarkMode 
                             ? Colors.amber.withValues(alpha: 0.1) 
                             : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 400),
@@ -467,7 +467,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               elevation: 0,
               highlightElevation: 0,
               child: const Icon(Icons.add, size: 32),

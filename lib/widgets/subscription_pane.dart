@@ -255,7 +255,7 @@ class _SubscriptionPaneState extends State<SubscriptionPane> {
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: colorScheme.primary,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(16),
                             ),
                             child: Text(
                               badgeText,

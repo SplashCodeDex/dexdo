@@ -230,7 +230,7 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: TextField(
                 controller: _descriptionController,
@@ -371,7 +371,7 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
           color: widget.task.isCompleted 
               ? Colors.green.withValues(alpha: 0.1) 
               : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -421,7 +421,7 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
           decoration: BoxDecoration(
             color: onTap != null ? Theme.of(context).colorScheme.surface : Colors.transparent,
             border: Border.all(color: Theme.of(context).dividerColor),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
