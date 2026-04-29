@@ -5,10 +5,10 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:dexdo/providers/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:dexdo/providers/theme_provider.dart';
 // Note: In a true CI environment, you would mock the Firebase Initialization
 // and Providers using mockito. For this baseline smoke test, we ensure the Widget
 // tree renders without crashing when provided necessary mocked scopes.
@@ -27,9 +27,9 @@ void main() {
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
-          return const MaterialApp(
+          return MaterialApp(
             title: 'DeXDo Test',
-            home: Scaffold(
+            home: const Scaffold(
               body: Center(child: Text('Home')),
             ),
           );

@@ -1,23 +1,18 @@
-import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter/foundation.dart';
 
 class AIService {
   static const String _apiKey = String.fromEnvironment('GEMINI_API_KEY');
   
   final GenerativeModel _model;
 
-  AIService() : _model = GenerativeModel(
+  AIService({GenerativeModel? model}) : _model = model ?? GenerativeModel(
     model: 'gemini-1.5-pro',
     apiKey: _apiKey,
   );
 
   /// Breakdown task with streaming support for better UX
   Stream<String> breakdownTaskStream(String taskTitle) async* {
-    if (_apiKey.isEmpty) {
-      debugPrint('AI Service: GEMINI_API_KEY is not set.');
-      return;
-    }
-
     final prompt = 'Break down the following task into a list of actionable subtasks (max 5). '
         'Provide only the subtask names, one per line, without any numbering or extra text: "$taskTitle"';
 
@@ -36,11 +31,6 @@ class AIService {
   }
 
   Future<List<String>> breakdownTask(String taskTitle) async {
-    if (_apiKey.isEmpty) {
-      debugPrint('AI Service: GEMINI_API_KEY is not set.');
-      return [];
-    }
-
     final prompt = 'Break down the following task into a list of 5 actionable subtasks. '
         'Provide only the subtask names, one per line, without any numbering or extra text: "$taskTitle"';
 

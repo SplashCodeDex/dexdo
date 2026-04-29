@@ -4,8 +4,14 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "flutter run -d web-server --web-port=3000 --web-hostname=0.0.0.0",
-    "lint": "flutter analyze"
+    "lint": "flutter analyze",
+    "format": "dart format .",
+    "format:check": "dart format --output=none --set-exit-if-changed .",
+    "test": "flutter test",
+    "test:coverage": "flutter test --coverage",
+    "ci": "npm run format:check && npm run lint && npm run test:coverage"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "dotenv": "^17.4.2"
+  }
 }

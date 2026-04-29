@@ -41,10 +41,15 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => TaskProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => AuthService()),
         ChangeNotifierProvider(create: (context) => SubscriptionService()),
+        ChangeNotifierProxyProvider<AuthService, TaskProvider>(
+          create: (context) => TaskProvider(
+            authService: Provider.of<AuthService>(context, listen: false),
+          ),
+          update: (context, authService, previous) => previous!..updateAuth(authService),
+        ),
       ],
       child: const DeXDoApp(),
     ),
@@ -56,10 +61,12 @@ class DeXDoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return MaterialApp(
       title: 'DeXDo',
       debugShowCheckedModeBanner: false,
-      themeMode: Provider.of<ThemeProvider>(context).themeMode,
+      themeMode: themeProvider.themeMode,
       theme: ThemeData(
         useMaterial3: true,
         pageTransitionsTheme: const PageTransitionsTheme(
@@ -323,6 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final taskProvider = Provider.of<TaskProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
 
     return Shortcuts(
       shortcuts: <LogicalKeySet, Intent>{
@@ -365,7 +373,116 @@ class _HomeScreenState extends State<HomeScreen> {
           behavior: HitTestBehavior.translucent,
           child: Scaffold(
             extendBody: true,
-            body: SafeArea(child: _buildBody(isLargeScreen, taskProvider)),
+            appBar: AppBar(
+              leading: taskProvider.isSelectionMode
+                  ? IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        FocusScope.of(context).unfocus();
+                        taskProvider.clearSelection();
+                      },
+                    )
+                  : null,
+              title: taskProvider.isSelectionMode
+                  ? Text('${taskProvider.selectedTaskIds.length} Selected')
+                  : null,
+              actions: [
+                if (taskProvider.isSelectionMode) ...[
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () {
+                      FocusScope.of(context).unfocus();
+                      HapticFeedback.heavyImpact();
+                      taskProvider.deleteSelectedTasks();
+                    },
+                    tooltip: 'Delete Selected',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.check_circle_outline),
+                    onPressed: () {
+                      FocusScope.of(context).unfocus();
+                      HapticFeedback.mediumImpact();
+                      taskProvider.markSelectedAsCompleted(true);
+                    },
+                    tooltip: 'Mark Completed',
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.move_to_inbox_outlined),
+                    tooltip: 'Move to Category',
+                    onSelected: (category) {
+                      FocusScope.of(context).unfocus();
+                      taskProvider.moveSelectedToCategory(category);
+                    },
+                    itemBuilder: (context) => taskProvider.categories
+                        .where((c) => c != 'All')
+                        .map((c) => PopupMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                  ),
+                ] else ...[
+                  // Premium Theme Toggle
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      themeProvider.toggleTheme(!themeProvider.isDarkMode);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 400),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: themeProvider.isDarkMode 
+                            ? Colors.amber.withValues(alpha: 0.1) 
+                            : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 400),
+                        transitionBuilder: (Widget child, Animation<double> animation) {
+                          return ScaleTransition(
+                            scale: animation,
+                            child: RotationTransition(
+                              turns: animation,
+                              child: FadeTransition(opacity: animation, child: child),
+                            ),
+                          );
+                        },
+                        child: Icon(
+                          themeProvider.isDarkMode 
+                              ? Icons.wb_sunny_rounded 
+                              : Icons.nightlight_round,
+                          key: ValueKey(themeProvider.isDarkMode),
+                          size: 20,
+                          color: themeProvider.isDarkMode 
+                              ? Colors.amber[400] 
+                              : Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (taskProvider.hasCompleted && _selectedIndex == 2)
+                    IconButton(
+                      onPressed: () {
+                        FocusScope.of(context).unfocus();
+                        taskProvider.clearCompleted();
+                      },
+                      icon: const Icon(Icons.delete_sweep_outlined),
+                      tooltip: 'Clear Done',
+                    ),
+                  if (_selectedIndex != 0)
+                    Builder(
+                      builder: (context) {
+                        final authService = Provider.of<AuthService>(context);
+                        return CircleAvatar(
+                          radius: 18,
+                          backgroundImage: NetworkImage(authService.currentUser?.photoURL ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${authService.currentUser?.uid ?? "Felix"}'),
+                        );
+                      }
+                    ),
+                ],
+                const SizedBox(width: 16),
+              ],
+            ),
+            body: _buildBody(isLargeScreen, taskProvider),
             bottomNavigationBar: !isLargeScreen ? _buildBottomNav() : null,
             floatingActionButton: FloatingActionButton(
               onPressed: () {

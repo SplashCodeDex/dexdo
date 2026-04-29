@@ -31,7 +31,7 @@ class SubscriptionService extends ChangeNotifier {
     }
 
     // Check current entitlement status
-    final CustomerInfo customerInfo = await Purchases.getCustomerInfo();
+    CustomerInfo customerInfo = await Purchases.getCustomerInfo();
     _updateEntitlementStatus(customerInfo);
 
     // Listen for customer info updates
@@ -59,10 +59,8 @@ class SubscriptionService extends ChangeNotifier {
 
   Future<bool> purchasePackage(Package package) async {
     try {
-      final PurchaseResult result = await Purchases.purchase(
-        PurchaseParams.package(package),
-      );
-      _updateEntitlementStatus(result.customerInfo);
+      CustomerInfo customerInfo = await Purchases.purchasePackage(package);
+      _updateEntitlementStatus(customerInfo);
       return _isPremium;
     } catch (e) {
       debugPrint('Purchase error: $e');
@@ -72,7 +70,7 @@ class SubscriptionService extends ChangeNotifier {
 
   Future<void> restorePurchases() async {
     try {
-      final CustomerInfo customerInfo = await Purchases.restorePurchases();
+      CustomerInfo customerInfo = await Purchases.restorePurchases();
       _updateEntitlementStatus(customerInfo);
     } catch (e) {
       debugPrint('Restore error: $e');

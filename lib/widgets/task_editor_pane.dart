@@ -35,14 +35,14 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
     _subtaskController = TextEditingController();
   }
 
-  Future<void> _handleAIBreakdown(TaskProvider provider) async {
+  void _handleAIBreakdown(TaskProvider provider) async {
     if (_titleController.text.isEmpty) return;
     
     setState(() => _isAILoading = true);
     try {
       final subtasks = await _aiService.breakdownTask(_titleController.text);
       for (var sub in subtasks) {
-        await provider.addSubtask(widget.task, sub);
+        provider.addSubtask(widget.task, sub);
       }
     } finally {
       setState(() => _isAILoading = false);
@@ -206,9 +206,9 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
                             pickedTime.hour,
                             pickedTime.minute,
                           );
-                          await taskProvider.updateDueDate(widget.task, finalDateTime);
+                          taskProvider.updateDueDate(widget.task, finalDateTime);
                         } else {
-                          await taskProvider.updateDueDate(widget.task, pickedDate);
+                          taskProvider.updateDueDate(widget.task, pickedDate);
                         }
                       }
                     },

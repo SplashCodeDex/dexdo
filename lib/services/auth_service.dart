@@ -5,20 +5,23 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService extends ChangeNotifier {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  final FirebaseAuth _auth;
+  final GoogleSignIn _googleSignIn;
 
   User? get currentUser => _auth.currentUser;
 
   bool get isAnonymous => currentUser?.isAnonymous ?? true;
 
-  AuthService() {
+  AuthService({FirebaseAuth? auth, GoogleSignIn? googleSignIn})
+      : _auth = auth ?? FirebaseAuth.instance,
+        _googleSignIn = googleSignIn ?? GoogleSignIn.instance {
     _auth.authStateChanges().listen((User? user) {
       notifyListeners();
     });
     // Mandatory initialization for v7.2.0
     _googleSignIn.initialize();
   }
+
 
   /// Logs in silently. Good for tasks app before they explicitly attach an email.
   Future<UserCredential?> signInAnonymously() async {

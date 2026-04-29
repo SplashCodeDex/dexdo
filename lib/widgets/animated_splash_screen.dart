@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 
 /// A premium animated splash screen that mirrors the native Android AVD animation.
@@ -73,23 +72,23 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
 
   Future<void> _startAnimation() async {
     // Stagger the animations to match the CSS/AVD timing
-    unawaited(_circleStrokeController.forward()); // Start immediately
+    _circleStrokeController.forward(); // Start immediately
 
     await Future.delayed(const Duration(milliseconds: 200));
-    unawaited(_path1StrokeController.forward());
+    _path1StrokeController.forward();
 
     await Future.delayed(const Duration(milliseconds: 200));
-    unawaited(_path2StrokeController.forward());
+    _path2StrokeController.forward();
 
     await Future.delayed(const Duration(milliseconds: 200));
-    unawaited(_smallCircleController.forward());
-    unawaited(_circleFillController.forward());
+    _smallCircleController.forward();
+    _circleFillController.forward();
 
     await Future.delayed(const Duration(milliseconds: 100));
-    unawaited(_path1FillController.forward());
+    _path1FillController.forward();
 
     await Future.delayed(const Duration(milliseconds: 200));
-    unawaited(_path2FillController.forward());
+    _path2FillController.forward();
 
     // Wait for last animation to finish, then dismiss
     await Future.delayed(const Duration(milliseconds: 500));
@@ -175,7 +174,7 @@ class _DeXDoLogoPainter extends CustomPainter {
     canvas.scale(scale);
 
     // --- 1. Background Circle ---
-    const circleCenter = Offset(512, 512);
+    final circleCenter = const Offset(512, 512);
     const circleRadius = 485.52;
 
     // Fill (gradient)

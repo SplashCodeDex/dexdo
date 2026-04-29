@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 
 import '../models/task.dart';
 import '../providers/task_provider.dart';
-import '../utils/design_system.dart';
 import 'category_dialog.dart';
 import 'task_editor_pane.dart';
 
@@ -477,13 +476,15 @@ class _TaskListPaneState extends State<TaskListPane> {
                       : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2)),
               width: 1,
             ),
-            boxShadow: taskProvider.selectedTaskIds.contains(task.id)
-                ? AppShadows.priority(context)
-                : (isSelected 
-                    ? AppShadows.priority(context, color: task.color) 
-                    : (task.isStarred 
-                        ? AppShadows.priority(context, color: const Color(0xFFFFB300))
-                        : AppShadows.standard(context))),
+            boxShadow: [
+              BoxShadow(
+                color: isSelected 
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.08) 
+                    : Colors.black.withValues(alpha: 0.02),
+                blurRadius: isSelected ? 15 : 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),

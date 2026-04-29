@@ -11,9 +11,30 @@ import '../repositories/task_repository.dart';
 import '../services/data_migration_service.dart';
 import '../services/notification_service.dart';
 
+import '../repositories/hybrid_task_repository.dart';
+import '../services/auth_service.dart';
+
 class TaskProvider with ChangeNotifier {
-  final TaskRepository _repository;
+  TaskRepository _repository;
   final NotificationService _notifications;
+  AuthService? _authService;
+
+  // ... (all state vars)
+
+  TaskProvider({TaskRepository? repository, NotificationService? notifications, AuthService? authService}) 
+      : _repository = repository ?? (authService != null ? HybridTaskRepository(authService) : FirebaseTaskRepository()),
+        _notifications = notifications ?? NotificationService(),
+        _authService = authService {
+    _loadData();
+  }
+
+  void updateAuth(AuthService authService) {
+    if (_authService != authService) {
+      _authService = authService;
+      _repository = HybridTaskRepository(authService);
+      // Might want to reload from storage if auth state changes
+    }
+  }
 
   Timer? _searchDebounce;
 
@@ -69,7 +90,7 @@ class TaskProvider with ChangeNotifier {
     filtered.sort((a, b) {
       if (a.isStarred && !b.isStarred) return -1;
       if (!a.isStarred && b.isStarred) return 1;
-      final int res = a.orderIndex.compareTo(b.orderIndex);
+      int res = a.orderIndex.compareTo(b.orderIndex);
       if (res != 0) return res;
       return a.id.compareTo(b.id);
     });
@@ -85,12 +106,6 @@ class TaskProvider with ChangeNotifier {
   List<String> get categories => _categories;
   Set<String> get selectedTaskIds => _selectedTaskIds;
   bool get isSelectionMode => _selectedTaskIds.isNotEmpty;
-
-  TaskProvider({TaskRepository? repository, NotificationService? notifications}) 
-      : _repository = repository ?? FirebaseTaskRepository(),
-        _notifications = notifications ?? NotificationService() {
-    _loadData();
-  }
 
   @override
   void dispose() {
@@ -124,11 +139,6 @@ class TaskProvider with ChangeNotifier {
   Future<void> _loadData() async {
     await _repository.init();
     await _notifications.init();
-
-    // Ensure migration from Local -> Firebase happens on first boot
-    if (_repository is FirebaseTaskRepository) {
-      await DataMigrationService.performMigrationIfNeeded(_repository);
-    }
 
     await reloadFromStorage();
   }
@@ -253,7 +263,7 @@ class TaskProvider with ChangeNotifier {
   }
 
   Future<void> addTask({DateTime? dueDate}) async {
-    final String category = _selectedCategory == 'All' ? 'Personal' : _selectedCategory;
+    String category = _selectedCategory == 'All' ? 'Personal' : _selectedCategory;
     
     for (var t in _tasks) {
       t.orderIndex++;
@@ -294,7 +304,7 @@ class TaskProvider with ChangeNotifier {
   Future<void> toggleSubtask(Task task, SubTask subtask) async {
     subtask.isCompleted = !subtask.isCompleted;
     if (subtask.isCompleted) {
-      await HapticFeedback.lightImpact();
+      HapticFeedback.lightImpact();
     }
     notifyListeners();
     await _syncTask(task);
@@ -332,7 +342,7 @@ class TaskProvider with ChangeNotifier {
     final active = activeTasks;
     final completed = completedTasks;
     
-    final List<Task?> uiItems = [];
+    List<Task?> uiItems = [];
     uiItems.addAll(active);
     if (completed.isNotEmpty) {
       uiItems.add(null); // Header placeholder
@@ -340,7 +350,7 @@ class TaskProvider with ChangeNotifier {
     }
 
     if (oldIndex < 0 || oldIndex >= uiItems.length) return;
-    final Task? movedTask = uiItems[oldIndex];
+    Task? movedTask = uiItems[oldIndex];
     if (movedTask == null) return; // Cannot move header
 
     uiItems.removeAt(oldIndex);
@@ -353,12 +363,12 @@ class TaskProvider with ChangeNotifier {
     final List<Task> allTasksSorted = List.from(_tasks);
 
     // Detect if crossing header
-    final int headerIndexAfterRemove = uiItems.indexOf(null);
+    int headerIndexAfterRemove = uiItems.indexOf(null);
     if (headerIndexAfterRemove != -1) {
       if (oldIndex <= headerIndexAfterRemove && newIndex > headerIndexAfterRemove) {
         movedTask.isCompleted = true;
         movedTask.completionDate = DateTime.now();
-        final List<Task> pendingClones = [];
+        List<Task> pendingClones = [];
         _handleRecurrence(movedTask, DateTime.now(), pendingClones);
         if (pendingClones.isNotEmpty) {
           allTasksSorted.addAll(pendingClones);
@@ -390,8 +400,8 @@ class TaskProvider with ChangeNotifier {
       if (a.isStarred && !b.isStarred) return -1;
       if (!a.isStarred && b.isStarred) return 1;
       
-      final int aIdx = newlyOrderedVisible.indexOf(a);
-      final int bIdx = newlyOrderedVisible.indexOf(b);
+      int aIdx = newlyOrderedVisible.indexOf(a);
+      int bIdx = newlyOrderedVisible.indexOf(b);
       
       if (aIdx != -1 && bIdx != -1) return aIdx.compareTo(bIdx);
       if (aIdx != -1) return -1; 
@@ -450,7 +460,7 @@ class TaskProvider with ChangeNotifier {
 
   Future<void> markSelectedAsCompleted(bool completed) async {
     final now = DateTime.now();
-    final List<Task> newRecurringTasks = [];
+    List<Task> newRecurringTasks = [];
 
     for (var task in _tasks) {
       if (_selectedTaskIds.contains(task.id)) {
@@ -486,7 +496,7 @@ class TaskProvider with ChangeNotifier {
 
   void _handleRecurrence(Task task, DateTime now, List<Task> newTasksList) {
     if (task.recurrence != null && task.recurrence != 'none') {
-      final bool exists = _tasks.any((t) => t.title == task.title && !t.isCompleted && t.dueDate != null && t.dueDate!.isAfter(now));
+      bool exists = _tasks.any((t) => t.title == task.title && !t.isCompleted && t.dueDate != null && t.dueDate!.isAfter(now));
       if (exists) return;
       DateTime nextDueDate = task.dueDate ?? now;
       if (task.recurrence == 'daily') {
@@ -520,13 +530,13 @@ class TaskProvider with ChangeNotifier {
   }
 
   Future<void> toggleTask(Task task) async {
-    final bool isMarkingDone = !task.isCompleted;
+    bool isMarkingDone = !task.isCompleted;
     task.isCompleted = isMarkingDone;
     task.completionDate = isMarkingDone ? DateTime.now() : null;
     
     if (isMarkingDone) {
-      await HapticFeedback.heavyImpact();
-      final List<Task> pendingClones = [];
+      HapticFeedback.heavyImpact();
+      List<Task> pendingClones = [];
       _handleRecurrence(task, DateTime.now(), pendingClones);
       if (pendingClones.isNotEmpty) {
         _tasks.addAll(pendingClones);
@@ -536,7 +546,7 @@ class TaskProvider with ChangeNotifier {
         }
       }
     } else {
-      await HapticFeedback.mediumImpact();
+      HapticFeedback.mediumImpact();
     }
     
     _updateFilteredTasks();
@@ -555,7 +565,7 @@ class TaskProvider with ChangeNotifier {
 
   Future<void> toggleStarred(Task task) async {
     task.isStarred = !task.isStarred;
-    await HapticFeedback.selectionClick();
+    HapticFeedback.selectionClick();
     _updateFilteredTasks();
     notifyListeners();
     await _syncTask(task);
@@ -567,7 +577,7 @@ class TaskProvider with ChangeNotifier {
     if (_selectedTask?.id == task.id) {
       _selectedTask = null;
     }
-    await HapticFeedback.vibrate();
+    HapticFeedback.vibrate();
     await _removeTask(task);
     _updateFilteredTasks();
     notifyListeners();
@@ -589,7 +599,7 @@ class TaskProvider with ChangeNotifier {
       orderIndex: 0,
     );
     _tasks.insert(0, newTask);
-    await HapticFeedback.mediumImpact();
+    HapticFeedback.mediumImpact();
     _updateFilteredTasks();
     notifyListeners();
     await _saveTasks();
