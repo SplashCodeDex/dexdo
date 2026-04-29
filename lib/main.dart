@@ -9,16 +9,18 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
+
 import 'firebase_options.dart';
-import 'providers/task_provider.dart';
-import 'providers/theme_provider.dart';
-import 'services/auth_service.dart';
-import 'services/subscription_service.dart';
-import 'widgets/calendar_pane.dart';
-import 'widgets/home_pane.dart';
-import 'widgets/settings_pane.dart';
-import 'widgets/task_editor_pane.dart';
-import 'widgets/task_list_pane.dart';
+import 'features/tasks/presentation/providers/task_provider.dart';
+import 'core/theme/theme_provider.dart';
+import 'features/auth/data/auth_service.dart';
+import 'core/services/subscription_service.dart';
+import 'features/calendar/presentation/widgets/calendar_pane.dart';
+import 'features/home/presentation/widgets/home_pane.dart';
+import 'features/settings/presentation/widgets/settings_pane.dart';
+import 'features/tasks/presentation/widgets/task_editor_pane.dart';
+import 'features/tasks/presentation/widgets/task_list_pane.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,34 +41,23 @@ void main() async {
     persistenceEnabled: true,
   );
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (context) => ThemeProvider()),
-        ChangeNotifierProvider(create: (context) => AuthService()),
-        ChangeNotifierProvider(create: (context) => SubscriptionService()),
-        ChangeNotifierProxyProvider<AuthService, TaskProvider>(
-          create: (context) => TaskProvider(
-            authService: Provider.of<AuthService>(context, listen: false),
-          ),
-          update: (context, authService, previous) => previous!..updateAuth(authService),
-        ),
-      ],
-      child: const DeXDoApp(),
+    const rp.ProviderScope(
+      child: DeXDoApp(),
     ),
   );
 }
 
-class DeXDoApp extends StatelessWidget {
+class DeXDoApp extends rp.ConsumerWidget {
   const DeXDoApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+  Widget build(BuildContext context, rp.WidgetRef ref) {
+    final themeMode = ref.watch(themeNotifierProvider);
 
     return MaterialApp(
       title: 'DeXDo',
       debugShowCheckedModeBanner: false,
-      themeMode: themeProvider.themeMode,
+      themeMode: themeMode,
       theme: ThemeData(
         useMaterial3: true,
         pageTransitionsTheme: const PageTransitionsTheme(
@@ -163,11 +154,11 @@ class DeXDoApp extends StatelessWidget {
   }
 }
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends rp.ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  rp.ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
 class NewTaskIntent extends Intent {
@@ -178,10 +169,10 @@ class DeleteSelectedIntent extends Intent {
   const DeleteSelectedIntent();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
   int _selectedIndex = 2; // Default to 'Tasks' icon
 
-  Widget _buildBody(bool isLargeScreen, TaskProvider taskProvider) {
+  Widget _buildBody(bool isLargeScreen, TaskState taskState, TaskNotifier notifier) {
     if (isLargeScreen) {
       return Row(
         children: [
@@ -191,13 +182,13 @@ class _HomeScreenState extends State<HomeScreen> {
           
           // Content Area
           Expanded(
-            child: _buildMainContent(isLargeScreen, taskProvider),
+            child: _buildMainContent(isLargeScreen, taskState, notifier),
           ),
         ],
       );
     }
 
-    return _buildMainContent(isLargeScreen, taskProvider);
+    return _buildMainContent(isLargeScreen, taskState, notifier);
   }
 
   Widget _buildDesktopNavigationRail() {
@@ -240,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMainContent(bool isLargeScreen, TaskProvider taskProvider) {
+  Widget _buildMainContent(bool isLargeScreen, TaskState taskState, TaskNotifier taskNotifier) {
     if (_selectedIndex != 2) {
       Widget content;
       switch (_selectedIndex) {
@@ -298,10 +289,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: child,
                   );
                 },
-                child: taskProvider.selectedTask != null
+                child: taskState.selectedTask != null
                     ? TaskEditorPane(
-                        key: ValueKey(taskProvider.selectedTask!.id),
-                        task: taskProvider.selectedTask!,
+                        key: ValueKey(taskState.selectedTask!.id),
+                        task: taskState.selectedTask!,
                       )
                     : Center(
                         key: const ValueKey('empty_editor'),
@@ -329,8 +320,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final taskProvider = Provider.of<TaskProvider>(context);
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    final taskState = ref.watch(taskProvider);
+    final taskNotifier = ref.read(taskProvider.notifier);
+    final themeNotifier = ref.read(themeNotifierProvider.notifier);
 
     return Shortcuts(
       shortcuts: <LogicalKeySet, Intent>{
@@ -345,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onInvoke: (NewTaskIntent intent) {
               FocusScope.of(context).unfocus();
               HapticFeedback.mediumImpact();
-              taskProvider.addTask();
+              taskNotifier.addTask();
               if (_selectedIndex != 2) {
                 setState(() => _selectedIndex = 2);
               }
@@ -355,10 +347,10 @@ class _HomeScreenState extends State<HomeScreen> {
           DeleteSelectedIntent: CallbackAction<DeleteSelectedIntent>(
             onInvoke: (DeleteSelectedIntent intent) {
               FocusScope.of(context).unfocus();
-              if (taskProvider.isSelectionMode) {
-                taskProvider.deleteSelectedTasks();
-              } else if (taskProvider.selectedTask != null) {
-                taskProvider.deleteTask(taskProvider.selectedTask!);
+              if (taskState.isSelectionMode) {
+                taskNotifier.deleteSelectedTasks();
+              } else if (taskState.selectedTask != null) {
+                taskNotifier.deleteTask(taskState.selectedTask!);
               }
               return null;
             },
@@ -374,26 +366,26 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Scaffold(
             extendBody: true,
             appBar: AppBar(
-              leading: taskProvider.isSelectionMode
+              leading: taskState.isSelectionMode
                   ? IconButton(
                       icon: const Icon(Icons.close),
                       onPressed: () {
                         FocusScope.of(context).unfocus();
-                        taskProvider.clearSelection();
+                        taskNotifier.clearSelection();
                       },
                     )
                   : null,
-              title: taskProvider.isSelectionMode
-                  ? Text('${taskProvider.selectedTaskIds.length} Selected')
+              title: taskState.isSelectionMode
+                  ? Text('${taskState.selectedTaskIds.length} Selected')
                   : null,
               actions: [
-                if (taskProvider.isSelectionMode) ...[
+                if (taskState.isSelectionMode) ...[
                   IconButton(
                     icon: const Icon(Icons.delete_outline),
                     onPressed: () {
                       FocusScope.of(context).unfocus();
                       HapticFeedback.heavyImpact();
-                      taskProvider.deleteSelectedTasks();
+                      taskNotifier.deleteSelectedTasks();
                     },
                     tooltip: 'Delete Selected',
                   ),
@@ -402,7 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: () {
                       FocusScope.of(context).unfocus();
                       HapticFeedback.mediumImpact();
-                      taskProvider.markSelectedAsCompleted(true);
+                      taskNotifier.markSelectedAsCompleted(true);
                     },
                     tooltip: 'Mark Completed',
                   ),
@@ -411,9 +403,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     tooltip: 'Move to Category',
                     onSelected: (category) {
                       FocusScope.of(context).unfocus();
-                      taskProvider.moveSelectedToCategory(category);
+                      taskNotifier.moveSelectedToCategory(category);
                     },
-                    itemBuilder: (context) => taskProvider.categories
+                    itemBuilder: (context) => taskState.categories
                         .where((c) => c != 'All')
                         .map((c) => PopupMenuItem(value: c, child: Text(c)))
                         .toList(),
@@ -423,13 +415,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   GestureDetector(
                     onTap: () {
                       HapticFeedback.lightImpact();
-                      themeProvider.toggleTheme(!themeProvider.isDarkMode);
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      themeNotifier.setThemeMode(isDark ? ThemeMode.light : ThemeMode.dark);
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 400),
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: themeProvider.isDarkMode 
+                        color: Theme.of(context).brightness == Brightness.dark
                             ? Colors.amber.withValues(alpha: 0.1) 
                             : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
@@ -446,12 +439,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         },
                         child: Icon(
-                          themeProvider.isDarkMode 
+                          Theme.of(context).brightness == Brightness.dark
                               ? Icons.wb_sunny_rounded 
                               : Icons.nightlight_round,
-                          key: ValueKey(themeProvider.isDarkMode),
+                          key: ValueKey(Theme.of(context).brightness == Brightness.dark),
                           size: 20,
-                          color: themeProvider.isDarkMode 
+                          color: Theme.of(context).brightness == Brightness.dark
                               ? Colors.amber[400] 
                               : Theme.of(context).colorScheme.primary,
                         ),
@@ -459,22 +452,26 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  if (taskProvider.hasCompleted && _selectedIndex == 2)
+                  if (taskState.hasCompleted && _selectedIndex == 2)
                     IconButton(
                       onPressed: () {
                         FocusScope.of(context).unfocus();
-                        taskProvider.clearCompleted();
+                        taskNotifier.clearCompleted();
                       },
                       icon: const Icon(Icons.delete_sweep_outlined),
                       tooltip: 'Clear Done',
                     ),
                   if (_selectedIndex != 0)
-                    Builder(
-                      builder: (context) {
-                        final authService = Provider.of<AuthService>(context);
-                        return CircleAvatar(
-                          radius: 18,
-                          backgroundImage: NetworkImage(authService.currentUser?.photoURL ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${authService.currentUser?.uid ?? "Felix"}'),
+                    rp.Consumer(
+                      builder: (context, ref, child) {
+                        final authState = ref.watch(authStateChangesProvider);
+                        return authState.when(
+                          data: (user) => CircleAvatar(
+                            radius: 18,
+                            backgroundImage: NetworkImage(user?.photoURL ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${user?.uid ?? "Felix"}'),
+                          ),
+                          loading: () => const CircleAvatar(radius: 18, child: CircularProgressIndicator()),
+                          error: (_, __) => const CircleAvatar(radius: 18, child: Icon(Icons.error)),
                         );
                       }
                     ),
@@ -482,13 +479,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 16),
               ],
             ),
-            body: _buildBody(isLargeScreen, taskProvider),
+            body: _buildBody(isLargeScreen, taskState, taskNotifier),
             bottomNavigationBar: !isLargeScreen ? _buildBottomNav() : null,
             floatingActionButton: FloatingActionButton(
               onPressed: () {
                 FocusScope.of(context).unfocus();
                 HapticFeedback.mediumImpact();
-                taskProvider.addTask();
+                taskNotifier.addTask();
                 if (_selectedIndex != 2) {
                   setState(() => _selectedIndex = 2);
                 }

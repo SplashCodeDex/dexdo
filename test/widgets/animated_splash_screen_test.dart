@@ -1,19 +1,14 @@
-import 'package:dexdo/providers/theme_provider.dart';
-import 'package:dexdo/widgets/animated_splash_screen.dart';
+import 'package:dexdo/core/theme/theme_provider.dart';
+import 'package:dexdo/features/home/presentation/widgets/animated_splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
   testWidgets('AnimatedSplashScreen renders correctly', (WidgetTester tester) async {
-    final themeProvider = ThemeProvider();
-
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
-        ],
-        child: const MaterialApp(
+      const ProviderScope(
+        child: MaterialApp(
           home: AnimatedSplashScreen(),
         ),
       ),

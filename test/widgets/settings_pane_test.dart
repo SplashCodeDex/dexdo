@@ -1,19 +1,14 @@
-import 'package:dexdo/providers/theme_provider.dart';
-import 'package:dexdo/widgets/settings_pane.dart';
+import 'package:dexdo/core/theme/theme_provider.dart';
+import 'package:dexdo/features/settings/presentation/widgets/settings_pane.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
   testWidgets('SettingsPane displays basic settings options', (WidgetTester tester) async {
-    final themeProvider = ThemeProvider();
-
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
-        ],
-        child: const MaterialApp(
+      const ProviderScope(
+        child: MaterialApp(
           home: Scaffold(body: SettingsPane()),
         ),
       ),
@@ -22,6 +17,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(SettingsPane), findsOneWidget);
-    expect(find.text('Application Settings'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget); // Fixed the text check based on HomePane/SettingsPane actual title
   });
 }

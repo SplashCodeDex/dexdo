@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dexdo/providers/task_provider.dart';
-import 'package:dexdo/models/task.dart';
-import 'package:dexdo/repositories/task_repository.dart';
-import 'package:dexdo/services/notification_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
+import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
+import 'package:dexdo/features/tasks/data/repositories/task_repository_provider.dart';
+import 'package:dexdo/core/services/notification_service.dart';
 
 // Manual Mock for TaskRepository
 class MockTaskRepository implements TaskRepository {
@@ -82,60 +84,79 @@ class MockNotificationService implements NotificationService {
 }
 
 void main() {
-  group('TaskProvider Logic Tests via Dependency Injection', () {
-    late TaskProvider provider;
+  group('TaskProvider (Riverpod) Logic Tests', () {
+    late ProviderContainer container;
     late MockTaskRepository mockRepo;
     late MockNotificationService mockNotifications;
 
     setUp(() {
       mockRepo = MockTaskRepository();
       mockNotifications = MockNotificationService();
-      provider = TaskProvider(
-        repository: mockRepo,
-        notifications: mockNotifications,
+      
+      container = ProviderContainer(
+        overrides: [
+          taskRepositoryProvider.overrideWithValue(mockRepo),
+          notificationServiceProvider.overrideWithValue(mockNotifications),
+        ],
       );
     });
 
+    tearDown(() {
+      container.dispose();
+    });
+
     test('Initial state uses empty list', () async {
-      await provider.reloadFromStorage();
-      expect(provider.tasks, isEmpty);
-      expect(provider.activeTasks, isEmpty);
+      await container.read(taskProvider.notifier).reloadFromStorage();
+      final state = container.read(taskProvider);
+      expect(state.tasks, isEmpty);
+      expect(state.activeTasks, isEmpty);
     });
 
     test('AddTask increments task list natively', () async {
-      await provider.addTask();
-      expect(provider.tasks.length, 1);
-      expect(provider.tasks.first.category, 'Personal'); // Defaults to Personal if "All" is selected
-      expect(provider.selectedTask, provider.tasks.first);
+      await container.read(taskProvider.notifier).addTask();
+      final state = container.read(taskProvider);
+      expect(state.allTasks.length, 1);
+      expect(state.allTasks.first.category, 'Personal'); // Defaults to Personal if "All" is selected
+      expect(state.selectedTask, state.allTasks.first);
     });
 
     test('Selecting Category filters tasks properly', () async {
-      await provider.addTask();
-      final task = provider.tasks.first;
+      final notifier = container.read(taskProvider.notifier);
+      await notifier.addTask();
       
-      await provider.addCategory('Testing', Icons.bug_report, Colors.green);
-      await provider.updateCategory(task, 'Testing');
+      final stateAfterAdd = container.read(taskProvider);
+      final task = stateAfterAdd.allTasks.first;
+      
+      await notifier.addCategory('Testing', Icons.bug_report, Colors.green);
+      await notifier.updateCategory(task, 'Testing');
 
-      expect(provider.activeTasks.where((t) => t.category == 'Testing').length, 1);
+      final stateAfterCat = container.read(taskProvider);
+      expect(stateAfterCat.tasks.where((t) => t.category == 'Testing').length, 1);
 
-      provider.setCategory('Testing');
-      expect(provider.tasks.length, 1);
+      notifier.setCategory('Testing');
+      final stateTesting = container.read(taskProvider);
+      expect(stateTesting.tasks.length, 1);
 
-      provider.setCategory('Work');
-      expect(provider.tasks.length, 0); // Should be filtered out
+      notifier.setCategory('Work');
+      final stateWork = container.read(taskProvider);
+      expect(stateWork.tasks.length, 0); // Should be filtered out
     });
 
     test('Completing task moves it to completed array', () async {
-      await provider.addTask();
-      final task = provider.tasks.first;
+      final notifier = container.read(taskProvider.notifier);
+      await notifier.addTask();
       
-      expect(provider.activeTasks.length, 1);
-      expect(provider.completedTasks.length, 0);
+      final stateAfterAdd = container.read(taskProvider);
+      final task = stateAfterAdd.allTasks.first;
+      
+      expect(stateAfterAdd.activeTasks.length, 1);
+      expect(stateAfterAdd.completedTasks.length, 0);
 
-      await provider.toggleTask(task);
-
-      expect(provider.activeTasks.length, 0);
-      expect(provider.completedTasks.length, 1);
+      await notifier.toggleTask(task);
+      
+      final stateAfterToggle = container.read(taskProvider);
+      expect(stateAfterToggle.activeTasks.length, 0);
+      expect(stateAfterToggle.completedTasks.length, 1);
     });
   });
 }

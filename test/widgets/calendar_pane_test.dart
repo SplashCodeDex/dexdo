@@ -1,11 +1,11 @@
-import 'package:dexdo/models/task.dart' as dexdo_task;
-import 'package:dexdo/providers/task_provider.dart';
-import 'package:dexdo/providers/theme_provider.dart';
-import 'package:dexdo/widgets/calendar_pane.dart';
+import 'package:dexdo/features/tasks/domain/entities/task.dart' as dexdo_task;
+import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
+import 'package:dexdo/features/calendar/presentation/widgets/calendar_pane.dart';
+import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
+import 'package:dexdo/features/tasks/data/repositories/task_repository_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
-import 'package:dexdo/repositories/task_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Very basic manual fake
 class FakeTaskRepository extends Fake implements TaskRepository {
@@ -23,14 +23,10 @@ class FakeTaskRepository extends Fake implements TaskRepository {
 
 void main() {
   testWidgets('CalendarPane displays calendar components', (WidgetTester tester) async {
-    final taskProvider = TaskProvider(repository: FakeTaskRepository());
-    final themeProvider = ThemeProvider();
-
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<TaskProvider>.value(value: taskProvider),
-          ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
+      ProviderScope(
+        overrides: [
+          taskRepositoryProvider.overrideWithValue(FakeTaskRepository()),
         ],
         child: const MaterialApp(
           home: Scaffold(body: CalendarPane()),

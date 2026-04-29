@@ -11,20 +11,36 @@ include: package:flutter_lints/flutter.yaml
 
 linter:
   rules:
-    prefer_const_constructors: true
-    prefer_const_declarations: true
-    prefer_const_literals_to_create_immutables: true
-    use_key_in_widget_constructors: true
-    avoid_print: true
-    prefer_final_fields: true
-    prefer_final_locals: true
-    always_declare_return_types: true
-    unawaited_futures: true
-    avoid_void_async: true
-    cancel_subscriptions: true
-    directives_ordering: true
-    sized_box_for_whitespace: true
-    use_build_context_synchronously: true
+    - always_use_package_imports
+    - avoid_dynamic_calls
+    - avoid_type_to_string
+    - cast_nullable_to_non_nullable
+    - combinators_ordering
+    - dangling_library_doc_comments
+    - implicit_reprovide_this
+    - invalid_case_patterns
+    - library_annotations
+    - matching_super_parameters
+    - no_literal_bool_comparisons
+    - no_self_assignments
+    - no_wildcard_variable_uses
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - prefer_const_literals_to_create_immutables
+    - prefer_final_fields
+    - prefer_final_locals
+    - always_declare_return_types
+    - unawaited_futures
+    - avoid_void_async
+    - cancel_subscriptions
+    - directives_ordering
+    - sized_box_for_whitespace
+    - use_build_context_synchronously
+    - sort_constructors_first
+    - sort_pub_dependencies: false
+    - prefer_single_quotes
+    - require_trailing_commas
+    - unnecessary_parenthesis
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

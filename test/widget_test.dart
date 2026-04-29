@@ -7,29 +7,20 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
-import 'package:dexdo/providers/theme_provider.dart';
-// Note: In a true CI environment, you would mock the Firebase Initialization
-// and Providers using mockito. For this baseline smoke test, we ensure the Widget
-// tree renders without crashing when provided necessary mocked scopes.
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dexdo/core/theme/theme_provider.dart';
 
 void main() {
   testWidgets('Core DeXDo UI Rendering Smoke Test', (WidgetTester tester) async {
-    // Because Firebase.initializeApp() is called inside main(), testing the full DeXDoApp 
-    // requires mocking Firebase channels or creating a Testable wrapper.
-    // We will build a testable widget wrapper mimicking DeXDoApp.
-    
-    // Create a scaffold test wrapper
-    final testApp = MultiProvider(
-      providers: [
-        ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
-        // Using late Init or mock implementations of TaskProvider / AuthService in the real test suite
+    final testApp = ProviderScope(
+      overrides: [
+        // We can add overrides here if we need to mock specific providers
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, _) {
-          return MaterialApp(
+      child: Consumer(
+        builder: (context, ref, _) {
+          return const MaterialApp(
             title: 'DeXDo Test',
-            home: const Scaffold(
+            home: Scaffold(
               body: Center(child: Text('Home')),
             ),
           );
