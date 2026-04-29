@@ -2,26 +2,31 @@
 
 As requested, here is the structured execution plan. I am currently running **Phase 1** live in the background.
 
-## Phase 1: Architecture & State Management Consolidation (EXECUTING ⏳)
-- [ ] Create `lib/services/storage_service.dart` (Abstracts Data Handling)
-- [ ] Create `lib/services/local_storage_service.dart` (Implements `SharedPreferences` securely)
-- [ ] Refactor `TaskProvider` to utilize structured Service injected classes.
-- [ ] Prepare dependencies in `pubspec.yaml`.
+## Phase 1: Architecture & State Management Consolidation (EXECUTED ✅)
+- [x] Migrate state management from `provider` to `flutter_riverpod`.
+- [x] Consolidate `TaskProvider` into `taskProvider` (Notifier).
+- [x] Refactor `AuthService` and `SubscriptionService` to Riverpod.
+- [x] Standardize directory structure (`features/`, `core/`, `shared/`).
 
-## Phase 2: Local Notifications & Reminders (EXECUTED ✅)
-- [x] Create `lib/services/notification_service.dart` using `flutter_local_notifications`
-- [x] Integrate Task Due Dates to trigger OS-level alarms.
-- [ ] **USER ACTION BLOCKER**: You will need to request iOS/Android notification permissions in `AppDelegate.swift` and `AndroidManifest.xml` via your IDE.
+## Phase 2: Data Layer & Persistence (EXECUTED ✅)
+- [x] Implement Repository Pattern with `HybridTaskRepository`.
+- [x] Integrate **Isar** for robust local storage.
+- [x] Setup `LocalStorageService` (SharedPreferences) for legacy migration.
 
-## Phase 3: Firebase Auth & Cloud Sync (EXECUTED ✅)
-- [x] Create `lib/services/firebase_storage_service.dart` (Firestore alternative handler)
-- [x] Implement `lib/services/auth_service.dart` for Multi-device sync tracking.
-- [x] **USER ACTION**: Bound `google-services.json` and `firebase_options.dart`.
+## Phase 3: Security & Stability (IN PROGRESS 🏗️)
+- [x] Implement `flutter_secure_storage` for session data.
+- [x] Setup Firebase Crashlytics for error logging.
+- [ ] Audit Firestore security rules.
 
-## Phase 4: Data Migration & Identity (EXECUTED ✅)
-- [x] Migrate existing standard native `SharedPreferences` tasks -> `Firebase`.
-- [x] Implement Sign-In/Auth state UI (Google/Apple login UI to bind accounts natively).
-- [x] Implement Offline Persistence (Trivial with Firebase rules).
+## Phase 4: UI/UX Polishing (EXECUTED ✅)
+- [x] Standardize design tokens in `AppTheme`.
+- [x] Implement high-quality micro-interactions with `flutter_animate`.
+- [x] Revamp `CalendarPane` with vertical timeline.
+
+## Phase 5: Testing & Quality Assurance (TODO ⏳)
+- [ ] Implement full widget test suite for feature modularity.
+- [ ] Verify Riverpod provider overrides in test mocks.
+- [ ] Clean up all stale imports and unused dependencies.
 
 ## Phase 6: Core Infrastructure & Identity (EXECUTED ✅)
 - [x] Configure explicit OS notification perms in AndroidManifest.xml and Info.plist.

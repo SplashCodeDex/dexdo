@@ -7,7 +7,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../tasks/presentation/providers/task_provider.dart';
 import '../../../../core/theme/theme_provider.dart';
-import '../../../auth/data/auth_service.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import 'subscription_pane.dart';
 
 class SettingsPane extends ConsumerWidget {
@@ -72,8 +72,8 @@ class SettingsPane extends ConsumerWidget {
             icon: Icons.account_circle_rounded,
             iconColor: Colors.orange,
             onTap: () async {
-              final authService = ref.read(authServiceProvider);
-              final credential = await authService.linkWithGoogle();
+              final authController = ref.read(authControllerProvider.notifier);
+              final credential = await authController.linkWithGoogle();
               if (context.mounted) {
                 if (credential != null) {
                   await taskNotifier.reloadFromStorage();
@@ -99,14 +99,14 @@ class SettingsPane extends ConsumerWidget {
             trailing: IconButton(
               icon: const Icon(Icons.logout_rounded),
               onPressed: () async {
-                final authService = ref.read(authServiceProvider);
-                await authService.signOut();
+                final authController = ref.read(authControllerProvider.notifier);
+                await authController.signOut();
                 if (context.mounted) {
                    ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Successfully signed out. Returning to anonymous.')),
                   );
                   // Rerun the anon init
-                  await authService.signInAnonymously();
+                  await authController.signInAnonymously();
                   await taskNotifier.reloadFromStorage();
                 }
               },

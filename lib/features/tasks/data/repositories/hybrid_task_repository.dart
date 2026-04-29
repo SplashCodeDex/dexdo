@@ -17,13 +17,17 @@ class HybridTaskRepository implements TaskRepository {
   TaskRepository get _currentRepo => 
       _ref.read(authStateChangesProvider).value == null ? _local : _firebase;
 
+  Future<void> migrate() async {
+    if (_ref.read(authStateChangesProvider).value != null) {
+      await DataMigrationService.performMigrationIfNeeded(_firebase);
+    }
+  }
+
   @override
   Future<void> init() async {
     await _local.init();
     await _firebase.init();
-    if (_ref.read(authStateChangesProvider).value != null) {
-      await DataMigrationService.performMigrationIfNeeded(_firebase);
-    }
+    await migrate();
   }
 
   // Then delegate all methods to _currentRepo

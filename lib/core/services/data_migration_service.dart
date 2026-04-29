@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/tasks/data/repositories/firebase_task_repository.dart';
-import '../../features/tasks/data/data_sources/local_storage_service.dart';
+import '../services/local_storage_service.dart';
 
 class DataMigrationService {
   static const String _migrationKey = 'migrated_to_firebase';

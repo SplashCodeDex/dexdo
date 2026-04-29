@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/task.dart';
+import '../../features/tasks/domain/entities/task.dart';
 
 abstract class StorageService {
   Future<void> init();

@@ -4,7 +4,14 @@ import 'hybrid_task_repository.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 final taskRepositoryProvider = Provider<TaskRepository>((ref) {
-  // We need to pass something that acts like old AuthService if HybridTaskRepository still expects it
-  // Or we refactor HybridTaskRepository to use Riverpod ref.
-  return HybridTaskRepository(ref);
+  final repo = HybridTaskRepository(ref);
+  
+  // Listen for auth state changes to trigger migration when user logs in
+  ref.listen(authStateChangesProvider, (previous, next) {
+    if (next.value != null && (previous == null || previous.value == null)) {
+      repo.migrate();
+    }
+  });
+
+  return repo;
 });

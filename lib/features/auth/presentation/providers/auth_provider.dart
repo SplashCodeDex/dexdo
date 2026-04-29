@@ -27,7 +27,7 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
     state = AsyncValue.data(user);
   }
 
-  Future<void> signInAnonymously() async {
+  Future<UserCredential?> signInAnonymously() async {
     state = const AsyncValue.loading();
     final result = await ref.read(authRepositoryProvider).signInAnonymously();
     if (result != null) {
@@ -35,9 +35,10 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
     } else {
       state = AsyncValue.error('Sign in failed', StackTrace.current);
     }
+    return result;
   }
 
-  Future<void> linkWithGoogle() async {
+  Future<UserCredential?> linkWithGoogle() async {
     state = const AsyncValue.loading();
     final result = await ref.read(authRepositoryProvider).linkWithGoogle();
     if (result != null) {
@@ -45,6 +46,7 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
     } else {
       state = AsyncValue.error('Google link failed', StackTrace.current);
     }
+    return result;
   }
 
   Future<void> signOut() async {

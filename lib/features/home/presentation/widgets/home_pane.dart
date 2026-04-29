@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../tasks/domain/entities/task.dart';
 import '../../tasks/presentation/providers/task_provider.dart';
-import '../../../auth/data/auth_service.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 class HomePane extends ConsumerWidget {
   final Function(Task)? onTaskTap;

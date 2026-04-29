@@ -7,14 +7,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 
 import 'firebase_options.dart';
 import 'features/tasks/presentation/providers/task_provider.dart';
 import 'core/theme/theme_provider.dart';
-import 'features/auth/data/auth_service.dart';
+import 'core/theme/app_theme.dart';
 import 'core/services/subscription_service.dart';
 import 'features/calendar/presentation/widgets/calendar_pane.dart';
 import 'features/home/presentation/widgets/home_pane.dart';
@@ -58,97 +57,8 @@ class DeXDoApp extends rp.ConsumerWidget {
       title: 'DeXDo',
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
-      theme: ThemeData(
-        useMaterial3: true,
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-          },
-        ),
-        textTheme: GoogleFonts.plusJakartaSansTextTheme(
-          ThemeData.light().textTheme,
-        ).copyWith(
-          titleLarge: GoogleFonts.plusJakartaSans(
-            textStyle: ThemeData.light().textTheme.titleLarge,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2563EB),
-          brightness: Brightness.light,
-          surface: const Color(0xFFF8FAFC),
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-        dividerColor: const Color(0xFFE2E8F0),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFF8FAFC),
-          surfaceTintColor: Colors.transparent,
-          systemOverlayStyle: SystemUiOverlayStyle.dark,
-          centerTitle: false,
-          elevation: 0,
-          titleTextStyle: TextStyle(
-            color: Color(0xFF1E293B),
-            fontSize: 24,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-          ),
-        ),
-        cardTheme: CardThemeData(
-          color: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
-          ),
-        ),
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-          },
-        ),
-        textTheme: GoogleFonts.plusJakartaSansTextTheme(
-          ThemeData.dark().textTheme,
-        ).copyWith(
-          titleLarge: GoogleFonts.plusJakartaSans(
-            textStyle: ThemeData.dark().textTheme.titleLarge,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF3B82F6),
-          brightness: Brightness.dark,
-          surface: const Color(0xFF0F172A),
-          onSurface: const Color(0xFFF1F5F9),
-          primaryContainer: const Color(0xFF1E293B),
-          onPrimaryContainer: const Color(0xFF3B82F6),
-        ),
-        scaffoldBackgroundColor: const Color(0xFF0F172A),
-        dividerColor: const Color(0xFF1E293B),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF0F172A),
-          surfaceTintColor: Colors.transparent,
-          systemOverlayStyle: SystemUiOverlayStyle.light,
-          centerTitle: false,
-          elevation: 0,
-          titleTextStyle: TextStyle(
-            color: Color(0xFFF1F5F9),
-            fontSize: 24,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-          ),
-        ),
-        cardTheme: CardThemeData(
-          color: const Color(0xFF1E293B),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFF334155), width: 1),
-          ),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
       home: const HomeScreen(),
     );
   }
@@ -479,7 +389,9 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                 const SizedBox(width: 16),
               ],
             ),
-            body: _buildBody(isLargeScreen, taskState, taskNotifier),
+            body: _buildBody(isLargeScreen, taskState, taskNotifier)
+                .animate()
+                .fadeIn(duration: 400.ms, curve: Curves.easeOut),
             bottomNavigationBar: !isLargeScreen ? _buildBottomNav() : null,
             floatingActionButton: FloatingActionButton(
               onPressed: () {
