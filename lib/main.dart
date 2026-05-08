@@ -1,25 +1,25 @@
 import 'dart:ui';
+
 import 'package:animations/animations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dexdo/core/services/subscription_service.dart';
+import 'package:dexdo/core/theme/app_theme.dart';
+import 'package:dexdo/core/theme/theme_provider.dart';
+import 'package:dexdo/features/calendar/presentation/widgets/calendar_pane.dart';
+import 'package:dexdo/features/home/presentation/widgets/home_pane.dart';
+import 'package:dexdo/features/settings/presentation/widgets/settings_pane.dart';
+import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
+import 'package:dexdo/features/tasks/presentation/widgets/task_editor_pane.dart';
+import 'package:dexdo/features/tasks/presentation/widgets/task_list_pane.dart';
+import 'package:dexdo/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
-
-import 'firebase_options.dart';
-import 'features/tasks/presentation/providers/task_provider.dart';
-import 'core/theme/theme_provider.dart';
-import 'core/theme/app_theme.dart';
-import 'core/services/subscription_service.dart';
-import 'features/calendar/presentation/widgets/calendar_pane.dart';
-import 'features/home/presentation/widgets/home_pane.dart';
-import 'features/settings/presentation/widgets/settings_pane.dart';
-import 'features/tasks/presentation/widgets/task_editor_pane.dart';
-import 'features/tasks/presentation/widgets/task_list_pane.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -179,9 +179,9 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
     }
 
     if (isLargeScreen) {
-      return Row(
+      return const Row(
         children: [
-          const Expanded(
+          Expanded(
             flex: 2,
             child: TaskListPane(),
           ),
@@ -205,12 +205,12 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                         task: taskState.selectedTask!,
                       )
                     : Center(
-                        key: const ValueKey('empty_editor'),
+                        key: ValueKey('empty_editor'),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.edit_note_rounded, size: 64, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                             Text(
                               'Select a task to view details',
                               style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5), fontSize: 16),
@@ -381,7 +381,7 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                             backgroundImage: NetworkImage(user?.photoURL ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${user?.uid ?? "Felix"}'),
                           ),
                           loading: () => const CircleAvatar(radius: 18, child: CircularProgressIndicator()),
-                          error: (_, __) => const CircleAvatar(radius: 18, child: Icon(Icons.error)),
+                          error: (_, _) => const CircleAvatar(radius: 18, child: Icon(Icons.error)),
                         );
                       }
                     ),

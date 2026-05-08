@@ -1,18 +1,18 @@
+import 'package:dexdo/core/services/data_migration_service.dart';
+import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
+import 'package:dexdo/features/tasks/data/repositories/firebase_task_repository.dart';
+import 'package:dexdo/features/tasks/data/repositories/isar_task_repository.dart';
+import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/entities/task.dart';
-import '../../domain/repositories/task_repository.dart';
-import 'firebase_task_repository.dart';
-import 'isar_task_repository.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../../core/services/data_migration_service.dart';
 
 class HybridTaskRepository implements TaskRepository {
+
+  HybridTaskRepository(this._ref);
   final FirebaseTaskRepository _firebase = FirebaseTaskRepository();
   final IsarTaskRepository _local = IsarTaskRepository();
   final Ref _ref;
-
-  HybridTaskRepository(this._ref);
 
   TaskRepository get _currentRepo => 
       _ref.read(authStateChangesProvider).value == null ? _local : _firebase;

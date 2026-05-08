@@ -1,7 +1,7 @@
+import 'package:dexdo/core/services/subscription_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
-import '../../../../core/services/subscription_service.dart';
 
 class SubscriptionPane extends ConsumerStatefulWidget {
   const SubscriptionPane({super.key});

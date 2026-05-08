@@ -1,17 +1,16 @@
+import 'package:dexdo/models/task.dart';
+import 'package:dexdo/providers/task_provider.dart';
+import 'package:dexdo/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../models/task.dart';
-import '../providers/task_provider.dart';
-import '../services/auth_service.dart';
-
 class HomePane extends StatelessWidget {
+  const HomePane({super.key, this.onTaskTap, this.scrollController});
   final Function(Task)? onTaskTap;
   final ScrollController? scrollController;
-  const HomePane({super.key, this.onTaskTap, this.scrollController});
 
   @override
   Widget build(BuildContext context) {

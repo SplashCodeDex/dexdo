@@ -1,23 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:dexdo/models/task.dart';
+import 'package:dexdo/repositories/firebase_task_repository.dart';
+import 'package:dexdo/repositories/hybrid_task_repository.dart';
+import 'package:dexdo/repositories/task_repository.dart';
+import 'package:dexdo/services/auth_service.dart';
+import 'package:dexdo/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 
-import '../models/task.dart';
-import '../repositories/firebase_task_repository.dart';
-import '../repositories/task_repository.dart';
-import '../services/data_migration_service.dart';
-import '../services/notification_service.dart';
-
-import '../repositories/hybrid_task_repository.dart';
-import '../services/auth_service.dart';
-
 class TaskProvider with ChangeNotifier {
-  TaskRepository _repository;
-  final NotificationService _notifications;
-  AuthService? _authService;
 
   // ... (all state vars)
 
@@ -27,6 +21,9 @@ class TaskProvider with ChangeNotifier {
         _authService = authService {
     _loadData();
   }
+  TaskRepository _repository;
+  final NotificationService _notifications;
+  AuthService? _authService;
 
   void updateAuth(AuthService authService) {
     if (_authService != authService) {
@@ -90,7 +87,7 @@ class TaskProvider with ChangeNotifier {
     filtered.sort((a, b) {
       if (a.isStarred && !b.isStarred) return -1;
       if (!a.isStarred && b.isStarred) return 1;
-      int res = a.orderIndex.compareTo(b.orderIndex);
+      final int res = a.orderIndex.compareTo(b.orderIndex);
       if (res != 0) return res;
       return a.id.compareTo(b.id);
     });
@@ -263,7 +260,7 @@ class TaskProvider with ChangeNotifier {
   }
 
   Future<void> addTask({DateTime? dueDate}) async {
-    String category = _selectedCategory == 'All' ? 'Personal' : _selectedCategory;
+    final String category = _selectedCategory == 'All' ? 'Personal' : _selectedCategory;
     
     for (var t in _tasks) {
       t.orderIndex++;
@@ -342,7 +339,7 @@ class TaskProvider with ChangeNotifier {
     final active = activeTasks;
     final completed = completedTasks;
     
-    List<Task?> uiItems = [];
+    final List<Task?> uiItems = [];
     uiItems.addAll(active);
     if (completed.isNotEmpty) {
       uiItems.add(null); // Header placeholder
@@ -350,7 +347,7 @@ class TaskProvider with ChangeNotifier {
     }
 
     if (oldIndex < 0 || oldIndex >= uiItems.length) return;
-    Task? movedTask = uiItems[oldIndex];
+    final Task? movedTask = uiItems[oldIndex];
     if (movedTask == null) return; // Cannot move header
 
     uiItems.removeAt(oldIndex);
@@ -363,12 +360,12 @@ class TaskProvider with ChangeNotifier {
     final List<Task> allTasksSorted = List.from(_tasks);
 
     // Detect if crossing header
-    int headerIndexAfterRemove = uiItems.indexOf(null);
+    final int headerIndexAfterRemove = uiItems.indexOf(null);
     if (headerIndexAfterRemove != -1) {
       if (oldIndex <= headerIndexAfterRemove && newIndex > headerIndexAfterRemove) {
         movedTask.isCompleted = true;
         movedTask.completionDate = DateTime.now();
-        List<Task> pendingClones = [];
+        final List<Task> pendingClones = [];
         _handleRecurrence(movedTask, DateTime.now(), pendingClones);
         if (pendingClones.isNotEmpty) {
           allTasksSorted.addAll(pendingClones);
@@ -400,8 +397,8 @@ class TaskProvider with ChangeNotifier {
       if (a.isStarred && !b.isStarred) return -1;
       if (!a.isStarred && b.isStarred) return 1;
       
-      int aIdx = newlyOrderedVisible.indexOf(a);
-      int bIdx = newlyOrderedVisible.indexOf(b);
+      final int aIdx = newlyOrderedVisible.indexOf(a);
+      final int bIdx = newlyOrderedVisible.indexOf(b);
       
       if (aIdx != -1 && bIdx != -1) return aIdx.compareTo(bIdx);
       if (aIdx != -1) return -1; 
@@ -460,7 +457,7 @@ class TaskProvider with ChangeNotifier {
 
   Future<void> markSelectedAsCompleted(bool completed) async {
     final now = DateTime.now();
-    List<Task> newRecurringTasks = [];
+    final List<Task> newRecurringTasks = [];
 
     for (var task in _tasks) {
       if (_selectedTaskIds.contains(task.id)) {
@@ -496,7 +493,7 @@ class TaskProvider with ChangeNotifier {
 
   void _handleRecurrence(Task task, DateTime now, List<Task> newTasksList) {
     if (task.recurrence != null && task.recurrence != 'none') {
-      bool exists = _tasks.any((t) => t.title == task.title && !t.isCompleted && t.dueDate != null && t.dueDate!.isAfter(now));
+      final bool exists = _tasks.any((t) => t.title == task.title && !t.isCompleted && t.dueDate != null && t.dueDate!.isAfter(now));
       if (exists) return;
       DateTime nextDueDate = task.dueDate ?? now;
       if (task.recurrence == 'daily') {
@@ -530,13 +527,13 @@ class TaskProvider with ChangeNotifier {
   }
 
   Future<void> toggleTask(Task task) async {
-    bool isMarkingDone = !task.isCompleted;
+    final bool isMarkingDone = !task.isCompleted;
     task.isCompleted = isMarkingDone;
     task.completionDate = isMarkingDone ? DateTime.now() : null;
     
     if (isMarkingDone) {
       HapticFeedback.heavyImpact();
-      List<Task> pendingClones = [];
+      final List<Task> pendingClones = [];
       _handleRecurrence(task, DateTime.now(), pendingClones);
       if (pendingClones.isNotEmpty) {
         _tasks.addAll(pendingClones);
@@ -554,7 +551,7 @@ class TaskProvider with ChangeNotifier {
     await _syncTask(task);
     // Since we added clones to _tasks, we need to save the new ones too
     if (isMarkingDone) {
-      final clones = _tasks.where((t) => t.isCompleted == false && t.title == task.title && t.dueDate != null && t.dueDate!.isAfter(DateTime.now().subtract(const Duration(days: 1)))).toList();
+      final clones = _tasks.where((t) => !t.isCompleted && t.title == task.title && t.dueDate != null && t.dueDate!.isAfter(DateTime.now().subtract(const Duration(days: 1)))).toList();
       for(var clone in clones) {
         if(clone.id != task.id) {
            await _syncTask(clone);

@@ -1,16 +1,15 @@
 import 'package:animations/animations.dart';
+import 'package:dexdo/features/calendar/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/calendar/tasks/presentation/providers/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 
-import '../../tasks/domain/entities/task.dart';
-import '../../tasks/presentation/providers/task_provider.dart';
-
 class CalendarPane extends ConsumerStatefulWidget {
-  final Function(Task)? onTaskTap;
   const CalendarPane({super.key, this.onTaskTap});
+  final Function(Task)? onTaskTap;
 
   @override
   ConsumerState<CalendarPane> createState() => _CalendarPaneState();

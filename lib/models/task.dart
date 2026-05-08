@@ -1,23 +1,12 @@
 import 'package:flutter/material.dart';
 
 class SubTask {
-  final String id;
-  String title;
-  bool isCompleted;
 
   SubTask({
     required this.id,
     required this.title,
     this.isCompleted = false,
   });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'isCompleted': isCompleted ? 1 : 0,
-    };
-  }
 
   factory SubTask.fromJson(Map<String, dynamic> map) {
     return SubTask(
@@ -26,23 +15,20 @@ class SubTask {
       isCompleted: map['isCompleted'] == 1,
     );
   }
+  final String id;
+  String title;
+  bool isCompleted;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'isCompleted': isCompleted ? 1 : 0,
+    };
+  }
 }
 
 class Task {
-  final String id;
-  String title;
-  String description;
-  bool isCompleted;
-  DateTime? completionDate;
-  bool isStarred;
-  IconData icon;
-  Color color;
-  String category;
-  int attachmentCount;
-  List<SubTask> subtasks;
-  DateTime? dueDate;
-  int orderIndex;
-  String? recurrence;
 
   Task({
     required this.id,
@@ -60,6 +46,41 @@ class Task {
     this.orderIndex = 0,
     this.recurrence = 'none',
   }) : subtasks = subtasks ?? [];
+
+  factory Task.fromJson(Map<String, dynamic> map) {
+    return Task(
+      id: map['id'],
+      title: map['title'],
+      description: map['description'] ?? '',
+      isCompleted: map['isCompleted'] == 1,
+      completionDate: map['completionDate'] != null ? DateTime.parse(map['completionDate']) : null,
+      isStarred: map['isStarred'] == 1,
+      icon: IconData(map['icon'] ?? Icons.task_alt.codePoint, fontFamily: 'MaterialIcons'),
+      color: Color(map['color'] ?? Colors.blue.toARGB32()),
+      category: map['category'] ?? 'All',
+      attachmentCount: map['attachmentCount'] ?? 0,
+      subtasks: (map['subtasks'] as List<dynamic>?)
+          ?.map((s) => SubTask.fromJson(s))
+          .toList() ?? [],
+      dueDate: map['dueDate'] != null ? DateTime.parse(map['dueDate']) : null,
+      orderIndex: map['orderIndex'] ?? 0,
+      recurrence: map['recurrence'] ?? 'none',
+    );
+  }
+  final String id;
+  String title;
+  String description;
+  bool isCompleted;
+  DateTime? completionDate;
+  bool isStarred;
+  IconData icon;
+  Color color;
+  String category;
+  int attachmentCount;
+  List<SubTask> subtasks;
+  DateTime? dueDate;
+  int orderIndex;
+  String? recurrence;
 
   int get subtaskCount => subtasks.length;
   int get completedSubtaskCount => subtasks.where((s) => s.isCompleted).toList().length;
@@ -116,26 +137,5 @@ class Task {
       'orderIndex': orderIndex,
       'recurrence': recurrence,
     };
-  }
-
-  factory Task.fromJson(Map<String, dynamic> map) {
-    return Task(
-      id: map['id'],
-      title: map['title'],
-      description: map['description'] ?? '',
-      isCompleted: map['isCompleted'] == 1,
-      completionDate: map['completionDate'] != null ? DateTime.parse(map['completionDate']) : null,
-      isStarred: map['isStarred'] == 1,
-      icon: IconData(map['icon'] ?? Icons.task_alt.codePoint, fontFamily: 'MaterialIcons'),
-      color: Color(map['color'] ?? Colors.blue.toARGB32()),
-      category: map['category'] ?? 'All',
-      attachmentCount: map['attachmentCount'] ?? 0,
-      subtasks: (map['subtasks'] as List<dynamic>?)
-          ?.map((s) => SubTask.fromJson(s))
-          .toList() ?? [],
-      dueDate: map['dueDate'] != null ? DateTime.parse(map['dueDate']) : null,
-      orderIndex: map['orderIndex'] ?? 0,
-      recurrence: map['recurrence'] ?? 'none',
-    );
   }
 }

@@ -1,14 +1,13 @@
 import 'dart:io';
 
+import 'package:dexdo/core/theme/theme_provider.dart';
+import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
+import 'package:dexdo/features/settings/presentation/widgets/subscription_pane.dart';
+import 'package:dexdo/features/settings/tasks/presentation/providers/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-
-import '../../tasks/presentation/providers/task_provider.dart';
-import '../../../../core/theme/theme_provider.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
-import 'subscription_pane.dart';
 
 class SettingsPane extends ConsumerWidget {
   const SettingsPane({super.key});

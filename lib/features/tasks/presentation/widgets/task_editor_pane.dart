@@ -1,20 +1,19 @@
 import 'dart:async';
 
+import 'package:dexdo/core/services/ai_service.dart';
+import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
+import 'package:dexdo/features/tasks/presentation/providers/task_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../domain/entities/task.dart';
-import '../providers/task_provider.dart';
-import '../providers/task_state.dart';
-import '../../../../core/services/ai_service.dart';
-
 class TaskEditorPane extends ConsumerStatefulWidget {
-  final Task task;
 
   const TaskEditorPane({
     super.key,
     required this.task,
   });
+  final Task task;
 
   @override
   ConsumerState<TaskEditorPane> createState() => _TaskEditorPaneState();
@@ -36,7 +35,7 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
     _subtaskController = TextEditingController();
   }
 
-  void _handleAIBreakdown(TaskNotifier notifier) async {
+  Future<void> _handleAIBreakdown(TaskNotifier notifier) async {
     if (_titleController.text.isEmpty) return;
     
     setState(() => _isAILoading = true);

@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dexdo/features/auth/data/domain/repositories/auth_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import '../domain/repositories/auth_repository.dart';
 
 class FirebaseAuthRepository implements AuthRepository {
   FirebaseAuthRepository({
@@ -67,7 +67,7 @@ class FirebaseAuthRepository implements AuthRepository {
           accessToken = currentAuth.accessToken;
         }
 
-        final googleAuth = await googleUser.authentication;
+        final googleAuth = googleUser.authentication;
 
         final credential = GoogleAuthProvider.credential(
           accessToken: accessToken,

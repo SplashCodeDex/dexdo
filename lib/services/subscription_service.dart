@@ -3,6 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 class SubscriptionService extends ChangeNotifier {
+
+  SubscriptionService() {
+    _init();
+  }
   static const String _publicSdkKeyAndroid = 'goog_placeholder_key'; // Users should replace with real RC key
   static const String _publicSdkKeyIos = 'appl_placeholder_key';
 
@@ -11,10 +15,6 @@ class SubscriptionService extends ChangeNotifier {
 
   Offerings? _offerings;
   Offerings? get offerings => _offerings;
-
-  SubscriptionService() {
-    _init();
-  }
 
   Future<void> _init() async {
     await Purchases.setLogLevel(LogLevel.debug);
@@ -31,7 +31,7 @@ class SubscriptionService extends ChangeNotifier {
     }
 
     // Check current entitlement status
-    CustomerInfo customerInfo = await Purchases.getCustomerInfo();
+    final CustomerInfo customerInfo = await Purchases.getCustomerInfo();
     _updateEntitlementStatus(customerInfo);
 
     // Listen for customer info updates
@@ -59,7 +59,7 @@ class SubscriptionService extends ChangeNotifier {
 
   Future<bool> purchasePackage(Package package) async {
     try {
-      CustomerInfo customerInfo = await Purchases.purchasePackage(package);
+      final CustomerInfo customerInfo = await Purchases.purchasePackage(package);
       _updateEntitlementStatus(customerInfo);
       return _isPremium;
     } catch (e) {
@@ -70,7 +70,7 @@ class SubscriptionService extends ChangeNotifier {
 
   Future<void> restorePurchases() async {
     try {
-      CustomerInfo customerInfo = await Purchases.restorePurchases();
+      final CustomerInfo customerInfo = await Purchases.restorePurchases();
       _updateEntitlementStatus(customerInfo);
     } catch (e) {
       debugPrint('Restore error: $e');

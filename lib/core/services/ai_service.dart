@@ -1,15 +1,15 @@
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 
 class AIService {
-  static const String _apiKey = String.fromEnvironment('GEMINI_API_KEY');
-  
-  final GenerativeModel _model;
 
   AIService({GenerativeModel? model}) : _model = model ?? GenerativeModel(
     model: 'gemini-1.5-pro',
     apiKey: _apiKey,
   );
+  static const String _apiKey = String.fromEnvironment('GEMINI_API_KEY');
+  
+  final GenerativeModel _model;
 
   /// Breakdown task with streaming support for better UX
   Stream<String> breakdownTaskStream(String taskTitle) async* {

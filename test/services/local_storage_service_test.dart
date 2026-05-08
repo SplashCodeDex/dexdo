@@ -1,9 +1,7 @@
 import 'package:dexdo/models/task.dart';
 import 'package:dexdo/services/local_storage_service.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 
 void main() {
   group('LocalStorageService Unit Tests', () {
@@ -36,7 +34,7 @@ void main() {
       expect((await storage.loadTasks()).length, 1);
 
       await storage.deleteTask('t2');
-      expect((await storage.loadTasks()), isEmpty);
+      expect(await storage.loadTasks(), isEmpty);
     });
 
     test('saveCategories and loadCategories match', () async {

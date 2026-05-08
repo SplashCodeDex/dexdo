@@ -1,6 +1,6 @@
 import 'package:dexdo/services/ai_service.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 
 class FakeGenerativeModel extends Fake implements GenerativeModel {
   @override

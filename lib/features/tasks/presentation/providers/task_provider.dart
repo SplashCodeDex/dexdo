@@ -1,14 +1,14 @@
 import 'dart:async';
+
+import 'package:dexdo/core/services/notification_service.dart';
+import 'package:dexdo/features/tasks/data/repositories/task_repository_provider.dart';
+import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
+import 'package:dexdo/features/tasks/presentation/providers/task_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
-
-import '../../domain/entities/task.dart';
-import '../../domain/repositories/task_repository.dart';
-import '../../data/repositories/task_repository_provider.dart';
-import '../../../../core/services/notification_service.dart';
-import 'task_state.dart';
 
 final taskProvider = NotifierProvider<TaskNotifier, TaskState>(() {
   return TaskNotifier();
@@ -87,7 +87,7 @@ class TaskNotifier extends Notifier<TaskState> {
     filtered.sort((a, b) {
       if (a.isStarred && !b.isStarred) return -1;
       if (!a.isStarred && b.isStarred) return 1;
-      int res = a.orderIndex.compareTo(b.orderIndex);
+      final int res = a.orderIndex.compareTo(b.orderIndex);
       if (res != 0) return res;
       return a.id.compareTo(b.id);
     });
@@ -100,7 +100,7 @@ class TaskNotifier extends Notifier<TaskState> {
   }
 
   Future<void> addTask({DateTime? dueDate}) async {
-    String category = state.selectedCategory == 'All' ? 'Personal' : state.selectedCategory;
+    final String category = state.selectedCategory == 'All' ? 'Personal' : state.selectedCategory;
     
     final updatedTasks = state.tasks.map((t) => t.copyWith(orderIndex: t.orderIndex + 1)).toList();
 

@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dexdo/models/task.dart';
+import 'package:dexdo/repositories/task_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../models/task.dart';
-import 'task_repository.dart';
 
 class FirebaseTaskRepository implements TaskRepository {
   final FirebaseFirestore _db = FirebaseFirestore.instance;

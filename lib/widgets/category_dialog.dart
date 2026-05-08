@@ -1,11 +1,8 @@
+import 'package:dexdo/providers/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/task_provider.dart';
 
 class CategoryDialog extends StatefulWidget {
-  final String? initialName;
-  final IconData? initialIcon;
-  final Color? initialColor;
 
   const CategoryDialog({
     super.key,
@@ -13,6 +10,9 @@ class CategoryDialog extends StatefulWidget {
     this.initialIcon,
     this.initialColor,
   });
+  final String? initialName;
+  final IconData? initialIcon;
+  final Color? initialColor;
 
   @override
   State<CategoryDialog> createState() => _CategoryDialogState();

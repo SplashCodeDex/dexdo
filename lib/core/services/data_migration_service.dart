@@ -1,8 +1,7 @@
+import 'package:dexdo/core/services/local_storage_service.dart';
+import 'package:dexdo/features/tasks/data/repositories/firebase_task_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../features/tasks/data/repositories/firebase_task_repository.dart';
-import '../services/local_storage_service.dart';
 
 class DataMigrationService {
   static const String _migrationKey = 'migrated_to_firebase';

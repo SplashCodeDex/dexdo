@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dexdo/features/tasks/domain/entities/task.dart';
-import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
-import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
-import 'package:dexdo/features/tasks/data/repositories/task_repository_provider.dart';
 import 'package:dexdo/core/services/notification_service.dart';
+import 'package:dexdo/features/tasks/data/repositories/task_repository_provider.dart';
+import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
+import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 // Manual Mock for TaskRepository
 class MockTaskRepository implements TaskRepository {
@@ -71,7 +71,7 @@ class MockTaskRepository implements TaskRepository {
 // Manual Mock for NotificationService to bypass Platform channels
 class MockNotificationService implements NotificationService {
   @override
-  get flutterLocalNotificationsPlugin => throw UnimplementedError();
+  Never get flutterLocalNotificationsPlugin => throw UnimplementedError();
 
   @override
   Future<void> init() async {}

@@ -1,8 +1,8 @@
 import 'package:dexdo/core/theme/theme_provider.dart';
 import 'package:dexdo/features/settings/presentation/widgets/settings_pane.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('SettingsPane displays basic settings options', (WidgetTester tester) async {

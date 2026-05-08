@@ -4,13 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 class SubscriptionState {
-  final bool isPremium;
-  final Offerings? offerings;
 
   SubscriptionState({
     this.isPremium = false,
     this.offerings,
   });
+  final bool isPremium;
+  final Offerings? offerings;
 
   SubscriptionState copyWith({
     bool? isPremium,
@@ -48,7 +48,7 @@ class SubscriptionNotifier extends Notifier<SubscriptionState> {
     }
 
     // Check current entitlement status
-    CustomerInfo customerInfo = await Purchases.getCustomerInfo();
+    final CustomerInfo customerInfo = await Purchases.getCustomerInfo();
     _updateEntitlementStatus(customerInfo);
 
     // Listen for customer info updates
@@ -76,7 +76,7 @@ class SubscriptionNotifier extends Notifier<SubscriptionState> {
 
   Future<bool> purchasePackage(Package package) async {
     try {
-      CustomerInfo customerInfo = await Purchases.purchasePackage(package);
+      final CustomerInfo customerInfo = await Purchases.purchasePackage(package);
       _updateEntitlementStatus(customerInfo);
       return state.isPremium;
     } catch (e) {
@@ -87,7 +87,7 @@ class SubscriptionNotifier extends Notifier<SubscriptionState> {
 
   Future<void> restorePurchases() async {
     try {
-      CustomerInfo customerInfo = await Purchases.restorePurchases();
+      final CustomerInfo customerInfo = await Purchases.restorePurchases();
       _updateEntitlementStatus(customerInfo);
     } catch (e) {
       debugPrint('Restore error: $e');

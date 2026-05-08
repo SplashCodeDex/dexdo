@@ -1,6 +1,6 @@
+import 'package:dexdo/core/features/tasks/data/models/task_model.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-import '../features/tasks/data/models/task_model.dart';
 
 class IsarService {
   static Isar? _instance;

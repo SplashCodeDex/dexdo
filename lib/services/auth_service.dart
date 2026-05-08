@@ -5,12 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService extends ChangeNotifier {
-  final FirebaseAuth _auth;
-  final GoogleSignIn _googleSignIn;
-
-  User? get currentUser => _auth.currentUser;
-
-  bool get isAnonymous => currentUser?.isAnonymous ?? true;
 
   AuthService({FirebaseAuth? auth, GoogleSignIn? googleSignIn})
       : _auth = auth ?? FirebaseAuth.instance,
@@ -21,6 +15,12 @@ class AuthService extends ChangeNotifier {
     // Mandatory initialization for v7.2.0
     _googleSignIn.initialize();
   }
+  final FirebaseAuth _auth;
+  final GoogleSignIn _googleSignIn;
+
+  User? get currentUser => _auth.currentUser;
+
+  bool get isAnonymous => currentUser?.isAnonymous ?? true;
 
 
   /// Logs in silently. Good for tasks app before they explicitly attach an email.
@@ -28,7 +28,7 @@ class AuthService extends ChangeNotifier {
     try {
       return await _auth.signInAnonymously();
     } catch (e) {
-      debugPrint("Auth Error: $e");
+      debugPrint('Auth Error: $e');
       return null;
     }
   }
@@ -41,10 +41,10 @@ class AuthService extends ChangeNotifier {
         
         final user = _auth.currentUser;
         if (user != null && user.isAnonymous) {
-          debugPrint("Linking anonymous account with Google (Web)...");
+          debugPrint('Linking anonymous account with Google (Web)...');
           return await user.linkWithPopup(googleProvider);
         } else {
-          debugPrint("Signing in with Google directly (Web)...");
+          debugPrint('Signing in with Google directly (Web)...');
           return await _auth.signInWithPopup(googleProvider);
         }
       } else {
@@ -73,18 +73,18 @@ class AuthService extends ChangeNotifier {
 
         final user = _auth.currentUser;
         if (user != null && user.isAnonymous) {
-          debugPrint("Linking anonymous account with Google...");
+          debugPrint('Linking anonymous account with Google...');
           return await user.linkWithCredential(credential);
         } else {
-          debugPrint("Signing in with Google directly...");
+          debugPrint('Signing in with Google directly...');
           return await _auth.signInWithCredential(credential);
         }
       }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'provider-already-linked') {
-         debugPrint("The provider is already linked to a user.");
+         debugPrint('The provider is already linked to a user.');
       } else if (e.code == 'credential-already-in-use') {
-         debugPrint("The credential is used by a different account - logging in directly.");
+         debugPrint('The credential is used by a different account - logging in directly.');
          final oldUid = _auth.currentUser?.uid;
          final cred = await _auth.signInWithCredential(e.credential!);
          final newUid = cred.user?.uid;
@@ -107,17 +107,17 @@ class AuthService extends ChangeNotifier {
                   sBatch.set(firestore.collection('users').doc(newUid).collection('settings').doc(doc.id), doc.data(), SetOptions(merge: true));
                }
                await sBatch.commit();
-               debugPrint("Merged data to new account.");
+               debugPrint('Merged data to new account.');
              } catch(mergeErr) {
-               debugPrint("Merge err: $mergeErr");
+               debugPrint('Merge err: $mergeErr');
              }
          }
          return cred;
       }
-      debugPrint("Firebase Auth Error: ${e.message}");
+      debugPrint('Firebase Auth Error: ${e.message}');
       return null;
     } catch (e) {
-      debugPrint("Generic Auth Error: $e");
+      debugPrint('Generic Auth Error: $e');
       return null;
     }
   }

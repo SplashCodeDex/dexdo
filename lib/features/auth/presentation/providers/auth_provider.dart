@@ -1,7 +1,7 @@
+import 'package:dexdo/features/auth/data/repositories/firebase_auth_repository.dart';
+import 'package:dexdo/features/auth/domain/repositories/auth_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/repositories/firebase_auth_repository.dart';
-import '../../domain/repositories/auth_repository.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return FirebaseAuthRepository();
@@ -16,11 +16,11 @@ final authControllerProvider = StateNotifierProvider<AuthController, AsyncValue<
 });
 
 class AuthController extends StateNotifier<AsyncValue<User?>> {
-  final Ref ref;
 
   AuthController(this.ref) : super(const AsyncValue.loading()) {
     _init();
   }
+  final Ref ref;
 
   void _init() {
     final user = ref.read(authRepositoryProvider).currentUser;

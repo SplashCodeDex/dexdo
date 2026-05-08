@@ -1,17 +1,17 @@
+import 'package:dexdo/models/task.dart';
+import 'package:dexdo/repositories/firebase_task_repository.dart';
+import 'package:dexdo/repositories/task_repository.dart';
+import 'package:dexdo/services/auth_service.dart';
+import 'package:dexdo/services/data_migration_service.dart';
+import 'package:dexdo/services/local_storage_service.dart';
 import 'package:flutter/material.dart';
-import '../models/task.dart';
-import 'task_repository.dart';
-import 'firebase_task_repository.dart';
-import '../services/local_storage_service.dart';
-import '../services/auth_service.dart';
-import '../services/data_migration_service.dart';
 
 class HybridTaskRepository implements TaskRepository {
+
+  HybridTaskRepository(this._auth);
   final FirebaseTaskRepository _firebase = FirebaseTaskRepository();
   final LocalStorageService _local = LocalStorageService();
   final AuthService _auth;
-
-  HybridTaskRepository(this._auth);
 
   TaskRepository get _currentRepo => 
       _auth.currentUser == null ? _local : _firebase;

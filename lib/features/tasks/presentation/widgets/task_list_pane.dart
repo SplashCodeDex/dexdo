@@ -1,15 +1,14 @@
+import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
+import 'package:dexdo/features/tasks/presentation/providers/task_state.dart';
+import 'package:dexdo/features/tasks/presentation/widgets/category_dialog.dart';
+import 'package:dexdo/features/tasks/presentation/widgets/task_editor_pane.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../domain/entities/task.dart';
-import '../providers/task_provider.dart';
-import '../providers/task_state.dart';
-import 'category_dialog.dart';
-import 'task_editor_pane.dart';
 
 class TaskListPane extends ConsumerStatefulWidget {
   const TaskListPane({super.key});

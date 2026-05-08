@@ -1,5 +1,5 @@
+import 'package:dexdo/features/tasks/domain/entities/task.dart';
 import 'package:flutter/material.dart';
-import '../entities/task.dart';
 
 abstract class TaskRepository {
   Future<void> init();

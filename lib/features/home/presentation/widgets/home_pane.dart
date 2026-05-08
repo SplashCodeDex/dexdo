@@ -1,12 +1,12 @@
+import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
+import 'package:dexdo/features/home/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/home/tasks/presentation/providers/task_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../tasks/domain/entities/task.dart';
-import '../../tasks/presentation/providers/task_provider.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 
 class HomePane extends ConsumerWidget {
+  const HomePane({super.key, this.onTaskTap, this.scrollController});
   final Function(Task)? onTaskTap;
   final ScrollController? scrollController;
-  const HomePane({super.key, this.onTaskTap, this.scrollController});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -1,4 +1,3 @@
-import 'package:dexdo/models/task.dart';
 import 'package:dexdo/repositories/firebase_task_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 

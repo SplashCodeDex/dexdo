@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dexdo/models/task.dart';
+import 'package:dexdo/services/storage_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../models/task.dart';
-import 'storage_service.dart';
 
 class FirebaseStorageService implements StorageService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;

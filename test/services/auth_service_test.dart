@@ -1,13 +1,14 @@
-import 'package:dexdo/services/auth_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'dart:async';
 
+import 'package:dexdo/services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+
 class FakeUser extends Fake implements User {
+  FakeUser({this.uid = 'test-uid'});
   @override
   final String uid;
-  FakeUser({this.uid = 'test-uid'});
 }
 
 class FakeFirebaseAuth extends Fake implements FirebaseAuth {

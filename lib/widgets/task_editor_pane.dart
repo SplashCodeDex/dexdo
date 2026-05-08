@@ -1,19 +1,18 @@
 import 'dart:async';
 
+import 'package:dexdo/models/task.dart';
+import 'package:dexdo/providers/task_provider.dart';
+import 'package:dexdo/services/ai_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/task.dart';
-import '../providers/task_provider.dart';
-import '../services/ai_service.dart';
-
 class TaskEditorPane extends StatefulWidget {
-  final Task task;
 
   const TaskEditorPane({
     super.key,
     required this.task,
   });
+  final Task task;
 
   @override
   State<TaskEditorPane> createState() => _TaskEditorPaneState();
@@ -35,7 +34,7 @@ class _TaskEditorPaneState extends State<TaskEditorPane> {
     _subtaskController = TextEditingController();
   }
 
-  void _handleAIBreakdown(TaskProvider provider) async {
+  Future<void> _handleAIBreakdown(TaskProvider provider) async {
     if (_titleController.text.isEmpty) return;
     
     setState(() => _isAILoading = true);

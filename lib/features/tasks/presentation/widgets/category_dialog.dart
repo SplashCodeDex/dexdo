@@ -1,10 +1,7 @@
+import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/task_provider.dart';
 
 class CategoryDialog extends ConsumerStatefulWidget {
-  final String? initialName;
-  final IconData? initialIcon;
-  final Color? initialColor;
 
   const CategoryDialog({
     super.key,
@@ -12,6 +9,9 @@ class CategoryDialog extends ConsumerStatefulWidget {
     this.initialIcon,
     this.initialColor,
   });
+  final String? initialName;
+  final IconData? initialIcon;
+  final Color? initialColor;
 
   @override
   ConsumerState<CategoryDialog> createState() => _CategoryDialogState();
@@ -41,7 +41,7 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
     final notifier = ref.read(taskProvider.notifier);
     final isEditing = widget.initialName != null;
 
-    final List<IconData> _availableIcons = [
+    final List<IconData> availableIcons = [
       Icons.work_rounded,
       Icons.account_balance_wallet_rounded,
       Icons.fitness_center_rounded,
@@ -56,7 +56,7 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
       Icons.brush_rounded,
     ];
 
-    final List<Color> _availableColors = [
+    final List<Color> availableColors = [
       const Color(0xFFF44336), // Red
       const Color(0xFF4CAF50), // Green
       const Color(0xFF2196F3), // Blue
@@ -150,9 +150,9 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
                   mainAxisSpacing: 8,
                   crossAxisSpacing: 8,
                 ),
-                itemCount: _availableIcons.length,
+                itemCount: availableIcons.length,
                 itemBuilder: (context, index) {
-                  final icon = _availableIcons[index];
+                  final icon = availableIcons[index];
                   final isSelected = _selectedIcon == icon;
                   return GestureDetector(
                     onTap: () => setState(() => _selectedIcon = icon),
@@ -191,10 +191,10 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
               height: 44,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                itemCount: _availableColors.length,
+                itemCount: availableColors.length,
                 separatorBuilder: (context, index) => const SizedBox(width: 12),
                 itemBuilder: (context, index) {
-                  final color = _availableColors[index];
+                  final color = availableColors[index];
                   final isSelected = _selectedColor == color;
                   return GestureDetector(
                     onTap: () => setState(() => _selectedColor = color),

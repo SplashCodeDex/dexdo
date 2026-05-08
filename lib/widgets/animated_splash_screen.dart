@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 /// A premium animated splash screen that mirrors the native Android AVD animation.
 /// Used for Web and iOS platforms where the native Android SplashScreen API isn't available.
 class AnimatedSplashScreen extends StatefulWidget {
-  final VoidCallback onComplete;
 
   const AnimatedSplashScreen({super.key, required this.onComplete});
+  final VoidCallback onComplete;
 
   @override
   State<AnimatedSplashScreen> createState() => _AnimatedSplashScreenState();
@@ -149,13 +149,6 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
 }
 
 class _DeXDoLogoPainter extends CustomPainter {
-  final double circleStroke;
-  final double circleFill;
-  final double smallCircle;
-  final double path1Stroke;
-  final double path1Fill;
-  final double path2Stroke;
-  final double path2Fill;
 
   _DeXDoLogoPainter({
     required this.circleStroke,
@@ -166,6 +159,13 @@ class _DeXDoLogoPainter extends CustomPainter {
     required this.path2Stroke,
     required this.path2Fill,
   });
+  final double circleStroke;
+  final double circleFill;
+  final double smallCircle;
+  final double path1Stroke;
+  final double path1Fill;
+  final double path2Stroke;
+  final double path2Fill;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -174,7 +174,7 @@ class _DeXDoLogoPainter extends CustomPainter {
     canvas.scale(scale);
 
     // --- 1. Background Circle ---
-    final circleCenter = const Offset(512, 512);
+    const circleCenter = Offset(512, 512);
     const circleRadius = 485.52;
 
     // Fill (gradient)

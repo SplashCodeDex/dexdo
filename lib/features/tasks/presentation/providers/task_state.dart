@@ -1,17 +1,7 @@
+import 'package:dexdo/features/tasks/domain/entities/task.dart';
 import 'package:flutter/material.dart';
-import '../../domain/entities/task.dart';
 
 class TaskState {
-  final List<Task> tasks;
-  final List<Task> filteredTasks;
-  final Task? selectedTask;
-  final String selectedCategory;
-  final String searchQuery;
-  final Set<String> selectedTaskIds;
-  final List<String> categories;
-  final Map<String, IconData> categoryIcons;
-  final Map<String, Color> categoryColors;
-  final bool isLoading;
 
   TaskState({
     this.tasks = const [],
@@ -39,6 +29,16 @@ class TaskState {
     },
     this.isLoading = false,
   });
+  final List<Task> tasks;
+  final List<Task> filteredTasks;
+  final Task? selectedTask;
+  final String selectedCategory;
+  final String searchQuery;
+  final Set<String> selectedTaskIds;
+  final List<String> categories;
+  final Map<String, IconData> categoryIcons;
+  final Map<String, Color> categoryColors;
+  final bool isLoading;
 
   List<Task> get activeTasks => filteredTasks.where((t) => !t.isCompleted).toList();
   List<Task> get completedTasks => filteredTasks.where((t) => t.isCompleted).toList();

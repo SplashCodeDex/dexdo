@@ -1,6 +1,6 @@
+import 'package:dexdo/features/tasks/domain/entities/task.dart';
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
-import '../../domain/entities/task.dart';
 
 part 'task_model.g.dart';
 

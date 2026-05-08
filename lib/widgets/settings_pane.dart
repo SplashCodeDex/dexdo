@@ -1,14 +1,13 @@
 import 'dart:io';
 
+import 'package:dexdo/providers/task_provider.dart';
+import 'package:dexdo/providers/theme_provider.dart';
+import 'package:dexdo/services/auth_service.dart';
+import 'package:dexdo/widgets/subscription_pane.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-
-import '../providers/task_provider.dart';
-import '../providers/theme_provider.dart';
-import '../services/auth_service.dart';
-import 'subscription_pane.dart';
 
 class SettingsPane extends StatelessWidget {
   const SettingsPane({super.key});

@@ -1,7 +1,7 @@
+import 'package:dexdo/services/subscription_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
-import '../services/subscription_service.dart';
 
 class SubscriptionPane extends StatefulWidget {
   const SubscriptionPane({super.key});

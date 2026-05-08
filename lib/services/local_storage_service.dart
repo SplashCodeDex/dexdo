@@ -1,8 +1,9 @@
 import 'dart:convert';
+
+import 'package:dexdo/models/task.dart';
+import 'package:dexdo/repositories/task_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/task.dart';
-import '../repositories/task_repository.dart';
 
 class LocalStorageService implements TaskRepository {
   late SharedPreferences _prefs;

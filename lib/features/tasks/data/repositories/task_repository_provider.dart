@@ -1,7 +1,7 @@
+import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
+import 'package:dexdo/features/tasks/data/repositories/hybrid_task_repository.dart';
+import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/repositories/task_repository.dart';
-import 'hybrid_task_repository.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 
 final taskRepositoryProvider = Provider<TaskRepository>((ref) {
   final repo = HybridTaskRepository(ref);

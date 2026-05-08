@@ -1,5 +1,5 @@
+import 'package:dexdo/models/task.dart';
 import 'package:flutter/material.dart';
-import '../models/task.dart';
 
 abstract class StorageService {
   Future<void> init();

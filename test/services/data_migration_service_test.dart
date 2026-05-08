@@ -1,10 +1,10 @@
+import 'dart:convert';
+
 import 'package:dexdo/models/task.dart';
 import 'package:dexdo/repositories/firebase_task_repository.dart';
 import 'package:dexdo/services/data_migration_service.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 
 class FakeFirebaseTaskRepository extends Fake implements FirebaseTaskRepository {
   List<Task> savedTasks = [];

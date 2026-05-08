@@ -10,21 +10,21 @@ class FakeFlutterLocalNotificationsPlugin extends Fake implements FlutterLocalNo
   int scheduleCount = 0;
 
   @override
-  Future<void> cancel(id: int, {String? tag}) async {
+  Future<void> cancel(id = int, {String? tag}) async {
     cancelCount++;
   }
 
   @override
   Future<void> zonedSchedule(
-    id: int,
-    title: String?,
-    body: String?,
-    scheduledDate: tz.TZDateTime,
-    notificationDetails: NotificationDetails, {
+    id = int,
+    title = String?,
+    body = String?,
+    scheduledDate = tz.TZDateTime,
+    notificationDetails = NotificationDetails, {
     String? payload,
     AndroidScheduleMode? androidScheduleMode,
     DateTimeComponents? matchDateTimeComponents,
-    uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation? uiLocalNotificationDateInterpretation,
+    uiLocalNotificationDateInterpretation = UILocalNotificationDateInterpretation? uiLocalNotificationDateInterpretation,
   }) async {
     scheduleCount++;
   }
