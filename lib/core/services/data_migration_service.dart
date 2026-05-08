@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/tasks/data/repositories/firebase_task_repository.dart';
 import '../services/local_storage_service.dart';
 
+import '../utils/logger.dart';
+
 class DataMigrationService {
   static const String _migrationKey = 'migrated_to_firebase';
 
@@ -12,7 +14,7 @@ class DataMigrationService {
     final hasMigrated = prefs.getBool(_migrationKey) ?? false;
 
     if (!hasMigrated) {
-      debugPrint('Starting one-time migration from Local -> Firebase...');
+      AppLogger.i('Starting one-time migration from Local -> Firebase...');
       try {
         final localService = LocalStorageService();
         await localService.init();
@@ -29,9 +31,9 @@ class DataMigrationService {
 
         // We mark it as migrated even if lists are empty so we don't repeat this.
         await prefs.setBool(_migrationKey, true);
-        debugPrint('Migration complete.');
-      } catch (e) {
-        debugPrint('Migration failed: $e');
+        AppLogger.i('Migration complete.');
+      } catch (e, stack) {
+        AppLogger.e('Migration failed', e, stack);
       }
     }
   }

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/task.dart';
+import '../utils/logger.dart';
 import 'storage_service.dart';
 
 class FirebaseStorageService implements StorageService {
@@ -16,8 +17,8 @@ class FirebaseStorageService implements StorageService {
     if (_auth.currentUser == null) {
       try {
         await _auth.signInAnonymously();
-      } catch (e) {
-        debugPrint('Failed to sign in anonymously: $e');
+      } catch (e, stack) {
+        AppLogger.e('Failed to sign in anonymously', e, stack);
       }
     }
   }
@@ -38,13 +39,13 @@ class FirebaseStorageService implements StorageService {
           final data = doc.data();
           data['id'] = doc.id; // Force ID to match the document key
           return Task.fromJson(data);
-        } catch (e) {
-          debugPrint('Error parsing firestore task: $e');
+        } catch (e, stack) {
+          AppLogger.e('Error parsing firestore task', e, stack);
           return null;
         }
       }).whereType<Task>().toList();
-    } catch (e) {
-      debugPrint('Firestore loadTasks Error: $e');
+    } catch (e, stack) {
+      AppLogger.e('Firestore loadTasks Error', e, stack);
       return [];
     }
   }
@@ -64,8 +65,8 @@ class FirebaseStorageService implements StorageService {
 
     try {
       await batch.commit();
-    } catch (e) {
-      debugPrint('Firestore saveTasks Error: $e');
+    } catch (e, stack) {
+      AppLogger.e('Firestore saveTasks Error', e, stack);
     }
   }
 
@@ -77,8 +78,8 @@ class FirebaseStorageService implements StorageService {
       if (doc.exists) {
         return List<String>.from(doc.data()?['list'] ?? []);
       }
-    } catch (e) {
-      debugPrint('Firestore loadCategories Error: $e');
+    } catch (e, stack) {
+      AppLogger.e('Firestore loadCategories Error', e, stack);
     }
     return [];
   }
@@ -86,9 +87,13 @@ class FirebaseStorageService implements StorageService {
   @override
   Future<void> saveCategories(List<String> categories) async {
     if (_auth.currentUser == null) return;
-    await _db.collection('users').doc(_userId).collection('settings').doc('categories').set({
-      'list': categories,
-    });
+    try {
+      await _db.collection('users').doc(_userId).collection('settings').doc('categories').set({
+        'list': categories,
+      });
+    } catch (e, stack) {
+      AppLogger.e('Firestore saveCategories Error', e, stack);
+    }
   }
 
   @override
@@ -104,8 +109,8 @@ class FirebaseStorageService implements StorageService {
         });
         return result;
       }
-    } catch (e) {
-      debugPrint('Firestore loadCategoryIcons Error: $e');
+    } catch (e, stack) {
+      AppLogger.e('Firestore loadCategoryIcons Error', e, stack);
     }
     return {};
   }
@@ -113,9 +118,13 @@ class FirebaseStorageService implements StorageService {
   @override
   Future<void> saveCategoryIcons(Map<String, IconData> icons) async {
     if (_auth.currentUser == null) return;
-    final Map<String, int> iconMap = {};
-    icons.forEach((key, value) => iconMap[key] = value.codePoint);
-    await _db.collection('users').doc(_userId).collection('settings').doc('categoryIcons').set(iconMap);
+    try {
+      final Map<String, int> iconMap = {};
+      icons.forEach((key, value) => iconMap[key] = value.codePoint);
+      await _db.collection('users').doc(_userId).collection('settings').doc('categoryIcons').set(iconMap);
+    } catch (e, stack) {
+      AppLogger.e('Firestore saveCategoryIcons Error', e, stack);
+    }
   }
 
   @override
@@ -131,8 +140,8 @@ class FirebaseStorageService implements StorageService {
         });
         return result;
       }
-    } catch (e) {
-      debugPrint('Firestore loadCategoryColors Error: $e');
+    } catch (e, stack) {
+      AppLogger.e('Firestore loadCategoryColors Error', e, stack);
     }
     return {};
   }
@@ -140,8 +149,13 @@ class FirebaseStorageService implements StorageService {
   @override
   Future<void> saveCategoryColors(Map<String, Color> colors) async {
     if (_auth.currentUser == null) return;
-    final Map<String, int> colorMap = {};
-    colors.forEach((key, value) => colorMap[key] = value.toARGB32());
-    await _db.collection('users').doc(_userId).collection('settings').doc('categoryColors').set(colorMap);
+    try {
+      final Map<String, int> colorMap = {};
+      colors.forEach((key, value) => colorMap[key] = value.toARGB32());
+      await _db.collection('users').doc(_userId).collection('settings').doc('categoryColors').set(colorMap);
+    } catch (e, stack) {
+      AppLogger.e('Firestore saveCategoryColors Error', e, stack);
+    }
   }
+}
 }

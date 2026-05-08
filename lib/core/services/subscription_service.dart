@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import '../utils/logger.dart';
 
 class SubscriptionState {
   final bool isPremium;
@@ -69,8 +70,8 @@ class SubscriptionNotifier extends Notifier<SubscriptionState> {
     try {
       final offerings = await Purchases.getOfferings();
       state = state.copyWith(offerings: offerings);
-    } catch (e) {
-      debugPrint('Error fetching offerings: $e');
+    } catch (e, stack) {
+      AppLogger.e('Error fetching offerings', e, stack);
     }
   }
 
@@ -79,8 +80,8 @@ class SubscriptionNotifier extends Notifier<SubscriptionState> {
       CustomerInfo customerInfo = await Purchases.purchasePackage(package);
       _updateEntitlementStatus(customerInfo);
       return state.isPremium;
-    } catch (e) {
-      debugPrint('Purchase error: $e');
+    } catch (e, stack) {
+      AppLogger.e('Purchase error', e, stack);
       return false;
     }
   }
@@ -89,8 +90,8 @@ class SubscriptionNotifier extends Notifier<SubscriptionState> {
     try {
       CustomerInfo customerInfo = await Purchases.restorePurchases();
       _updateEntitlementStatus(customerInfo);
-    } catch (e) {
-      debugPrint('Restore error: $e');
+    } catch (e, stack) {
+      AppLogger.e('Restore error', e, stack);
     }
   }
 }

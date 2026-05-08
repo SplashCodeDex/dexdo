@@ -57,12 +57,13 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
             backgroundColor: Theme.of(context).colorScheme.surface,
             elevation: innerBoxIsScrolled ? 2 : 0,
             shadowColor: Colors.black.withValues(alpha: 0.1),
-            expandedHeight: 140,
+            expandedHeight: 180,
             flexibleSpace: FlexibleSpaceBar(
               background: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   _buildSearchBar(context, taskState, taskNotifier),
+                  _buildSortAndFilterRow(context, taskState, taskNotifier),
                   _buildCategoryHeader(context, taskState, taskNotifier),
                 ],
               ),
@@ -216,6 +217,64 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
           const SizedBox(width: 12),
           Expanded(child: Divider(color: Theme.of(context).dividerColor, thickness: 1)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSortAndFilterRow(BuildContext context, TaskState state, TaskNotifier notifier) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Row(
+        children: [
+          Text(
+            'Sort by:',
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 8),
+          _buildSortChip(context, 'Date', TaskSortOption.dueDate, state, notifier),
+          _buildSortChip(context, 'Priority', TaskSortOption.priority, state, notifier),
+          _buildSortChip(context, 'Title', TaskSortOption.title, state, notifier),
+          const Spacer(),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            icon: Icon(
+              state.sortAscending ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            onPressed: () => notifier.setSortOption(state.sortOption),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSortChip(BuildContext context, String label, TaskSortOption option, TaskState state, TaskNotifier notifier) {
+    final isSelected = state.sortOption == option;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: InkWell(
+        onTap: () => notifier.setSortOption(option),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: isSelected ? Theme.of(context).colorScheme.primaryContainer : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -568,16 +627,34 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        task.title.isEmpty ? 'New Task' : task.title,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: task.isCompleted 
-                              ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) 
-                              : Theme.of(context).colorScheme.onSurface,
-                          decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-                        ),
+                      Row(
+                        children: [
+                          if (task.priority != TaskPriority.medium)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Container(
+                                width: 4,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: task.priority.color,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                            ),
+                          Expanded(
+                            child: Text(
+                              task.title.isEmpty ? 'New Task' : task.title,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                                color: task.isCompleted 
+                                    ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) 
+                                    : Theme.of(context).colorScheme.onSurface,
+                                decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 8),
                       Wrap(

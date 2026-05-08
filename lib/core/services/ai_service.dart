@@ -1,5 +1,5 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:flutter/foundation.dart';
+import '../utils/logger.dart';
 
 class AIService {
   static const String _apiKey = String.fromEnvironment('GEMINI_API_KEY');
@@ -25,8 +25,8 @@ class AIService {
           yield chunk.text!;
         }
       }
-    } catch (e) {
-      debugPrint('Error streaming task breakdown with AI: $e');
+    } catch (e, stack) {
+      AppLogger.e('Error streaming task breakdown with AI', e, stack);
     }
   }
 
@@ -47,8 +47,8 @@ class AIService {
           .map((s) => s.trim())
           .where((s) => s.isNotEmpty)
           .toList();
-    } catch (e) {
-      debugPrint('Error breaking down task with AI: $e');
+    } catch (e, stack) {
+      AppLogger.e('Error breaking down task with AI', e, stack);
       return [];
     }
   }

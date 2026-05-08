@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/tasks/domain/entities/task.dart';
 import '../../features/tasks/domain/repositories/task_repository.dart';
+import '../utils/logger.dart';
 
 class LocalStorageService implements TaskRepository {
   late SharedPreferences _prefs;
@@ -27,13 +28,13 @@ class LocalStorageService implements TaskRepository {
       return decoded.map((item) {
         try {
           return Task.fromJson(item as Map<String, dynamic>);
-        } catch (e) {
-          debugPrint('Error parsing individual task: $e');
+        } catch (e, stack) {
+          AppLogger.e('Error parsing individual task', e, stack);
           return null;
         }
       }).whereType<Task>().toList();
-    } catch (e) {
-      debugPrint('Error loading tasks from SharedPreferences: $e');
+    } catch (e, stack) {
+      AppLogger.e('Error loading tasks from SharedPreferences', e, stack);
       return [];
     }
   }

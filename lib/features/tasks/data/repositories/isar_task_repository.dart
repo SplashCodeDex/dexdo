@@ -5,12 +5,18 @@ import '../../domain/repositories/task_repository.dart';
 import '../models/task_model.dart';
 import '../../../../core/services/isar_service.dart';
 
+import '../../../../core/utils/logger.dart';
+
 class IsarTaskRepository implements TaskRepository {
   Future<Isar> get _db => IsarService.instance;
 
   @override
   Future<void> init() async {
-    await _db;
+    try {
+      await _db;
+    } catch (e, stack) {
+      AppLogger.e('Isar initialization failed', e, stack);
+    }
   }
 
   @override

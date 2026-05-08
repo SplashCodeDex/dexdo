@@ -9,41 +9,58 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'firebase_options.dart';
 import 'features/tasks/presentation/providers/task_provider.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/theme/app_theme.dart';
+import 'core/utils/logger.dart';
 import 'core/services/subscription_service.dart';
 import 'features/calendar/presentation/widgets/calendar_pane.dart';
 import 'features/home/presentation/widgets/home_pane.dart';
 import 'features/settings/presentation/widgets/settings_pane.dart';
 import 'features/tasks/presentation/widgets/task_editor_pane.dart';
 import 'features/tasks/presentation/widgets/task_list_pane.dart';
+// Note: Import will be valid after build/generation
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
   
-  // Pass all uncaught "fatal" errors from the framework to Crashlytics
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    
+    // Pass all uncaught "fatal" errors from the framework to Crashlytics
+    FlutterError.onError = (errorDetails) {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+      AppLogger.e('Flutter Error', errorDetails.exception, errorDetails.stack);
+    };
 
-  // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
-  PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true;
-  };
+    // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      AppLogger.e('Platform Error', error, stack);
+      return true;
+    };
 
-  FirebaseFirestore.instance.settings = const Settings(
-    persistenceEnabled: true,
-  );
-  runApp(
-    const rp.ProviderScope(
-      child: DeXDoApp(),
-    ),
-  );
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+    );
+
+    AppLogger.i('Application successfully initialized');
+    
+    runApp(
+      const rp.ProviderScope(
+        child: DeXDoApp(),
+      ),
+    );
+  } catch (e, stack) {
+    AppLogger.e('Initialization failed', e, stack);
+    // In a real app, you might show a minimal error UI here
+  }
 }
 
 class DeXDoApp extends rp.ConsumerWidget {
@@ -54,11 +71,20 @@ class DeXDoApp extends rp.ConsumerWidget {
     final themeMode = ref.watch(themeNotifierProvider);
 
     return MaterialApp(
-      title: 'DeXDo',
+      onGenerateTitle: (context) => 'DeXDo', // Use localization when generated
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
+      localizationsDelegates: const [
+        // AppLocalizations.delegate, // Uncomment when generated
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', ''), // English
+      ],
       home: const HomeScreen(),
     );
   }

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../../domain/entities/task.dart';
 import '../../domain/repositories/task_repository.dart';
 
+import '../../../../core/utils/logger.dart';
+
 class FirebaseTaskRepository implements TaskRepository {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -35,14 +37,14 @@ class FirebaseTaskRepository implements TaskRepository {
           data['id'] = doc.id; // Force ID to match the document key
           final task = Task.fromJson(data);
           activeTasks.add(task);
-        } catch (e) {
-          debugPrint('Error parsing firestore task: $e');
+        } catch (e, stack) {
+          AppLogger.e('Error parsing firestore task', e, stack);
         }
       }
 
       return activeTasks;
-    } catch (e) {
-      debugPrint('Firestore loadTasks Error: $e');
+    } catch (e, stack) {
+      AppLogger.e('Firestore loadTasks Error', e, stack);
       return [];
     }
   }
@@ -63,16 +65,16 @@ class FirebaseTaskRepository implements TaskRepository {
           await batch.commit();
           batch = _db.batch();
           count = 0;
-        } catch (e) {
-          debugPrint('Firestore saveTasks batch chunk Error: $e');
+        } catch (e, stack) {
+          AppLogger.e('Firestore saveTasks batch chunk Error', e, stack);
         }
       }
     }
 
     try {
       if (count > 0) await batch.commit();
-    } catch (e) {
-      debugPrint('Firestore saveTasks Error: $e');
+    } catch (e, stack) {
+      AppLogger.e('Firestore saveTasks Error', e, stack);
     }
   }
 
@@ -81,8 +83,8 @@ class FirebaseTaskRepository implements TaskRepository {
     if (_auth.currentUser == null) return;
     try {
       await _db.collection('users').doc(_userId).collection('tasks').doc(task.id).set(task.toJson());
-    } catch (e) {
-      debugPrint('Firestore saveTask Error: $e');
+    } catch (e, stack) {
+      AppLogger.e('Firestore saveTask Error', e, stack);
     }
   }
 
@@ -91,8 +93,8 @@ class FirebaseTaskRepository implements TaskRepository {
     if (_auth.currentUser == null) return;
     try {
       await _db.collection('users').doc(_userId).collection('tasks').doc(taskId).delete();
-    } catch (e) {
-      debugPrint('Firestore deleteTask Error: $e');
+    } catch (e, stack) {
+      AppLogger.e('Firestore deleteTask Error', e, stack);
     }
   }
 
@@ -148,8 +150,8 @@ class FirebaseTaskRepository implements TaskRepository {
       if (doc.exists) {
         return List<String>.from(doc.data()?['list'] ?? []);
       }
-    } catch (e) {
-      debugPrint('Firestore loadCategories Error: $e');
+    } catch (e, stack) {
+      AppLogger.e('Firestore loadCategories Error', e, stack);
     }
     return [];
   }
@@ -175,8 +177,8 @@ class FirebaseTaskRepository implements TaskRepository {
         });
         return result;
       }
-    } catch (e) {
-      debugPrint('Firestore loadCategoryIcons Error: $e');
+    } catch (e, stack) {
+      AppLogger.e('Firestore loadCategoryIcons Error', e, stack);
     }
     return {};
   }
@@ -202,8 +204,8 @@ class FirebaseTaskRepository implements TaskRepository {
         });
         return result;
       }
-    } catch (e) {
-      debugPrint('Firestore loadCategoryColors Error: $e');
+    } catch (e, stack) {
+      AppLogger.e('Firestore loadCategoryColors Error', e, stack);
     }
     return {};
   }

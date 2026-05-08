@@ -1,7 +1,13 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../tasks/domain/entities/task.dart';
-import '../../tasks/presentation/providers/task_provider.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+
+import '../../../tasks/domain/entities/task.dart';
+import '../../../tasks/presentation/providers/task_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../tasks/presentation/providers/task_state.dart';
 
 class HomePane extends ConsumerWidget {
   final Function(Task)? onTaskTap;
@@ -47,6 +53,10 @@ class HomePane extends ConsumerWidget {
           _buildHeader(context, ref),
           const SizedBox(height: 32),
           _buildProgressCard(context, progressToday, completedToday.length, totalToday),
+          const SizedBox(height: 32),
+          _buildSectionTitle(context, 'Weekly Completion'),
+          const SizedBox(height: 16),
+          _buildProductivityChart(context, allTasks),
           const SizedBox(height: 32),
           _buildCategoryFilter(context, taskState, taskNotifier),
           const SizedBox(height: 8),
@@ -195,6 +205,136 @@ class HomePane extends ConsumerWidget {
         fontSize: 18,
         fontWeight: FontWeight.bold,
         letterSpacing: -0.5,
+      ),
+    );
+  }
+
+  Widget _buildProductivityChart(BuildContext context, List<Task> tasks) {
+    final now = DateTime.now();
+    final last7Days = List.generate(7, (index) {
+      return now.subtract(Duration(days: 6 - index));
+    });
+
+    final data = last7Days.map((day) {
+      final completedOnDay = tasks.where((t) {
+        if (t.isCompleted && t.completionDate != null) {
+          return t.completionDate!.year == day.year &&
+              t.completionDate!.month == day.month &&
+              t.completionDate!.day == day.day;
+        }
+        return false;
+      }).length;
+      return double.parse(completedOnDay.toString());
+    }).toList();
+
+    final maxVal = data.isEmpty ? 5.0 : data.reduce((a, b) => a > b ? a : b);
+    final interval = maxVal > 0 ? (maxVal / 5).ceilToDouble() : 1.0;
+
+    return Container(
+      height: 220,
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Theme.of(context).dividerColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: BarChart(
+        BarChartData(
+          alignment: BarChartAlignment.spaceAround,
+          maxY: maxVal + 1,
+          barTouchData: BarTouchData(
+            touchTooltipData: BarTouchTooltipData(
+              getTooltipColor: (_) => Theme.of(context).colorScheme.primaryContainer,
+              getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                return BarTooltipItem(
+                  rod.toY.round().toString(),
+                  TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              },
+            ),
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, meta) {
+                  if (value.toInt() < 0 || value.toInt() >= 7) return const SizedBox();
+                  final date = last7Days[value.toInt()];
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      DateFormat('E').format(date).substring(0, 1),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  );
+                },
+                reservedSize: 28,
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                interval: interval,
+                getTitlesWidget: (value, meta) {
+                  return Text(
+                    value.round().toString(),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                      fontSize: 10,
+                    ),
+                  );
+                },
+                reservedSize: 20,
+              ),
+            ),
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: interval,
+            getDrawingHorizontalLine: (value) => FlLine(
+              color: Theme.of(context).dividerColor,
+              strokeWidth: 1,
+            ),
+          ),
+          borderData: FlBorderData(show: false),
+          barGroups: data.asMap().entries.map((entry) {
+            return BarChartGroupData(
+              x: entry.key,
+              barRods: [
+                BarChartRodData(
+                  toY: entry.value,
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 16,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                  backDrawRodData: BackgroundBarChartRodData(
+                    show: true,
+                    toY: maxVal + 1,
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
       ),
     );
   }

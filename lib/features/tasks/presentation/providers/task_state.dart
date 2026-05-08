@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/task.dart';
+import '../../../../core/error/failures.dart';
+
+enum TaskSortOption {
+  dueDate,
+  priority,
+  title,
+  orderIndex,
+}
 
 class TaskState {
   final List<Task> tasks;
@@ -7,11 +15,14 @@ class TaskState {
   final Task? selectedTask;
   final String selectedCategory;
   final String searchQuery;
+  final TaskSortOption sortOption;
+  final bool sortAscending;
   final Set<String> selectedTaskIds;
   final List<String> categories;
   final Map<String, IconData> categoryIcons;
   final Map<String, Color> categoryColors;
   final bool isLoading;
+  final Failure? error;
 
   TaskState({
     this.tasks = const [],
@@ -19,6 +30,8 @@ class TaskState {
     this.selectedTask,
     this.selectedCategory = 'All',
     this.searchQuery = '',
+    this.sortOption = TaskSortOption.orderIndex,
+    this.sortAscending = true,
     this.selectedTaskIds = const {},
     this.categories = const ['All', 'Work', 'Finance', 'Sport', 'Home', 'Personal'],
     this.categoryIcons = const {
@@ -38,6 +51,7 @@ class TaskState {
       'All': Color(0xFF2196F3),
     },
     this.isLoading = false,
+    this.error,
   });
 
   List<Task> get activeTasks => filteredTasks.where((t) => !t.isCompleted).toList();
@@ -51,11 +65,15 @@ class TaskState {
     bool clearSelectedTask = false,
     String? selectedCategory,
     String? searchQuery,
+    TaskSortOption? sortOption,
+    bool? sortAscending,
     Set<String>? selectedTaskIds,
     List<String>? categories,
     Map<String, IconData>? categoryIcons,
     Map<String, Color>? categoryColors,
     bool? isLoading,
+    Failure? error,
+    bool clearError = false,
   }) {
     return TaskState(
       tasks: tasks ?? this.tasks,
@@ -63,11 +81,14 @@ class TaskState {
       selectedTask: clearSelectedTask ? null : (selectedTask ?? this.selectedTask),
       selectedCategory: selectedCategory ?? this.selectedCategory,
       searchQuery: searchQuery ?? this.searchQuery,
+      sortOption: sortOption ?? this.sortOption,
+      sortAscending: sortAscending ?? this.sortAscending,
       selectedTaskIds: selectedTaskIds ?? this.selectedTaskIds,
       categories: categories ?? this.categories,
       categoryIcons: categoryIcons ?? this.categoryIcons,
       categoryColors: categoryColors ?? this.categoryColors,
       isLoading: isLoading ?? this.isLoading,
+      error: clearError ? null : (error ?? this.error),
     );
   }
 }

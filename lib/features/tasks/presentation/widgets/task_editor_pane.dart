@@ -227,6 +227,14 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
                 SizedBox(
                   width: 160,
                   child: _buildDetailCard(
+                    icon: Icons.priority_high_rounded,
+                    label: 'Priority',
+                    child: _buildPriorityDropdown(taskState, taskNotifier),
+                  ),
+                ),
+                SizedBox(
+                  width: 160,
+                  child: _buildDetailCard(
                     icon: Icons.repeat_rounded,
                     label: 'Recurrence',
                     child: _buildRecurrenceDropdown(taskState, taskNotifier),
@@ -424,6 +432,112 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 color: widget.task.isCompleted ? Colors.green : Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriorityDropdown(TaskState state, TaskNotifier notifier) {
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        _showPriorityPicker(context, state, notifier);
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: widget.task.priority.color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            widget.task.priority.label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 20,
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPriorityPicker(BuildContext context, TaskState state, TaskNotifier notifier) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              'Select Priority',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: TaskPriority.values.map((priority) {
+                  final bool isSelected = widget.task.priority == priority;
+                  return ListTile(
+                    leading: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: priority.color,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    title: Text(
+                      priority.label,
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected 
+                            ? Theme.of(context).colorScheme.primary 
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? Icon(Icons.check_circle_rounded, color: Theme.of(context).colorScheme.primary)
+                        : null,
+                    onTap: () {
+                      notifier.updateTaskPriority(widget.task, priority);
+                      Navigator.pop(context);
+                    },
+                  );
+                }).toList(),
               ),
             ),
           ],
