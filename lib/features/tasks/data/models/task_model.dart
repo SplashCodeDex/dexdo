@@ -6,10 +6,11 @@ part 'task_model.g.dart';
 
 @collection
 class TaskModel {
-  Id? isarId;
+  @id
+  int isarId = 0;
 
-  @Index(unique: true, replace: true)
-  late String id;
+  @Index(unique: true)
+  late String taskId;
 
   late String title;
   late String description;
@@ -24,12 +25,12 @@ class TaskModel {
   DateTime? dueDate;
   late int orderIndex;
   late String recurrence;
-  @enumerated
-  late TaskPriority priority;
+  
+  late int priorityIndex;
 
   Task toEntity() {
     return Task(
-      id: id,
+      id: taskId,
       title: title,
       description: description,
       isCompleted: isCompleted,
@@ -43,13 +44,13 @@ class TaskModel {
       dueDate: dueDate,
       orderIndex: orderIndex,
       recurrence: recurrence,
-      priority: priority,
+      priority: TaskPriority.values[priorityIndex],
     );
   }
 
   static TaskModel fromEntity(Task task) {
     return TaskModel()
-      ..id = task.id
+      ..taskId = task.id
       ..title = task.title
       ..description = task.description
       ..isCompleted = task.isCompleted
@@ -63,15 +64,16 @@ class TaskModel {
       ..dueDate = task.dueDate
       ..orderIndex = task.orderIndex
       ..recurrence = task.recurrence
-      ..priority = task.priority;
+      ..priorityIndex = task.priority.index;
   }
 }
 
 @collection
 class CategoryModel {
-  Id? isarId;
+  @id
+  int isarId = 0;
 
-  @Index(unique: true, replace: true)
+  @Index(unique: true)
   late String name;
 
   late int iconCodePoint;

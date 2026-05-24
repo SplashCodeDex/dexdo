@@ -252,7 +252,7 @@ class SettingsPane extends ConsumerWidget {
 
   Future<void> _exportData(BuildContext context, TaskNotifier notifier) async {
     try {
-      final jsonString = await notifier.exportTasksToJson();
+      final jsonString = notifier.exportTasksToJson();
       final directory = await getTemporaryDirectory();
       final file = File('${directory.path}/dexdo_tasks_export.json');
       await file.writeAsString(jsonString);

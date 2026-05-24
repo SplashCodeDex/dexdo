@@ -27,6 +27,12 @@ class ThemeNotifier extends Notifier<ThemeMode> {
     await prefs.setInt('themeMode', state.index);
   }
 
+  Future<void> setThemeMode(ThemeMode mode) async {
+    state = mode;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('themeMode', mode.index);
+  }
+
   bool isDarkMode(BuildContext context) {
     if (state == ThemeMode.system) {
       return MediaQuery.platformBrightnessOf(context) == Brightness.dark;

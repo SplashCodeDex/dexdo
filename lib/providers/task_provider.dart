@@ -301,7 +301,7 @@ class TaskProvider with ChangeNotifier {
   Future<void> toggleSubtask(Task task, SubTask subtask) async {
     subtask.isCompleted = !subtask.isCompleted;
     if (subtask.isCompleted) {
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
     }
     notifyListeners();
     await _syncTask(task);
@@ -532,7 +532,7 @@ class TaskProvider with ChangeNotifier {
     task.completionDate = isMarkingDone ? DateTime.now() : null;
     
     if (isMarkingDone) {
-      HapticFeedback.heavyImpact();
+      unawaited(HapticFeedback.heavyImpact());
       final List<Task> pendingClones = [];
       _handleRecurrence(task, DateTime.now(), pendingClones);
       if (pendingClones.isNotEmpty) {
@@ -543,7 +543,7 @@ class TaskProvider with ChangeNotifier {
         }
       }
     } else {
-      HapticFeedback.mediumImpact();
+      unawaited(HapticFeedback.mediumImpact());
     }
     
     _updateFilteredTasks();
@@ -562,7 +562,7 @@ class TaskProvider with ChangeNotifier {
 
   Future<void> toggleStarred(Task task) async {
     task.isStarred = !task.isStarred;
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     _updateFilteredTasks();
     notifyListeners();
     await _syncTask(task);
@@ -574,7 +574,7 @@ class TaskProvider with ChangeNotifier {
     if (_selectedTask?.id == task.id) {
       _selectedTask = null;
     }
-    HapticFeedback.vibrate();
+    unawaited(HapticFeedback.vibrate());
     await _removeTask(task);
     _updateFilteredTasks();
     notifyListeners();
@@ -596,7 +596,7 @@ class TaskProvider with ChangeNotifier {
       orderIndex: 0,
     );
     _tasks.insert(0, newTask);
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     _updateFilteredTasks();
     notifyListeners();
     await _saveTasks();

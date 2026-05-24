@@ -1,8 +1,8 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+
+import 'package:dexdo/core/utils/logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
-import '../utils/logger.dart';
 
 class SubscriptionState {
 
@@ -77,8 +77,8 @@ class SubscriptionNotifier extends Notifier<SubscriptionState> {
 
   Future<bool> purchasePackage(Package package) async {
     try {
-      final CustomerInfo customerInfo = await Purchases.purchasePackage(package);
-      _updateEntitlementStatus(customerInfo);
+      final PurchaseResult result = await Purchases.purchase(PurchaseParams.package(package));
+      _updateEntitlementStatus(result.customerInfo);
       return state.isPremium;
     } catch (e, stack) {
       AppLogger.e('Purchase error', e, stack);

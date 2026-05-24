@@ -1,7 +1,6 @@
+import 'package:dexdo/core/error/failures.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
 import 'package:flutter/material.dart';
-import '../../domain/entities/task.dart';
-import '../../../../core/error/failures.dart';
 
 enum TaskSortOption {
   dueDate,
@@ -11,19 +10,6 @@ enum TaskSortOption {
 }
 
 class TaskState {
-  final List<Task> tasks;
-  final List<Task> filteredTasks;
-  final Task? selectedTask;
-  final String selectedCategory;
-  final String searchQuery;
-  final TaskSortOption sortOption;
-  final bool sortAscending;
-  final Set<String> selectedTaskIds;
-  final List<String> categories;
-  final Map<String, IconData> categoryIcons;
-  final Map<String, Color> categoryColors;
-  final bool isLoading;
-  final Failure? error;
 
   TaskState({
     this.tasks = const [],
@@ -54,9 +40,24 @@ class TaskState {
     this.isLoading = false,
     this.error,
   });
+  final List<Task> tasks;
+  final List<Task> filteredTasks;
+  final Task? selectedTask;
+  final String selectedCategory;
+  final String searchQuery;
+  final TaskSortOption sortOption;
+  final bool sortAscending;
+  final Set<String> selectedTaskIds;
+  final List<String> categories;
+  final Map<String, IconData> categoryIcons;
+  final Map<String, Color> categoryColors;
+  final bool isLoading;
+  final Failure? error;
 
   List<Task> get activeTasks => filteredTasks.where((t) => !t.isCompleted).toList();
   List<Task> get completedTasks => filteredTasks.where((t) => t.isCompleted).toList();
+  List<Task> get allTasks => tasks;
+  bool get hasCompleted => tasks.any((t) => t.isCompleted);
   bool get isSelectionMode => selectedTaskIds.isNotEmpty;
 
   TaskState copyWith({

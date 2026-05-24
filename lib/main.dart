@@ -1,14 +1,15 @@
 import 'dart:ui';
-
 import 'package:animations/animations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dexdo/core/services/subscription_service.dart';
 import 'package:dexdo/core/theme/app_theme.dart';
 import 'package:dexdo/core/theme/theme_provider.dart';
+import 'package:dexdo/core/utils/logger.dart';
+import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
 import 'package:dexdo/features/calendar/presentation/widgets/calendar_pane.dart';
 import 'package:dexdo/features/home/presentation/widgets/home_pane.dart';
 import 'package:dexdo/features/settings/presentation/widgets/settings_pane.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
+import 'package:dexdo/features/tasks/presentation/providers/task_state.dart';
 import 'package:dexdo/features/tasks/presentation/widgets/task_editor_pane.dart';
 import 'package:dexdo/features/tasks/presentation/widgets/task_list_pane.dart';
 import 'package:dexdo/firebase_options.dart';
@@ -18,20 +19,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 import 'package:flutter_localizations/flutter_localizations.dart';
-
-import 'firebase_options.dart';
-import 'features/tasks/presentation/providers/task_provider.dart';
-import 'core/theme/theme_provider.dart';
-import 'core/theme/app_theme.dart';
-import 'core/utils/logger.dart';
-import 'core/services/subscription_service.dart';
-import 'features/calendar/presentation/widgets/calendar_pane.dart';
-import 'features/home/presentation/widgets/home_pane.dart';
-import 'features/settings/presentation/widgets/settings_pane.dart';
-import 'features/tasks/presentation/widgets/task_editor_pane.dart';
-import 'features/tasks/presentation/widgets/task_list_pane.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 // Note: Import will be valid after build/generation
 // import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -215,9 +204,9 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
     }
 
     if (isLargeScreen) {
-      return const Row(
+      return Row(
         children: [
-          Expanded(
+          const Expanded(
             flex: 2,
             child: TaskListPane(),
           ),
@@ -240,16 +229,16 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                         key: ValueKey(taskState.selectedTask!.id),
                         task: taskState.selectedTask!,
                       )
-                    : Center(
+                    : const Center(
                         key: ValueKey('empty_editor'),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.edit_note_rounded, size: 64, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)),
+                            Icon(Icons.edit_note_rounded, size: 64, color: Colors.grey),
                             SizedBox(height: 16),
                             Text(
                               'Select a task to view details',
-                              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5), fontSize: 16),
+                              style: TextStyle(color: Colors.grey, fontSize: 16),
                             ),
                           ],
                         ),

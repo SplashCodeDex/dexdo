@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 /// A premium animated splash screen that mirrors the native Android AVD animation.
@@ -72,23 +73,23 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
 
   Future<void> _startAnimation() async {
     // Stagger the animations to match the CSS/AVD timing
-    _circleStrokeController.forward(); // Start immediately
+    unawaited(_circleStrokeController.forward()); // Start immediately
 
     await Future.delayed(const Duration(milliseconds: 200));
-    _path1StrokeController.forward();
+    unawaited(_path1StrokeController.forward());
 
     await Future.delayed(const Duration(milliseconds: 200));
-    _path2StrokeController.forward();
+    unawaited(_path2StrokeController.forward());
 
     await Future.delayed(const Duration(milliseconds: 200));
-    _smallCircleController.forward();
-    _circleFillController.forward();
+    unawaited(_smallCircleController.forward());
+    unawaited(_circleFillController.forward());
 
     await Future.delayed(const Duration(milliseconds: 100));
-    _path1FillController.forward();
+    unawaited(_path1FillController.forward());
 
     await Future.delayed(const Duration(milliseconds: 200));
-    _path2FillController.forward();
+    unawaited(_path2FillController.forward());
 
     // Wait for last animation to finish, then dismiss
     await Future.delayed(const Duration(milliseconds: 500));

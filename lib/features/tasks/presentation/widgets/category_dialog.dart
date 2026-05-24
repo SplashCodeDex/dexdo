@@ -1,4 +1,5 @@
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class CategoryDialog extends ConsumerStatefulWidget {
@@ -246,5 +247,4 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
       ),
     );
   }
-}
 }

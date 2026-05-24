@@ -9,8 +9,8 @@ class IsarService {
     if (_instance != null) return _instance!;
 
     final dir = await getApplicationDocumentsDirectory();
-    _instance = await Isar.open(
-      [TaskModelSchema, CategoryModelSchema],
+    _instance = Isar.open(
+      schemas: [TaskModelSchema, CategoryModelSchema],
       directory: dir.path,
     );
     return _instance!;

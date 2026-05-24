@@ -1,10 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dexdo/features/tasks/domain/entities/task.dart';
 import 'package:dexdo/core/services/storage_service.dart';
+import 'package:dexdo/core/utils/logger.dart';
+import 'package:dexdo/features/tasks/domain/entities/task.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../utils/logger.dart';
-import 'storage_service.dart';
 
 class FirebaseStorageService implements StorageService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -158,5 +157,4 @@ class FirebaseStorageService implements StorageService {
       AppLogger.e('Firestore saveCategoryColors Error', e, stack);
     }
   }
-}
 }

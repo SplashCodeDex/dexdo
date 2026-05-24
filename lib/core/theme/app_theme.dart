@@ -66,7 +66,7 @@ class AppTheme {
         systemOverlayStyle: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       ),
 
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(

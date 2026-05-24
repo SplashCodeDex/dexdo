@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:dexdo/services/auth_service.dart';
+import 'package:dexdo/features/auth/data/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -29,7 +29,12 @@ class FakeFirebaseAuth extends Fake implements FirebaseAuth {
 
 class FakeGoogleSignIn extends Fake implements GoogleSignIn {
   @override
-  void initialize() {}
+  Future<void> initialize({
+    String? clientId,
+    String? hostedDomain,
+    String? nonce,
+    String? serverClientId,
+  }) async {}
 }
 
 void main() {
@@ -48,6 +53,11 @@ void main() {
       fakeAuth.simulateAuthState(null);
       expect(authService.isAnonymous, true);
     });
+
+    test('isAnonymous is false when a non-anonymous user is signed in', () {
+      // FakeUser.isAnonymous defaults to false (not overridden = Fake returns false)
+      fakeAuth.simulateAuthState(FakeUser(uid: 'real-uid'));
+      expect(authService.isAnonymous, false);
+    });
   });
 }
-

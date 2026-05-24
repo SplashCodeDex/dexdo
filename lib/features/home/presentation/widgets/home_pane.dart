@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
+import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
+import 'package:dexdo/features/tasks/presentation/providers/task_state.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-
-import '../../../tasks/domain/entities/task.dart';
-import '../../../tasks/presentation/providers/task_provider.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../tasks/presentation/providers/task_state.dart';
+import 'package:intl/intl.dart';
 
 class HomePane extends ConsumerWidget {
   const HomePane({super.key, this.onTaskTap, this.scrollController});

@@ -2,7 +2,6 @@ import 'package:dexdo/features/calendar/presentation/widgets/calendar_pane.dart'
 import 'package:dexdo/features/tasks/data/repositories/task_repository_provider.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart' as dexdo_task;
 import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
-import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

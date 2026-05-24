@@ -1,33 +1,44 @@
-import 'package:dexdo/providers/theme_provider.dart';
+import 'package:dexdo/core/theme/theme_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  group('ThemeProvider Tests', () {
+  group('ThemeNotifier Tests', () {
+    late ProviderContainer container;
+
     setUp(() {
       SharedPreferences.setMockInitialValues({});
+      container = ProviderContainer();
     });
 
-    test('Initial theme is Light/System depending on SharedPreferences', () async {
-      SharedPreferences.setMockInitialValues({'isDarkMode': false});
-      final provider = ThemeProvider();
-      await Future.delayed(Duration.zero); // allow constructor async to finish (if any)
-      expect(provider.isDarkMode, false);
-      expect(provider.themeMode, ThemeMode.light);
+    tearDown(() {
+      container.dispose();
     });
 
-    test('Toggle theme updates mode and saves to SharedPreferences', () async {
-      SharedPreferences.setMockInitialValues({'isDarkMode': false});
-      final provider = ThemeProvider();
-      
-      await provider.toggleTheme();
-      
-      expect(provider.isDarkMode, true);
-      expect(provider.themeMode, ThemeMode.dark);
-      
+    test('Initial theme defaults to ThemeMode.system', () {
+      final theme = container.read(themeNotifierProvider);
+      expect(theme, ThemeMode.system);
+    });
+
+    test('toggleTheme(true) switches to dark mode and saves to SharedPreferences', () async {
+      final notifier = container.read(themeNotifierProvider.notifier);
+
+      await notifier.toggleTheme(true);
+
+      expect(container.read(themeNotifierProvider), ThemeMode.dark);
+
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getBool('isDarkMode'), true);
+      expect(prefs.getInt('themeMode'), ThemeMode.dark.index);
+    });
+
+    test('toggleTheme(false) switches to light mode', () async {
+      final notifier = container.read(themeNotifierProvider.notifier);
+
+      await notifier.toggleTheme(false);
+
+      expect(container.read(themeNotifierProvider), ThemeMode.light);
     });
   });
 }

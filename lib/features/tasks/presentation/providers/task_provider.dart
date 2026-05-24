@@ -1,6 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:dexdo/core/error/failures.dart';
 import 'package:dexdo/core/services/notification_service.dart';
+import 'package:dexdo/core/utils/haptics.dart';
+import 'package:dexdo/core/utils/logger.dart';
 import 'package:dexdo/features/tasks/data/repositories/task_repository_provider.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
 import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
@@ -8,15 +12,6 @@ import 'package:dexdo/features/tasks/presentation/providers/task_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
-
-import '../../domain/entities/task.dart';
-import '../../domain/repositories/task_repository.dart';
-import '../../data/repositories/task_repository_provider.dart';
-import '../../../../core/services/notification_service.dart';
-import '../../../../core/utils/logger.dart';
-import '../../../../core/utils/haptics.dart';
-import '../../../../core/error/failures.dart';
-import 'task_state.dart';
 
 final taskProvider = NotifierProvider<TaskNotifier, TaskState>(() {
   return TaskNotifier();
@@ -164,7 +159,7 @@ class TaskNotifier extends Notifier<TaskState> {
 
   Future<void> addTask({DateTime? dueDate}) async {
     try {
-      String category = state.selectedCategory == 'All' ? 'Personal' : state.selectedCategory;
+      final String category = state.selectedCategory == 'All' ? 'Personal' : state.selectedCategory;
       
       final updatedTasks = state.tasks.map((t) => t.copyWith(orderIndex: t.orderIndex + 1)).toList();
 
@@ -183,7 +178,7 @@ class TaskNotifier extends Notifier<TaskState> {
         selectedTask: newTask,
       );
       _updateFilteredTasks();
-      AppHaptics.light();
+      unawaited(AppHaptics.light());
       await _repository.saveTasks(state.tasks);
     } catch (e, stack) {
       _handleError(e, stack, 'Add task failed');
@@ -204,7 +199,7 @@ class TaskNotifier extends Notifier<TaskState> {
     try {
       final updatedTask = task.copyWith(priority: priority);
       _replaceTask(updatedTask);
-      AppHaptics.light();
+      unawaited(AppHaptics.light());
       await _repository.saveTask(updatedTask);
     } catch (e, stack) {
       _handleError(e, stack, 'Update task priority failed');
@@ -231,7 +226,7 @@ class TaskNotifier extends Notifier<TaskState> {
       _replaceTask(updatedTask);
       
       if (isMarkingDone) {
-        AppHaptics.heavy();
+        unawaited(AppHaptics.heavy());
         await _notifications.cancelTaskReminder(task.id);
 
         final List<Task> pendingClones = [];
@@ -245,7 +240,7 @@ class TaskNotifier extends Notifier<TaskState> {
           await _repository.saveTasks(state.tasks);
         }
       } else {
-        AppHaptics.medium();
+        unawaited(AppHaptics.medium());
         await _notifications.scheduleTaskReminder(updatedTask);
       }
       
@@ -308,7 +303,7 @@ class TaskNotifier extends Notifier<TaskState> {
         if (s.id == subtask.id) {
           final isMarkingDone = !s.isCompleted;
           if (isMarkingDone) {
-            AppHaptics.light();
+            unawaited(AppHaptics.light());
           }
           return s.copyWith(isCompleted: isMarkingDone);
         }
@@ -387,7 +382,7 @@ class TaskNotifier extends Notifier<TaskState> {
         tasks: [duplicatedTask, ...updatedTasks],
       );
       _updateFilteredTasks();
-      AppHaptics.medium();
+      unawaited(AppHaptics.medium());
       await _repository.saveTasks(state.tasks);
     } catch (e, stack) {
       _handleError(e, stack, 'Duplicate task failed');
@@ -426,7 +421,7 @@ class TaskNotifier extends Notifier<TaskState> {
     try {
       final updatedTask = task.copyWith(isStarred: !task.isStarred);
       _replaceTask(updatedTask);
-      AppHaptics.light();
+      unawaited(AppHaptics.light());
       await _repository.saveTask(updatedTask);
     } catch (e, stack) {
       _handleError(e, stack, 'Toggle starred failed');
@@ -445,7 +440,7 @@ class TaskNotifier extends Notifier<TaskState> {
       );
       
       _updateFilteredTasks();
-      AppHaptics.heavy();
+      unawaited(AppHaptics.heavy());
       await _repository.deleteTask(task.id);
       await _notifications.cancelTaskReminder(task.id);
     } catch (e, stack) {
@@ -505,5 +500,160 @@ class TaskNotifier extends Notifier<TaskState> {
     );
     _updateFilteredTasks();
     await _repository.saveTasks(state.tasks);
+  }
+
+  Future<void> clearAllTasks() async {
+    try {
+      final taskIds = state.tasks.map((t) => t.id).toList();
+      state = state.copyWith(tasks: [], selectedTaskIds: {}, clearSelectedTask: true);
+      _updateFilteredTasks();
+      await _repository.batchDeleteTasks(taskIds);
+      for (var id in taskIds) {
+        await _notifications.cancelTaskReminder(id);
+      }
+    } catch (e, stack) {
+      _handleError(e, stack, 'Clear all tasks failed');
+    }
+  }
+
+  Future<void> clearCompleted() async {
+    try {
+      final completed = state.tasks.where((t) => t.isCompleted).toList();
+      final completedIds = completed.map((t) => t.id).toList();
+      final tasks = state.tasks.where((t) => !t.isCompleted).toList();
+      
+      state = state.copyWith(
+        tasks: tasks,
+        selectedTaskIds: state.selectedTaskIds.where((id) => !completedIds.contains(id)).toSet(),
+        clearSelectedTask: state.selectedTask != null && state.selectedTask!.isCompleted,
+      );
+      
+      _updateFilteredTasks();
+      await _repository.batchDeleteTasks(completedIds);
+    } catch (e, stack) {
+      _handleError(e, stack, 'Clear completed failed');
+    }
+  }
+
+  Future<void> moveSelectedToCategory(String category) async {
+    try {
+      final updatedTasks = state.tasks.map((task) {
+        if (state.selectedTaskIds.contains(task.id)) {
+          return task.copyWith(
+            category: category,
+            color: state.categoryColors[category] ?? Colors.blue,
+            icon: state.categoryIcons[category] ?? Icons.task_alt,
+          );
+        }
+        return task;
+      }).toList();
+
+      state = state.copyWith(
+        tasks: updatedTasks,
+        selectedTaskIds: {},
+      );
+      _updateFilteredTasks();
+      await _repository.saveTasks(state.tasks);
+    } catch (e, stack) {
+      _handleError(e, stack, 'Move selected to category failed');
+    }
+  }
+
+  String exportTasksToJson() {
+    return jsonEncode(state.tasks.map((t) => t.toJson()).toList());
+  }
+
+  Future<void> addCategory(String name, IconData icon, Color color) async {
+    try {
+      if (state.categories.contains(name)) return;
+      
+      final updatedCategories = [...state.categories, name];
+      final updatedIcons = {...state.categoryIcons, name: icon};
+      final updatedColors = {...state.categoryColors, name: color};
+      
+      state = state.copyWith(
+        categories: updatedCategories,
+        categoryIcons: updatedIcons,
+        categoryColors: updatedColors,
+      );
+      
+      await _repository.saveCategoryIcons(updatedIcons);
+      await _repository.saveCategoryColors(updatedColors);
+    } catch (e, stack) {
+      _handleError(e, stack, 'Add category failed');
+    }
+  }
+
+  Future<void> editCategory(String oldName, String newName, IconData icon, Color color) async {
+    try {
+      if (oldName == 'All' || oldName == 'Personal') return;
+      
+      final updatedCategories = state.categories.map((c) => c == oldName ? newName : c).toList();
+      final updatedIcons = Map<String, IconData>.from(state.categoryIcons);
+      updatedIcons.remove(oldName);
+      updatedIcons[newName] = icon;
+      
+      final updatedColors = Map<String, Color>.from(state.categoryColors);
+      updatedColors.remove(oldName);
+      updatedColors[newName] = color;
+      
+      final updatedTasks = state.tasks.map((t) {
+        if (t.category == oldName) {
+          return t.copyWith(category: newName, icon: icon, color: color);
+        }
+        return t;
+      }).toList();
+
+      state = state.copyWith(
+        tasks: updatedTasks,
+        categories: updatedCategories,
+        categoryIcons: updatedIcons,
+        categoryColors: updatedColors,
+        selectedCategory: state.selectedCategory == oldName ? newName : state.selectedCategory,
+      );
+      
+      _updateFilteredTasks();
+      await _repository.saveTasks(state.tasks);
+      await _repository.saveCategoryIcons(updatedIcons);
+      await _repository.saveCategoryColors(updatedColors);
+    } catch (e, stack) {
+      _handleError(e, stack, 'Edit category failed');
+    }
+  }
+
+  Future<void> deleteCategory(String category) async {
+    try {
+      if (category == 'All' || category == 'Personal') return;
+      
+      final updatedCategories = state.categories.where((c) => c != category).toList();
+      final updatedIcons = Map<String, IconData>.from(state.categoryIcons)..remove(category);
+      final updatedColors = Map<String, Color>.from(state.categoryColors)..remove(category);
+      
+      final updatedTasks = state.tasks.map((t) {
+        if (t.category == category) {
+          return t.copyWith(
+            category: 'Personal',
+            icon: state.categoryIcons['Personal'] ?? Icons.person_rounded,
+            color: state.categoryColors['Personal'] ?? Colors.amber,
+          );
+        }
+        return t;
+      }).toList();
+
+      state = state.copyWith(
+        tasks: updatedTasks,
+        categories: updatedCategories,
+        categoryIcons: updatedIcons,
+        categoryColors: updatedColors,
+        selectedCategory: state.selectedCategory == category ? 'All' : state.selectedCategory,
+      );
+      
+      _updateFilteredTasks();
+      await _repository.saveTasks(state.tasks);
+      await _repository.saveCategoryIcons(updatedIcons);
+      await _repository.saveCategoryColors(updatedColors);
+    } catch (e, stack) {
+      _handleError(e, stack, 'Delete category failed');
+    }
   }
 }

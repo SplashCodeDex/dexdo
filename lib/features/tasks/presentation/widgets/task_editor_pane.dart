@@ -5,6 +5,7 @@ import 'package:dexdo/features/tasks/domain/entities/task.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class TaskEditorPane extends ConsumerStatefulWidget {
@@ -106,7 +107,7 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
     setState(() => _isAILoading = true);
     try {
       final suggestedCategory = await _aiService.suggestCategory(_titleController.text, state.categories);
-      notifier.updateCategory(widget.task, suggestedCategory);
+      unawaited(notifier.updateCategory(widget.task, suggestedCategory));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -147,7 +148,7 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
     try {
       final subtasks = await _aiService.breakdownTask(_titleController.text);
       for (var sub in subtasks) {
-        notifier.addSubtask(widget.task, sub);
+        unawaited(notifier.addSubtask(widget.task, sub));
       }
     } finally {
       setState(() => _isAILoading = false);
@@ -377,9 +378,9 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
                             pickedTime.hour,
                             pickedTime.minute,
                           );
-                          taskNotifier.updateDueDate(widget.task, finalDateTime);
+                          unawaited(taskNotifier.updateDueDate(widget.task, finalDateTime));
                         } else {
-                          taskNotifier.updateDueDate(widget.task, pickedDate);
+                          unawaited(taskNotifier.updateDueDate(widget.task, pickedDate));
                         }
                       }
                     },
@@ -807,7 +808,7 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
   }
 
   Widget _buildRecurrenceDropdown(TaskState state, TaskNotifier notifier) {
-    String displayVal = widget.task.recurrence ?? 'none';
+    String displayVal = widget.task.recurrence;
     displayVal = displayVal[0].toUpperCase() + displayVal.substring(1);
     
     return GestureDetector(

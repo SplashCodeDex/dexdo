@@ -583,4 +583,3 @@ class _CalendarPaneState extends ConsumerState<CalendarPane> {
     );
   }
 }
-}

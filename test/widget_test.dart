@@ -5,7 +5,6 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:dexdo/core/theme/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,7 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   testWidgets('Core DeXDo UI Rendering Smoke Test', (WidgetTester tester) async {
     final testApp = ProviderScope(
-      overrides: [
+      overrides: const [
         // We can add overrides here if we need to mock specific providers
       ],
       child: Consumer(

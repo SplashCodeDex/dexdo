@@ -1,25 +1,26 @@
-import 'package:dexdo/core/theme/theme_provider.dart';
 import 'package:dexdo/features/home/presentation/widgets/animated_splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('AnimatedSplashScreen renders correctly', (WidgetTester tester) async {
+  testWidgets('AnimatedSplashScreen renders and calls onComplete', (WidgetTester tester) async {
+    bool completed = false;
+
     await tester.pumpWidget(
-      const ProviderScope(
+      ProviderScope(
         child: MaterialApp(
-          home: AnimatedSplashScreen(),
+          home: AnimatedSplashScreen(
+            onComplete: () => completed = true,
+          ),
         ),
       ),
     );
 
-    // Initial pump and a few frames for animation
-    await tester.pumpAndSettle();
+    // Pump through the entire animation (total ~1500ms of staged animation)
+    await tester.pump(const Duration(milliseconds: 2000));
 
     expect(find.byType(AnimatedSplashScreen), findsOneWidget);
-    // Find Image or logo
-    expect(find.byType(Image), findsWidgets);
-    expect(find.text('DexDo'), findsWidgets);
+    expect(completed, true);
   });
 }

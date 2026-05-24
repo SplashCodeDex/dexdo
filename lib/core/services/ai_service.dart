@@ -1,6 +1,5 @@
-import 'package:flutter/foundation.dart';
+import 'package:dexdo/core/utils/logger.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import '../utils/logger.dart';
 
 class AIService {
 
