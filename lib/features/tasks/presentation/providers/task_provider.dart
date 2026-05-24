@@ -26,7 +26,7 @@ class TaskNotifier extends Notifier<TaskState> {
   @override
   TaskState build() {
     _repository = ref.watch(taskRepositoryProvider);
-    _notifications = NotificationService();
+    _notifications = ref.watch(notificationServiceProvider);
     
     Future.microtask(() => _loadData());
     

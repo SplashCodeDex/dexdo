@@ -144,7 +144,7 @@ class _CalendarPaneState extends ConsumerState<CalendarPane> {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: IconButton(
         icon: Icon(icon, size: 20),
@@ -268,7 +268,7 @@ class _CalendarPaneState extends ConsumerState<CalendarPane> {
                 color: isSelected 
                     ? Theme.of(context).colorScheme.primary 
                     : isToday ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05) : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 border: isToday && !isSelected 
                     ? Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5), width: 1.5) 
                     : Border.all(color: Colors.transparent),
@@ -372,10 +372,10 @@ class _CalendarPaneState extends ConsumerState<CalendarPane> {
               const Spacer(),
               if (dayTasks.isNotEmpty)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(24),
                   ),
                   child: Text(
                     '${dayTasks.where((t) => t.isCompleted).length}/${dayTasks.length} Done',
@@ -414,7 +414,7 @@ class _CalendarPaneState extends ConsumerState<CalendarPane> {
                 final task = dayTasks[index];
                 final isLast = index == dayTasks.length - 1;
                 
-                return Row(
+    return Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Timeline indicator
@@ -461,7 +461,7 @@ class _CalendarPaneState extends ConsumerState<CalendarPane> {
                             children: [
                               SlidableAction(
                                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(24),
                                 onPressed: (context) {
                                   final notifier = ref.read(taskProvider.notifier);
                                   notifier.toggleTask(task);
@@ -478,7 +478,7 @@ class _CalendarPaneState extends ConsumerState<CalendarPane> {
                             children: [
                               SlidableAction(
                                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(24),
                                 onPressed: (context) {
                                   final notifier = ref.read(taskProvider.notifier);
                                   notifier.deleteTask(task);
@@ -502,7 +502,7 @@ class _CalendarPaneState extends ConsumerState<CalendarPane> {
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).cardTheme.color,
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(24),
                                   border: Border.all(
                                     color: task.isCompleted 
                                         ? Colors.green.withValues(alpha: 0.3) 
@@ -523,7 +523,7 @@ class _CalendarPaneState extends ConsumerState<CalendarPane> {
                                       padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
                                         color: task.isCompleted ? Colors.green.withValues(alpha: 0.1) : task.color.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(16),
                                       ),
                                       child: Icon(
                                         task.isCompleted ? Icons.check_circle_rounded : task.icon, 

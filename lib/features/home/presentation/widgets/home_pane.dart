@@ -1,3 +1,4 @@
+import 'package:dexdo/core/theme/theme_provider.dart';
 import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
@@ -5,6 +6,7 @@ import 'package:dexdo/features/tasks/presentation/providers/task_state.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:intl/intl.dart';
@@ -57,13 +59,21 @@ class HomePane extends ConsumerWidget {
               const SizedBox(height: 16),
               _buildProductivityChart(context, allTasks),
               const SizedBox(height: 32),
-              _buildCategoryFilter(context, taskState, taskNotifier),
-              const SizedBox(height: 8),
               _buildSectionTitle(context, 'Upcoming Tasks'),
               const SizedBox(height: 16),
               _buildUpcomingTasks(context, ref, activeTasks),
               const SizedBox(height: 32),
-              _buildSectionTitle(context, 'Categories'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildSectionTitle(context, 'Categories'),
+                  if (taskState.selectedCategory != 'All')
+                    TextButton(
+                      onPressed: () => taskNotifier.setCategory('All'),
+                      child: const Text('Clear Filter'),
+                    ),
+                ],
+              ),
               const SizedBox(height: 16),
               _buildCategoryOverview(context, taskState, taskNotifier),
               const SizedBox(height: 100), // Bottom padding for FAB
@@ -84,6 +94,8 @@ class HomePane extends ConsumerWidget {
     final user = authState.value;
     final userName = user?.displayName?.split(' ').first ?? 'Friend!';
 
+    final themeNotifier = ref.read(themeNotifierProvider.notifier);
+
     return SliverAppBar(
       expandedHeight: 280.0,
       floating: false,
@@ -91,6 +103,45 @@ class HomePane extends ConsumerWidget {
       stretch: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       elevation: 0,
+      // Status bar brightness control
+      systemOverlayStyle: Theme.of(context).brightness == Brightness.dark 
+          ? SystemUiOverlayStyle.light 
+          : SystemUiOverlayStyle.dark,
+      actions: [
+        // Theme Toggle
+        IconButton(
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            themeNotifier.setThemeMode(isDark ? ThemeMode.light : ThemeMode.dark);
+          },
+          icon: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 400),
+            child: Icon(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Icons.wb_sunny_rounded
+                  : Icons.nightlight_round,
+              key: ValueKey(Theme.of(context).brightness == Brightness.dark),
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.amber[400]
+                  : Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ),
+        // User Avatar
+        Padding(
+          padding: const EdgeInsets.only(right: 16, left: 8),
+          child: authState.when(
+            data: (user) => CircleAvatar(
+              radius: 16,
+              backgroundImage: NetworkImage(user?.photoURL ??
+                  'https://api.dicebear.com/7.x/avataaars/png?seed=${user?.uid ?? "Felix"}'),
+            ),
+            loading: () => const CircleAvatar(radius: 16, child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))),
+            error: (_, _) => const CircleAvatar(radius: 16, child: Icon(Icons.error, size: 16)),
+          ),
+        ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         stretchModes: const [
           StretchMode.zoomBackground,
@@ -115,7 +166,12 @@ class HomePane extends ConsumerWidget {
             ),
             // Content
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
+              padding: EdgeInsets.fromLTRB(
+                24, 
+                MediaQuery.paddingOf(context).top + 40, 
+                24, 
+                24
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -279,9 +335,9 @@ class HomePane extends ConsumerWidget {
     return Text(
       title,
       style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        letterSpacing: -0.5,
+        fontSize: 20,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.2, // Slightly increased to avoid 'W' looking like 'vv'
       ),
     );
   }
@@ -305,36 +361,36 @@ class HomePane extends ConsumerWidget {
     }).toList();
 
     final maxVal = data.isEmpty ? 5.0 : data.reduce((a, b) => a > b ? a : b);
-    final interval = maxVal > 0 ? (maxVal / 5).ceilToDouble() : 1.0;
 
     return Container(
-      height: 220,
+      height: 200,
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(12, 24, 12, 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Theme.of(context).dividerColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: BarChart(
         BarChartData(
           alignment: BarChartAlignment.spaceAround,
-          maxY: maxVal + 1,
+          maxY: (maxVal == 0 ? 5 : maxVal) * 1.2,
           barTouchData: BarTouchData(
+            enabled: true,
             touchTooltipData: BarTouchTooltipData(
-              getTooltipColor: (_) => Theme.of(context).colorScheme.primaryContainer,
+              getTooltipColor: (_) => Theme.of(context).colorScheme.primary,
+              tooltipRoundedRadius: 8,
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 return BarTooltipItem(
                   rod.toY.round().toString(),
-                  TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  const TextStyle(
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 );
@@ -354,58 +410,42 @@ class HomePane extends ConsumerWidget {
                     child: Text(
                       DateFormat('E').format(date).substring(0, 1),
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   );
                 },
-                reservedSize: 28,
+                reservedSize: 30,
               ),
             ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                interval: interval,
-                getTitlesWidget: (value, meta) {
-                  return Text(
-                    value.round().toString(),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                      fontSize: 10,
-                    ),
-                  );
-                },
-                reservedSize: 20,
-              ),
-            ),
+            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: interval,
-            getDrawingHorizontalLine: (value) => FlLine(
-              color: Theme.of(context).dividerColor,
-              strokeWidth: 1,
-            ),
-          ),
+          gridData: const FlGridData(show: false),
           borderData: FlBorderData(show: false),
           barGroups: data.asMap().entries.map((entry) {
             return BarChartGroupData(
               x: entry.key,
               barRods: [
                 BarChartRodData(
-                  toY: entry.value,
-                  color: Theme.of(context).colorScheme.primary,
-                  width: 16,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                  toY: entry.value == 0 ? 0.2 : entry.value, // Minimal height for visibility
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+                    ],
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                  ),
+                  width: 12,
+                  borderRadius: BorderRadius.circular(4),
                   backDrawRodData: BackgroundBarChartRodData(
                     show: true,
-                    toY: maxVal + 1,
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+                    toY: (maxVal == 0 ? 5 : maxVal) * 1.2,
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.03),
                   ),
                 ),
               ],
@@ -416,38 +456,7 @@ class HomePane extends ConsumerWidget {
     );
   }
 
-  Widget _buildCategoryFilter(BuildContext context, TaskState state, TaskNotifier notifier) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Row(
-        children: state.categories.map((category) {
-          final isSelected = state.selectedCategory == category;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: ChoiceChip(
-              label: Text(category),
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) {
-                  HapticFeedback.selectionClick();
-                  notifier.setCategory(category);
-                }
-              },
-              side: BorderSide.none,
-              selectedColor: Theme.of(context).colorScheme.primaryContainer,
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              labelStyle: TextStyle(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
+
 
   Widget _buildUpcomingTasks(BuildContext context, WidgetRef ref, List<Task> tasks) {
     final sortedTasks = List<Task>.from(tasks)
@@ -457,26 +466,61 @@ class HomePane extends ConsumerWidget {
         if (b.dueDate == null) return -1;
         return a.dueDate!.compareTo(b.dueDate!);
       });
-    final upcoming = sortedTasks.take(5).toList();
+    final upcoming = sortedTasks.take(3).toList();
     if (upcoming.isEmpty) {
       return Container(
-        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Theme.of(context).dividerColor),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
         child: Column(
           children: [
-            Icon(Icons.auto_awesome_rounded, size: 48, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
-            const SizedBox(height: 16),
-            const Center(
-              child: Text(
-                'All caught up!\nEnjoy your free time.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+                shape: BoxShape.circle,
               ),
-            ),
+              child: Icon(
+                Icons.done_all_rounded,
+                size: 40,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+             .scale(duration: 2.seconds, curve: Curves.easeInOut)
+             .moveY(begin: -5, end: 5, duration: 2.seconds, curve: Curves.easeInOut),
+            const SizedBox(height: 24),
+            Text(
+              'All Caught Up!',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
+            const SizedBox(height: 8),
+            Text(
+              'You\'ve completed all your tasks.\nTake a break and recharge.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                height: 1.5,
+              ),
+            ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
           ],
         ),
       );
@@ -512,14 +556,14 @@ class HomePane extends ConsumerWidget {
           notifier.setSelectedTask(task);
           if (onTaskTap != null) onTaskTap!(task);
         },
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         child: Hero(
           tag: 'task_${task.id}',
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(24),
               border: Border.all(color: Theme.of(context).dividerColor),
             ),
             child: Row(
@@ -624,16 +668,23 @@ class HomePane extends ConsumerWidget {
                     HapticFeedback.selectionClick();
                     notifier.setCategory(category);
                   },
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(24),
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Theme.of(context).dividerColor),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: state.selectedCategory == category 
+                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
+                            : Theme.of(context).dividerColor,
+                        width: state.selectedCategory == category ? 2 : 1,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
+                          color: state.selectedCategory == category
+                              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05)
+                              : Colors.black.withValues(alpha: 0.02),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),

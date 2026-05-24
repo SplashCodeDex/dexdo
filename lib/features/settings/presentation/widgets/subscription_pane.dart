@@ -68,7 +68,7 @@ class _SubscriptionPaneState extends ConsumerState<SubscriptionPane> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.green.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(24),
                         border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
                       ),
                       child: const Row(
@@ -98,7 +98,7 @@ class _SubscriptionPaneState extends ConsumerState<SubscriptionPane> {
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(24),
                         ),
                         backgroundColor: colorScheme.primary,
                         foregroundColor: colorScheme.onPrimary,
@@ -132,7 +132,7 @@ class _SubscriptionPaneState extends ConsumerState<SubscriptionPane> {
         elevation: isSelected ? 2 : 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
           side: BorderSide(
             color: isSelected ? colorScheme.primary : colorScheme.outlineVariant.withValues(alpha: 0.3),
             width: isSelected ? 2 : 1,
@@ -141,7 +141,7 @@ class _SubscriptionPaneState extends ConsumerState<SubscriptionPane> {
         color: isSelected ? colorScheme.primary.withValues(alpha: 0.08) : colorScheme.surface,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(

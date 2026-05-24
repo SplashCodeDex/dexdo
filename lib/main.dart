@@ -27,6 +27,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Enable Edge-to-Edge mode to "get rid of" the status bar background
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.transparent,
+    ),
+  );
+  
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -300,8 +309,10 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
           behavior: HitTestBehavior.translucent,
           child: Scaffold(
             extendBody: true,
-            appBar: AppBar(
-              leading: taskState.isSelectionMode
+            appBar: (_selectedIndex == 0 && !taskState.isSelectionMode)
+                ? null
+                : AppBar(
+                    leading: taskState.isSelectionMode
                   ? IconButton(
                       icon: const Icon(Icons.close),
                       onPressed: () {
@@ -360,7 +371,7 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                         color: Theme.of(context).brightness == Brightness.dark
                             ? Colors.amber.withValues(alpha: 0.1) 
                             : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(24),
                       ),
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 400),
@@ -429,7 +440,7 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
               },
               backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               elevation: 0,
               highlightElevation: 0,
               child: const Icon(Icons.add, size: 32),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:dexdo/core/services/ai_service.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
@@ -146,12 +147,17 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
     
     setState(() => _isAILoading = true);
     try {
-      final subtasks = await _aiService.breakdownTask(_titleController.text);
-      for (var sub in subtasks) {
-        unawaited(notifier.addSubtask(widget.task, sub));
+      await for (final subtask in _aiService.breakdownTaskStream(_titleController.text)) {
+        final lines = subtask.split('\n').where((s) => s.trim().isNotEmpty);
+        for (var line in lines) {
+          unawaited(notifier.addSubtask(widget.task, line.trim()));
+          HapticFeedback.lightImpact();
+        }
       }
     } finally {
-      setState(() => _isAILoading = false);
+      if (mounted) {
+        setState(() => _isAILoading = false);
+      }
     }
   }
 
@@ -212,54 +218,92 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
   Widget build(BuildContext context) {
     final taskState = ref.watch(taskProvider);
     final taskNotifier = ref.read(taskProvider.notifier);
+    final canPop = Navigator.of(context).canPop();
 
     if (_isFocusActive) {
       return _buildFocusModeUI();
     }
 
-    return Hero(
-      tag: 'task_${widget.task.id}',
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(32),
-            bottomLeft: Radius.circular(32),
-          ),
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header Action Row
-              Row(
-                children: [
-                  _buildStatusChip(taskNotifier),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () {
-                      FocusScope.of(context).unfocus();
-                      taskNotifier.toggleStarred(widget.task);
-                    },
-                    icon: Icon(
-                      widget.task.isStarred ? Icons.star_rounded : Icons.star_outline_rounded,
-                      color: widget.task.isStarred ? const Color(0xFFFFB300) : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      FocusScope.of(context).unfocus();
-                      taskNotifier.deleteTask(widget.task);
-                      if (Navigator.of(context).canPop()) {
-                        Navigator.of(context).pop();
-                      }
-                    },
-                    icon: Icon(Icons.delete_outline_rounded, color: Theme.of(context).colorScheme.error),
-                    tooltip: 'Delete Task',
-                  ),
-                ],
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Hero(
+        tag: 'task_${widget.task.id}',
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(32),
+                bottomLeft: const Radius.circular(32),
+                topRight: canPop ? const Radius.circular(32) : Radius.zero,
+                bottomRight: canPop ? const Radius.circular(32) : Radius.zero,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                  offset: const Offset(-4, 0),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(32),
+                bottomLeft: const Radius.circular(32),
+                topRight: canPop ? const Radius.circular(32) : Radius.zero,
+                bottomRight: canPop ? const Radius.circular(32) : Radius.zero,
+              ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.only(
+                    left: 32.0,
+                    right: 32.0,
+                    top: MediaQuery.of(context).padding.top + 24,
+                    bottom: 32.0,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header Action Row
+                      Row(
+                        children: [
+                          if (canPop) ...[
+                            IconButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                          ],
+                          _buildStatusChip(taskNotifier),
+                          const Spacer(),
+                          IconButton(
+                            onPressed: () {
+                              FocusScope.of(context).unfocus();
+                              taskNotifier.toggleStarred(widget.task);
+                            },
+                            icon: Icon(
+                              widget.task.isStarred ? Icons.star_rounded : Icons.star_outline_rounded,
+                              color: widget.task.isStarred ? const Color(0xFFFFB300) : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              FocusScope.of(context).unfocus();
+                              taskNotifier.deleteTask(widget.task);
+                              if (canPop) {
+                                Navigator.of(context).pop();
+                              }
+                            },
+                            icon: Icon(Icons.delete_outline_rounded, color: Theme.of(context).colorScheme.error),
+                            tooltip: 'Delete Task',
+                          ),
+                        ],
+                      ),
               const SizedBox(height: 32),
               
               // Title Input
@@ -284,28 +328,37 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
               const SizedBox(height: 8),
 
               // AI Actions Row
-              Row(
-                children: [
-                  TextButton.icon(
-                    onPressed: _isAILoading ? null : () => _handleAICategorySuggest(taskNotifier, taskState),
-                    icon: const Icon(Icons.auto_awesome_rounded, size: 14),
-                    label: const Text('AI Categorize', style: TextStyle(fontSize: 11)),
-                    style: TextButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      foregroundColor: Theme.of(context).colorScheme.secondary,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextButton.icon(
+                        onPressed: _isAILoading ? null : () => _handleAICategorySuggest(taskNotifier, taskState),
+                        icon: const Icon(Icons.auto_awesome_rounded, size: 16),
+                        label: const Text('Categorize', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton.icon(
-                    onPressed: _isAILoading ? null : () => _handleAIEstimate(taskState),
-                    icon: const Icon(Icons.timer_outlined, size: 14),
-                    label: const Text('AI Time Estimate', style: TextStyle(fontSize: 11)),
-                    style: TextButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      foregroundColor: Theme.of(context).colorScheme.secondary,
+                    Container(width: 1, height: 20, color: Theme.of(context).dividerColor.withValues(alpha: 0.2)),
+                    Expanded(
+                      child: TextButton.icon(
+                        onPressed: _isAILoading ? null : () => _handleAIEstimate(taskState),
+                        icon: const Icon(Icons.insights_rounded, size: 16),
+                        label: const Text('Estimate', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
 
               if (_aiTimeEstimate != null) ...[
@@ -342,99 +395,94 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
               ],
               const SizedBox(height: 24),
 
-              // Metadata Cards
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: [
-                  SizedBox(
-                    width: 160,
-                    child: _buildDetailCard(
-                      icon: Icons.category_rounded,
-                      label: 'Category',
-                      child: _buildCategoryDropdown(taskState, taskNotifier),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 160,
-                    child: _buildDetailCard(
-                      icon: Icons.calendar_today_rounded,
-                      label: 'Due Date',
-                      onTap: () async {
-                        FocusScope.of(context).unfocus();
-                        final pickedDate = await showDatePicker(
-                          context: context,
-                          initialDate: widget.task.dueDate ?? DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-                        if (!context.mounted) return;
-                        if (pickedDate != null) {
-                          final pickedTime = await showTimePicker(
+              // Metadata Grid
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final cardWidth = (constraints.maxWidth - 16) / 2;
+                  return Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: [
+                      _buildDetailCard(
+                        width: cardWidth,
+                        icon: Icons.category_rounded,
+                        label: 'Category',
+                        child: _buildCategoryDropdown(taskState, taskNotifier),
+                      ),
+                      _buildDetailCard(
+                        width: cardWidth,
+                        icon: Icons.calendar_today_rounded,
+                        label: 'Due Date',
+                        onTap: () async {
+                          FocusScope.of(context).unfocus();
+                          final pickedDate = await showDatePicker(
                             context: context,
-                            initialTime: TimeOfDay.fromDateTime(widget.task.dueDate ?? DateTime.now()),
+                            initialDate: widget.task.dueDate ?? DateTime.now(),
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2100),
                           );
                           if (!context.mounted) return;
-                          if (pickedTime != null) {
-                            final finalDateTime = DateTime(
-                              pickedDate.year,
-                              pickedDate.month,
-                              pickedDate.day,
-                              pickedTime.hour,
-                              pickedTime.minute,
+                          if (pickedDate != null) {
+                            final pickedTime = await showTimePicker(
+                              context: context,
+                              initialTime: TimeOfDay.fromDateTime(widget.task.dueDate ?? DateTime.now()),
                             );
-                            unawaited(taskNotifier.updateDueDate(widget.task, finalDateTime));
-                          } else {
-                            unawaited(taskNotifier.updateDueDate(widget.task, pickedDate));
+                            if (!context.mounted) return;
+                            if (pickedTime != null) {
+                              final finalDateTime = DateTime(
+                                pickedDate.year,
+                                pickedDate.month,
+                                pickedDate.day,
+                                pickedTime.hour,
+                                pickedTime.minute,
+                              );
+                              unawaited(taskNotifier.updateDueDate(widget.task, finalDateTime));
+                            } else {
+                              unawaited(taskNotifier.updateDueDate(widget.task, pickedDate));
+                            }
                           }
-                        }
-                      },
-                      child: Text(
-                        widget.task.dueDate == null
-                            ? 'Set Date'
-                            : _formatDate(widget.task.dueDate!),
-                        style: TextStyle(
-                          color: widget.task.dueDate == null ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
+                        },
+                        child: Text(
+                          widget.task.dueDate == null
+                              ? 'Set Date'
+                              : _formatDate(widget.task.dueDate!),
+                          style: TextStyle(
+                            color: widget.task.dueDate == null ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 160,
-                    child: _buildDetailCard(
-                      icon: Icons.priority_high_rounded,
-                      label: 'Priority',
-                      child: _buildPriorityDropdown(taskState, taskNotifier),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 160,
-                    child: _buildDetailCard(
-                      icon: Icons.repeat_rounded,
-                      label: 'Recurrence',
-                      child: _buildRecurrenceDropdown(taskState, taskNotifier),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 160,
-                    child: _buildDetailCard(
-                      icon: Icons.timer_outlined,
-                      label: 'Focus Timer',
-                      onTap: () {
-                        FocusScope.of(context).unfocus();
-                        _startFocusMode();
-                      },
-                      child: Text(
-                        'Start Focus',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
+                      _buildDetailCard(
+                        width: cardWidth,
+                        icon: Icons.priority_high_rounded,
+                        label: 'Priority',
+                        child: _buildPriorityDropdown(taskState, taskNotifier),
+                      ),
+                      _buildDetailCard(
+                        width: cardWidth,
+                        icon: Icons.repeat_rounded,
+                        label: 'Recurrence',
+                        child: _buildRecurrenceDropdown(taskState, taskNotifier),
+                      ),
+                      _buildDetailCard(
+                        width: constraints.maxWidth, // Full width for the focus action
+                        icon: Icons.timer_outlined,
+                        label: 'Focus Timer',
+                        onTap: () {
+                          FocusScope.of(context).unfocus();
+                          _startFocusMode();
+                        },
+                        child: Text(
+                          'Start Focus Session',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                ],
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 32),
 
@@ -468,7 +516,7 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(24),
                 ),
                 child: Material(
                   color: Colors.transparent,
@@ -507,6 +555,10 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
           ),
         ),
       ),
+    ),
+    ),
+    ),
+    ),
     );
   }
 
@@ -524,44 +576,56 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
 
   Widget _buildSubtaskItem(TaskNotifier notifier, SubTask subtask) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            GestureDetector(
-              onTap: () {
-                FocusScope.of(context).unfocus();
-                notifier.toggleSubtask(widget.task, subtask);
-              },
-              child: Icon(
-                subtask.isCompleted ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
-                color: subtask.isCompleted ? Colors.green : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                size: 20,
+      padding: const EdgeInsets.only(bottom: 10.0),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+        onTap: () {
+          FocusScope.of(context).unfocus();
+          unawaited(HapticFeedback.lightImpact());
+          notifier.toggleSubtask(widget.task, subtask);
+        },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: subtask.isCompleted 
+                    ? Colors.green.withValues(alpha: 0.2) 
+                    : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.1),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                subtask.title,
-                style: TextStyle(
-                  color: subtask.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.onSurface,
-                  decoration: subtask.isCompleted ? TextDecoration.lineThrough : null,
+            child: Row(
+              children: [
+                Icon(
+                  subtask.isCompleted ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                  color: subtask.isCompleted ? Colors.green : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                  size: 22,
                 ),
-              ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    subtask.title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: subtask.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.onSurface,
+                      decoration: subtask.isCompleted ? TextDecoration.lineThrough : null,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.delete_sweep_outlined, size: 18, color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5)),
+                  onPressed: () {
+                    FocusScope.of(context).unfocus();
+                    notifier.deleteSubtask(widget.task, subtask);
+                  },
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
             ),
-            IconButton(
-              icon: Icon(Icons.close_rounded, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
-              onPressed: () {
-                FocusScope.of(context).unfocus();
-                notifier.deleteSubtask(widget.task, subtask);
-              },
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -570,21 +634,22 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
   Widget _buildAddSubtaskField(TaskNotifier notifier) {
     return Container(
       margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).dividerColor),
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-          Icon(Icons.add_rounded, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+          Icon(Icons.add_task_rounded, size: 20, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
               controller: _subtaskController,
               decoration: InputDecoration(
                 hintText: 'Add a subtask...',
-                hintStyle: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                hintStyle: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
                 border: InputBorder.none,
               ),
               onTapOutside: (_) => FocusScope.of(context).unfocus(),
@@ -605,6 +670,7 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
+        unawaited(HapticFeedback.lightImpact());
         notifier.toggleTask(widget.task);
       },
       child: Container(
@@ -613,7 +679,7 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
           color: widget.task.isCompleted 
               ? Colors.green.withValues(alpha: 0.1) 
               : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -642,6 +708,7 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
+        unawaited(HapticFeedback.lightImpact());
         _showPriorityPicker(context, state, notifier);
       },
       child: Row(
@@ -759,31 +826,48 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
     required IconData icon,
     required String label,
     required Widget child,
+    required double width,
     VoidCallback? onTap,
   }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: onTap != null ? Theme.of(context).colorScheme.surface : Colors.transparent,
-            border: Border.all(color: Theme.of(context).dividerColor),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(icon, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
-                  const SizedBox(width: 8),
-                  Text(label, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5))),
-                ],
+    return SizedBox(
+      width: width,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: onTap != null ? 0.3 : 0.1),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2),
               ),
-              const SizedBox(height: 8),
-              child,
-            ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, size: 14, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7)),
+                    const SizedBox(width: 6),
+                    Text(
+                      label.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                child,
+              ],
+            ),
           ),
         ),
       ),
@@ -792,7 +876,11 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
 
   Widget _buildCategoryDropdown(TaskState state, TaskNotifier notifier) {
     return InkWell(
-      onTap: () => _showCategoryPicker(context, state, notifier),
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        unawaited(HapticFeedback.lightImpact());
+        _showCategoryPicker(context, state, notifier);
+      },
       borderRadius: BorderRadius.circular(12),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -823,6 +911,7 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
+        unawaited(HapticFeedback.lightImpact());
         _showRecurrencePicker(context, state, notifier);
       },
       child: Row(
@@ -1042,9 +1131,10 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
                     height: 200,
                     child: CircularProgressIndicator(
                       value: percent,
-                      strokeWidth: 8,
+                      strokeWidth: 10,
                       backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                       valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+                      strokeCap: StrokeCap.round,
                     ),
                   ),
                   Text(
@@ -1068,6 +1158,7 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
                     label: Text(_isFocusTimerRunning ? 'Pause' : 'Resume'),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -1077,6 +1168,7 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
                     label: const Text('Exit'),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                     ),
                   ),
                 ],

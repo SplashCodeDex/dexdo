@@ -90,7 +90,7 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
                         child: Material(
                           elevation: Tween<double>(begin: 0, end: 12).transform(animValue),
                           color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(24),
                           shadowColor: Colors.black.withValues(alpha: 0.15),
                           child: child,
                         ),
@@ -179,7 +179,7 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
           fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
           contentPadding: const EdgeInsets.symmetric(vertical: 0),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(24),
             borderSide: BorderSide.none,
           ),
         ),
@@ -207,7 +207,7 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(24),
             ),
             child: Text(
               count.toString(),
@@ -259,12 +259,17 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
       padding: const EdgeInsets.only(right: 8),
       child: InkWell(
         onTap: () => notifier.setSortOption(option),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(24),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: isSelected ? Theme.of(context).colorScheme.primaryContainer : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isSelected 
+                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) 
+                  : Colors.transparent,
+            ),
           ),
           child: Text(
             label,
@@ -318,7 +323,7 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
                         color: isSelected 
                             ? Theme.of(context).colorScheme.primaryContainer 
                             : Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(24),
                         border: Border.all(
                           color: isSelected 
                               ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) 
@@ -472,8 +477,8 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
             icon: Icons.delete_outline,
             label: 'Delete',
             borderRadius: const BorderRadius.only(
-              topRight: Radius.circular(16),
-              bottomRight: Radius.circular(16),
+              topRight: Radius.circular(24),
+              bottomRight: Radius.circular(24),
             ),
           ),
         ],
@@ -493,8 +498,8 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
             icon: task.isCompleted ? Icons.undo_rounded : Icons.check_circle_outline,
             label: task.isCompleted ? 'Undo' : 'Complete',
             borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(16),
-              bottomLeft: Radius.circular(16),
+              topLeft: Radius.circular(24),
+              bottomLeft: Radius.circular(24),
             ),
           ),
         ],
@@ -514,11 +519,14 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
             notifier.setSelectedTask(task);
             if (!isLargeScreen) {
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => Scaffold(
-                    appBar: AppBar(title: const Text('Edit Task')),
-                    body: TaskEditorPane(task: task),
-                  ),
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => TaskEditorPane(task: task),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: child,
+                    );
+                  },
                 ),
               );
             }
@@ -531,7 +539,7 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
             tag: 'task_${task.id}',
             child: Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.02),
@@ -541,7 +549,7 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
                 ],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(24),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
                   child: AnimatedContainer(
@@ -549,18 +557,14 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
                     decoration: BoxDecoration(
                       color: state.selectedTaskIds.contains(task.id)
                           ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: isDark ? 0.4 : 0.6)
-                          : (isSelected 
-                              ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: isDark ? 0.2 : 0.3) 
-                              : Theme.of(context).colorScheme.surface.withValues(alpha: isDark ? 0.7 : 0.8)),
-                      borderRadius: BorderRadius.circular(16),
+                          : Theme.of(context).colorScheme.surface.withValues(alpha: isDark ? 0.7 : 0.8),
+                      borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: state.selectedTaskIds.contains(task.id)
                             ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
-                            : (isSelected 
-                                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) 
-                                : (isDark 
-                                    ? Colors.white.withValues(alpha: 0.05)
-                                    : Colors.black.withValues(alpha: 0.05))),
+                            : (isDark 
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : Colors.black.withValues(alpha: 0.05)),
                         width: 1,
                       ),
                     ),
@@ -683,7 +687,7 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
                                         color: task.isCompleted 
                                             ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.1) 
                                             : task.color.withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(16),
+                                        borderRadius: BorderRadius.circular(24),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -775,7 +779,7 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       builder: (context) => Container(
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),

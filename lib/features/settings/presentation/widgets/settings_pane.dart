@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dexdo/core/theme/theme_provider.dart';
 import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
 import 'package:dexdo/features/settings/presentation/widgets/subscription_pane.dart';
+import 'package:dexdo/features/settings/presentation/widgets/user_profile_header.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,11 +34,14 @@ class SettingsPane extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 32),
+        const UserProfileHeader(),
+        const SizedBox(height: 32),
+        _buildSectionHeader(context, 'Premium'),
         _buildSettingTile(
           context,
-          title: 'Upgrade to Premium',
-          subtitle: 'Unlock all features and support the developer',
-          trailing: const Icon(Icons.star_rounded, color: Colors.orange),
+          title: 'DeXDo Plus',
+          subtitle: 'Manage your subscription and billing',
+          trailing: const Icon(Icons.chevron_right_rounded),
           icon: Icons.workspace_premium_rounded,
           iconColor: Colors.orange,
           onTap: () {
@@ -65,11 +69,11 @@ class SettingsPane extends ConsumerWidget {
         if (isAnonymous)
           _buildSettingTile(
             context,
-            title: 'Sign In / Sync Data',
-            subtitle: 'Bind to a permanent cloud account',
-            trailing: const Icon(Icons.cloud_sync_rounded),
+            title: 'Link Google Account',
+            subtitle: 'Backup and sync your data across devices',
+            trailing: const Icon(Icons.link_rounded),
             icon: Icons.account_circle_rounded,
-            iconColor: Colors.orange,
+            iconColor: Colors.blue,
             onTap: () async {
               final authController = ref.read(authControllerProvider.notifier);
               final credential = await authController.linkWithGoogle();
@@ -91,25 +95,23 @@ class SettingsPane extends ConsumerWidget {
         else
           _buildSettingTile(
             context,
-            title: 'Signed in via Google',
-            subtitle: user?.email ?? 'Bound Account',
-            icon: Icons.verified_user_rounded,
-            iconColor: Colors.green,
-            trailing: IconButton(
-              icon: const Icon(Icons.logout_rounded),
-              onPressed: () async {
-                final authController = ref.read(authControllerProvider.notifier);
-                await authController.signOut();
-                if (context.mounted) {
-                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Successfully signed out. Returning to anonymous.')),
-                  );
-                  // Rerun the anon init
-                  await authController.signInAnonymously();
-                  await taskNotifier.reloadFromStorage();
-                }
-              },
-            ),
+            title: 'Sign Out',
+            subtitle: 'Switch to a local-only guest account',
+            icon: Icons.logout_rounded,
+            iconColor: Colors.red,
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () async {
+              final authController = ref.read(authControllerProvider.notifier);
+              await authController.signOut();
+              if (context.mounted) {
+                 ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Successfully signed out. Returning to anonymous.')),
+                );
+                // Rerun the anon init
+                await authController.signInAnonymously();
+                await taskNotifier.reloadFromStorage();
+              }
+            },
           ),
         const SizedBox(height: 24),
         _buildSectionHeader(context, 'Data Management'),
@@ -193,7 +195,7 @@ class SettingsPane extends ConsumerWidget {
   }) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: ListTile(
         onTap: onTap,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -201,7 +203,7 @@ class SettingsPane extends ConsumerWidget {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: iconColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(24),
           ),
           child: Icon(icon, color: iconColor),
         ),

@@ -71,7 +71,7 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
         top: 24,
@@ -124,7 +124,7 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
                 filled: true,
                 fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
                 ),
                 floatingLabelStyle: TextStyle(color: Theme.of(context).colorScheme.primary),
@@ -165,7 +165,7 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
                           color: isSelected ? _selectedColor : Colors.transparent,
                           width: 2,
                         ),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(24),
                       ),
                       child: Icon(
                         icon,
@@ -233,7 +233,7 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                   elevation: 0,
                 ),
                 child: Text(

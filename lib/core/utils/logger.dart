@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
@@ -49,7 +51,10 @@ class AppLogger {
     StackTrace? stackTrace, {
     required bool fatal,
   }) {
-    if (!kIsWeb) {
+    // Skip Crashlytics in Web, Debug mode, or during Tests
+    if (kIsWeb || kDebugMode || Platform.environment.containsKey('FLUTTER_TEST')) return;
+
+    try {
       FirebaseCrashlytics.instance.log(message);
       if (error != null) {
         FirebaseCrashlytics.instance.recordError(
@@ -59,6 +64,8 @@ class AppLogger {
           fatal: fatal,
         );
       }
+    } catch (e) {
+      // Silently fail if Crashlytics is not available
     }
   }
 }
