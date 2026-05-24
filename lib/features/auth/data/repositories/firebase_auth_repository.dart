@@ -12,7 +12,9 @@ class FirebaseAuthRepository implements AuthRepository {
   })  : _auth = auth ?? FirebaseAuth.instance,
         _googleSignIn = googleSignIn ?? GoogleSignIn.instance,
         _firestore = firestore ?? FirebaseFirestore.instance {
-    _googleSignIn.initialize();
+    if (!kIsWeb) {
+      _googleSignIn.initialize();
+    }
   }
 
   final FirebaseAuth _auth;

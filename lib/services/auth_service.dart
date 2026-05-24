@@ -13,7 +13,9 @@ class AuthService extends ChangeNotifier {
       notifyListeners();
     });
     // Mandatory initialization for v7.2.0
-    _googleSignIn.initialize();
+    if (!kIsWeb) {
+      _googleSignIn.initialize();
+    }
   }
   final FirebaseAuth _auth;
   final GoogleSignIn _googleSignIn;
