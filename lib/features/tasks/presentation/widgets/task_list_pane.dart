@@ -527,234 +527,238 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
         child: AnimatedOpacity(
           opacity: task.isCompleted ? 0.6 : 1.0,
           duration: const Duration(milliseconds: 300),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: isSelected 
-                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.08) 
-                      : Colors.black.withValues(alpha: 0.02),
-                  blurRadius: isSelected ? 15 : 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  decoration: BoxDecoration(
-                    color: state.selectedTaskIds.contains(task.id)
-                        ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: isDark ? 0.4 : 0.6)
-                        : (isSelected 
-                            ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: isDark ? 0.2 : 0.3) 
-                            : Theme.of(context).colorScheme.surface.withValues(alpha: isDark ? 0.7 : 0.8)),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: state.selectedTaskIds.contains(task.id)
-                          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
-                          : (isSelected 
-                              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) 
-                              : (isDark 
-                                  ? Colors.white.withValues(alpha: 0.05)
-                                  : Colors.black.withValues(alpha: 0.05))),
-                      width: 1,
-                    ),
+          child: Hero(
+            tag: 'task_${task.id}',
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Selection Checkbox with Progress Ring for Subtasks
-                        GestureDetector(
-                          onTap: () {
-                            FocusScope.of(context).unfocus();
-                            if (state.isSelectionMode) {
-                              notifier.toggleTaskSelection(task.id);
-                            } else {
-                              HapticFeedback.lightImpact();
-                              notifier.toggleTask(task);
-                            }
-                          },
-                          onLongPress: () {
-                            FocusScope.of(context).unfocus();
-                            if (!state.isSelectionMode) {
-                              HapticFeedback.heavyImpact();
-                              notifier.toggleTaskSelection(task.id);
-                            }
-                          },
-                          child: AnimatedScale(
-                            scale: task.isCompleted || state.selectedTaskIds.contains(task.id) ? 1.05 : 1.0,
-                            duration: const Duration(milliseconds: 150),
-                            curve: Curves.easeOutBack,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                if (task.subtasks.isNotEmpty && !task.isCompleted)
-                                  SizedBox(
-                                    width: 34,
-                                    height: 34,
-                                    child: CircularProgressIndicator(
-                                      value: task.progress,
-                                      strokeWidth: 2.5,
-                                      backgroundColor: task.color.withValues(alpha: 0.15),
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        task.progress == 1.0 ? Colors.green : task.color,
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    decoration: BoxDecoration(
+                      color: state.selectedTaskIds.contains(task.id)
+                          ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: isDark ? 0.4 : 0.6)
+                          : (isSelected 
+                              ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: isDark ? 0.2 : 0.3) 
+                              : Theme.of(context).colorScheme.surface.withValues(alpha: isDark ? 0.7 : 0.8)),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: state.selectedTaskIds.contains(task.id)
+                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
+                            : (isSelected 
+                                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) 
+                                : (isDark 
+                                    ? Colors.white.withValues(alpha: 0.05)
+                                    : Colors.black.withValues(alpha: 0.05))),
+                        width: 1,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Selection Checkbox with Progress Ring for Subtasks
+                          GestureDetector(
+                            onTap: () {
+                              FocusScope.of(context).unfocus();
+                              if (state.isSelectionMode) {
+                                notifier.toggleTaskSelection(task.id);
+                              } else {
+                                HapticFeedback.lightImpact();
+                                notifier.toggleTask(task);
+                              }
+                            },
+                            onLongPress: () {
+                              FocusScope.of(context).unfocus();
+                              if (!state.isSelectionMode) {
+                                HapticFeedback.heavyImpact();
+                                notifier.toggleTaskSelection(task.id);
+                              }
+                            },
+                            child: AnimatedScale(
+                              scale: task.isCompleted || state.selectedTaskIds.contains(task.id) ? 1.05 : 1.0,
+                              duration: const Duration(milliseconds: 150),
+                              curve: Curves.easeOutBack,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  if (task.subtasks.isNotEmpty && !task.isCompleted)
+                                    SizedBox(
+                                      width: 34,
+                                      height: 34,
+                                      child: CircularProgressIndicator(
+                                        value: task.progress,
+                                        strokeWidth: 2.5,
+                                        backgroundColor: task.color.withValues(alpha: 0.15),
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          task.progress == 1.0 ? Colors.green : task.color,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: state.selectedTaskIds.contains(task.id)
-                                        ? Theme.of(context).colorScheme.primary
-                                        : (task.isCompleted ? task.color.withValues(alpha: 0.15) : Colors.transparent),
-                                    shape: task.subtasks.isNotEmpty ? BoxShape.circle : BoxShape.rectangle,
-                                    borderRadius: task.subtasks.isNotEmpty ? null : BorderRadius.circular(8),
-                                    border: Border.all(
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(
                                       color: state.selectedTaskIds.contains(task.id)
                                           ? Theme.of(context).colorScheme.primary
-                                          : (task.isCompleted ? task.color : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4)),
-                                      width: (state.selectedTaskIds.contains(task.id) || task.isCompleted) ? 0 : 1.5,
+                                          : (task.isCompleted ? task.color.withValues(alpha: 0.15) : Colors.transparent),
+                                      shape: task.subtasks.isNotEmpty ? BoxShape.circle : BoxShape.rectangle,
+                                      borderRadius: task.subtasks.isNotEmpty ? null : BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: state.selectedTaskIds.contains(task.id)
+                                            ? Theme.of(context).colorScheme.primary
+                                            : (task.isCompleted ? task.color : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4)),
+                                        width: (state.selectedTaskIds.contains(task.id) || task.isCompleted) ? 0 : 1.5,
+                                      ),
                                     ),
+                                    child: state.selectedTaskIds.contains(task.id)
+                                        ? Icon(Icons.check, size: 16, color: Theme.of(context).colorScheme.onPrimary)
+                                        : (task.isCompleted ? Icon(Icons.check, size: 16, color: task.color) : null),
                                   ),
-                                  child: state.selectedTaskIds.contains(task.id)
-                                      ? Icon(Icons.check, size: 16, color: Theme.of(context).colorScheme.onPrimary)
-                                      : (task.isCompleted ? Icon(Icons.check, size: 16, color: task.color) : null),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 18),
+                          // Text content
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Row(
+                                  children: [
+                                    if (task.priority != TaskPriority.medium)
+                                      Padding(
+                                        padding: const EdgeInsets.only(right: 8.0),
+                                        child: Container(
+                                          width: 4,
+                                          height: 16,
+                                          decoration: BoxDecoration(
+                                            color: task.priority.color,
+                                            borderRadius: BorderRadius.circular(2),
+                                          ),
+                                        ),
+                                      ),
+                                    Expanded(
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: Text(
+                                          task.title.isEmpty ? 'New Task' : task.title,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 16,
+                                            color: task.isCompleted 
+                                                ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) 
+                                                : Theme.of(context).colorScheme.onSurface,
+                                            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: task.isCompleted 
+                                            ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.1) 
+                                            : task.color.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            task.icon, 
+                                            size: 12, 
+                                            color: task.isCompleted 
+                                                ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) 
+                                                : task.color
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            task.category,
+                                            style: TextStyle(
+                                              color: task.isCompleted 
+                                                  ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) 
+                                                  : task.color,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (task.subtasks.isNotEmpty)
+                                      _buildInfoChip(
+                                        context,
+                                        Icons.checklist_rounded,
+                                        '${task.completedSubtaskCount}/${task.subtasks.length}',
+                                        task.progress == 1.0 
+                                            ? Colors.green 
+                                            : (task.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.primary),
+                                      ),
+                                    if (task.dueDate != null) 
+                                      _buildDueDateChip(context, task.dueDate!, task.isCompleted),
+                                    if (task.attachmentCount > 0)
+                                      _buildInfoChip(
+                                        context,
+                                        Icons.attach_file_rounded,
+                                        '${task.attachmentCount}',
+                                        Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                                      ),
+                                  ],
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 18),
-                        // Text content
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Row(
-                                children: [
-                                  if (task.priority != TaskPriority.medium)
-                                    Padding(
-                                      padding: const EdgeInsets.only(right: 8.0),
-                                      child: Container(
-                                        width: 4,
-                                        height: 16,
-                                        decoration: BoxDecoration(
-                                          color: task.priority.color,
-                                          borderRadius: BorderRadius.circular(2),
-                                        ),
-                                      ),
-                                    ),
-                                  Expanded(
-                                    child: Text(
-                                      task.title.isEmpty ? 'New Task' : task.title,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                        color: task.isCompleted 
-                                            ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) 
-                                            : Theme.of(context).colorScheme.onSurface,
-                                        decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: task.isCompleted 
-                                          ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.1) 
-                                          : task.color.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          task.icon, 
-                                          size: 12, 
-                                          color: task.isCompleted 
-                                              ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) 
-                                              : task.color
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          task.category,
-                                          style: TextStyle(
-                                            color: task.isCompleted 
-                                                ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) 
-                                                : task.color,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (task.subtasks.isNotEmpty)
-                                    _buildInfoChip(
-                                      context,
-                                      Icons.checklist_rounded,
-                                      '${task.completedSubtaskCount}/${task.subtasks.length}',
-                                      task.progress == 1.0 
-                                          ? Colors.green 
-                                          : (task.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.primary),
-                                    ),
-                                  if (task.dueDate != null) 
-                                    _buildDueDateChip(context, task.dueDate!, task.isCompleted),
-                                  if (task.attachmentCount > 0)
-                                    _buildInfoChip(
-                                      context,
-                                      Icons.attach_file_rounded,
-                                      '${task.attachmentCount}',
-                                      Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                                    ),
-                                ],
-                              ),
-                            ],
+                          // Star
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            icon: Icon(
+                              task.isStarred ? Icons.star_rounded : Icons.star_outline_rounded,
+                              color: task.isStarred ? const Color(0xFFFFB300) : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                              size: 24,
+                            ),
+                            onPressed: () {
+                              FocusScope.of(context).unfocus();
+                              notifier.toggleStarred(task);
+                            },
                           ),
-                        ),
-                        // Star
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          icon: Icon(
-                            task.isStarred ? Icons.star_rounded : Icons.star_outline_rounded,
-                            color: task.isStarred ? const Color(0xFFFFB300) : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                            size: 24,
-                          ),
-                          onPressed: () {
-                            FocusScope.of(context).unfocus();
-                            notifier.toggleStarred(task);
-                          },
-                        ),
-                        if (state.searchQuery.isEmpty && !state.isSelectionMode)
-                          ReorderableDragStartListener(
-                            index: index,
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 4.0),
-                              child: Icon(
-                                Icons.drag_indicator_rounded,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                                size: 26,
+                          if (state.searchQuery.isEmpty && !state.isSelectionMode)
+                            ReorderableDragStartListener(
+                              index: index,
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 4.0),
+                                child: Icon(
+                                  Icons.drag_indicator_rounded,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                                  size: 26,
+                                ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

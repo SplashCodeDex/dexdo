@@ -217,285 +217,294 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
       return _buildFocusModeUI();
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(32),
-          bottomLeft: Radius.circular(32),
+    return Hero(
+      tag: 'task_${widget.task.id}',
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(32),
+            bottomLeft: Radius.circular(32),
+          ),
         ),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Action Row
-            Row(
-              children: [
-                _buildStatusChip(taskNotifier),
-                const Spacer(),
-                IconButton(
-                  onPressed: () {
-                    FocusScope.of(context).unfocus();
-                    taskNotifier.toggleStarred(widget.task);
-                  },
-                  icon: Icon(
-                    widget.task.isStarred ? Icons.star_rounded : Icons.star_outline_rounded,
-                    color: widget.task.isStarred ? const Color(0xFFFFB300) : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Action Row
+              Row(
+                children: [
+                  _buildStatusChip(taskNotifier),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () {
+                      FocusScope.of(context).unfocus();
+                      taskNotifier.toggleStarred(widget.task);
+                    },
+                    icon: Icon(
+                      widget.task.isStarred ? Icons.star_rounded : Icons.star_outline_rounded,
+                      color: widget.task.isStarred ? const Color(0xFFFFB300) : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                    ),
                   ),
-                ),
-                IconButton(
-                  onPressed: () {
-                    FocusScope.of(context).unfocus();
-                    taskNotifier.deleteTask(widget.task);
-                    if (Navigator.of(context).canPop()) {
-                      Navigator.of(context).pop();
-                    }
-                  },
-                  icon: Icon(Icons.delete_outline_rounded, color: Theme.of(context).colorScheme.error),
-                  tooltip: 'Delete Task',
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-            
-            // Title Input
-            TextField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                hintText: 'What needs to be done?',
-                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
-                border: InputBorder.none,
+                  IconButton(
+                    onPressed: () {
+                      FocusScope.of(context).unfocus();
+                      taskNotifier.deleteTask(widget.task);
+                      if (Navigator.of(context).canPop()) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    icon: Icon(Icons.delete_outline_rounded, color: Theme.of(context).colorScheme.error),
+                    tooltip: 'Delete Task',
+                  ),
+                ],
               ),
-              onTapOutside: (_) => FocusScope.of(context).unfocus(),
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: widget.task.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.onSurface,
-                    decoration: widget.task.isCompleted ? TextDecoration.lineThrough : null,
+              const SizedBox(height: 32),
+              
+              // Title Input
+              Material(
+                color: Colors.transparent,
+                child: TextField(
+                  controller: _titleController,
+                  decoration: InputDecoration(
+                    hintText: 'What needs to be done?',
+                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
+                    border: InputBorder.none,
                   ),
-              onChanged: (_) => _saveChanges(taskNotifier),
-            ),
-            const SizedBox(height: 8),
-
-            // AI Actions Row
-            Row(
-              children: [
-                TextButton.icon(
-                  onPressed: _isAILoading ? null : () => _handleAICategorySuggest(taskNotifier, taskState),
-                  icon: const Icon(Icons.auto_awesome_rounded, size: 14),
-                  label: const Text('AI Categorize', style: TextStyle(fontSize: 11)),
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    foregroundColor: Theme.of(context).colorScheme.secondary,
-                  ),
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: widget.task.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.onSurface,
+                        decoration: widget.task.isCompleted ? TextDecoration.lineThrough : null,
+                      ),
+                  onChanged: (_) => _saveChanges(taskNotifier),
                 ),
-                const SizedBox(width: 8),
-                TextButton.icon(
-                  onPressed: _isAILoading ? null : () => _handleAIEstimate(taskState),
-                  icon: const Icon(Icons.timer_outlined, size: 14),
-                  label: const Text('AI Time Estimate', style: TextStyle(fontSize: 11)),
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    foregroundColor: Theme.of(context).colorScheme.secondary,
+              ),
+              const SizedBox(height: 8),
+
+              // AI Actions Row
+              Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: _isAILoading ? null : () => _handleAICategorySuggest(taskNotifier, taskState),
+                    icon: const Icon(Icons.auto_awesome_rounded, size: 14),
+                    label: const Text('AI Categorize', style: TextStyle(fontSize: 11)),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      foregroundColor: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: _isAILoading ? null : () => _handleAIEstimate(taskState),
+                    icon: const Icon(Icons.timer_outlined, size: 14),
+                    label: const Text('AI Time Estimate', style: TextStyle(fontSize: 11)),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      foregroundColor: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                ],
+              ),
+
+              if (_aiTimeEstimate != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.lightbulb_outline_rounded, color: Theme.of(context).colorScheme.primary, size: 18),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _aiTimeEstimate!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 16),
+                        onPressed: () => setState(() => _aiTimeEstimate = null),
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                      ),
+                    ],
                   ),
                 ),
               ],
-            ),
+              const SizedBox(height: 24),
 
-            if (_aiTimeEstimate != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.lightbulb_outline_rounded, color: Theme.of(context).colorScheme.primary, size: 18),
-                    const SizedBox(width: 12),
-                    Expanded(
+              // Metadata Cards
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  SizedBox(
+                    width: 160,
+                    child: _buildDetailCard(
+                      icon: Icons.category_rounded,
+                      label: 'Category',
+                      child: _buildCategoryDropdown(taskState, taskNotifier),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 160,
+                    child: _buildDetailCard(
+                      icon: Icons.calendar_today_rounded,
+                      label: 'Due Date',
+                      onTap: () async {
+                        FocusScope.of(context).unfocus();
+                        final pickedDate = await showDatePicker(
+                          context: context,
+                          initialDate: widget.task.dueDate ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (!context.mounted) return;
+                        if (pickedDate != null) {
+                          final pickedTime = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.fromDateTime(widget.task.dueDate ?? DateTime.now()),
+                          );
+                          if (!context.mounted) return;
+                          if (pickedTime != null) {
+                            final finalDateTime = DateTime(
+                              pickedDate.year,
+                              pickedDate.month,
+                              pickedDate.day,
+                              pickedTime.hour,
+                              pickedTime.minute,
+                            );
+                            unawaited(taskNotifier.updateDueDate(widget.task, finalDateTime));
+                          } else {
+                            unawaited(taskNotifier.updateDueDate(widget.task, pickedDate));
+                          }
+                        }
+                      },
                       child: Text(
-                        _aiTimeEstimate!,
+                        widget.task.dueDate == null
+                            ? 'Set Date'
+                            : _formatDate(widget.task.dueDate!),
                         style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurface,
+                          color: widget.task.dueDate == null ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 16),
-                      onPressed: () => setState(() => _aiTimeEstimate = null),
+                  ),
+                  SizedBox(
+                    width: 160,
+                    child: _buildDetailCard(
+                      icon: Icons.priority_high_rounded,
+                      label: 'Priority',
+                      child: _buildPriorityDropdown(taskState, taskNotifier),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 160,
+                    child: _buildDetailCard(
+                      icon: Icons.repeat_rounded,
+                      label: 'Recurrence',
+                      child: _buildRecurrenceDropdown(taskState, taskNotifier),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 160,
+                    child: _buildDetailCard(
+                      icon: Icons.timer_outlined,
+                      label: 'Focus Timer',
+                      onTap: () {
+                        FocusScope.of(context).unfocus();
+                        _startFocusMode();
+                      },
+                      child: Text(
+                        'Start Focus',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+
+              // Subtasks Section
+              Row(
+                children: [
+                  _buildSectionLabel('SUBTASKS (${widget.task.completedSubtaskCount}/${widget.task.subtaskCount})'),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: _isAILoading ? null : () => _handleAIBreakdown(taskNotifier),
+                    icon: _isAILoading 
+                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.auto_awesome_rounded, size: 16),
+                    label: Text(_isAILoading ? 'Thinking...' : 'AI Breakdown', style: const TextStyle(fontSize: 12)),
+                    style: TextButton.styleFrom(
                       visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ...widget.task.subtasks.map((subtask) => _buildSubtaskItem(taskNotifier, subtask)),
+              _buildAddSubtaskField(taskNotifier),
+              const SizedBox(height: 32),
+
+              // Description Area
+              _buildSectionLabel('DESCRIPTION'),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: TextField(
+                    controller: _descriptionController,
+                    decoration: const InputDecoration(
+                      hintText: 'Add more details about this task...',
+                      border: InputBorder.none,
+                    ),
+                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                    maxLines: 8,
+                    style: TextStyle(height: 1.6, color: Theme.of(context).colorScheme.onSurface),
+                    onChanged: (_) => _saveChanges(taskNotifier),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 40),
+              
+              // Bottom Save Indicator
+              Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.cloud_done_outlined, size: 16, color: Colors.green.withValues(alpha: 0.7)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Changes saved automatically',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                          ),
                     ),
                   ],
                 ),
               ),
             ],
-            const SizedBox(height: 24),
-
-            // Metadata Cards
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                SizedBox(
-                  width: 160,
-                  child: _buildDetailCard(
-                    icon: Icons.category_rounded,
-                    label: 'Category',
-                    child: _buildCategoryDropdown(taskState, taskNotifier),
-                  ),
-                ),
-                SizedBox(
-                  width: 160,
-                  child: _buildDetailCard(
-                    icon: Icons.calendar_today_rounded,
-                    label: 'Due Date',
-                    onTap: () async {
-                      FocusScope.of(context).unfocus();
-                      final pickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: widget.task.dueDate ?? DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
-                      );
-                      if (!context.mounted) return;
-                      if (pickedDate != null) {
-                        final pickedTime = await showTimePicker(
-                          context: context,
-                          initialTime: TimeOfDay.fromDateTime(widget.task.dueDate ?? DateTime.now()),
-                        );
-                        if (!context.mounted) return;
-                        if (pickedTime != null) {
-                          final finalDateTime = DateTime(
-                            pickedDate.year,
-                            pickedDate.month,
-                            pickedDate.day,
-                            pickedTime.hour,
-                            pickedTime.minute,
-                          );
-                          unawaited(taskNotifier.updateDueDate(widget.task, finalDateTime));
-                        } else {
-                          unawaited(taskNotifier.updateDueDate(widget.task, pickedDate));
-                        }
-                      }
-                    },
-                    child: Text(
-                      widget.task.dueDate == null
-                          ? 'Set Date'
-                          : _formatDate(widget.task.dueDate!),
-                      style: TextStyle(
-                        color: widget.task.dueDate == null ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 160,
-                  child: _buildDetailCard(
-                    icon: Icons.priority_high_rounded,
-                    label: 'Priority',
-                    child: _buildPriorityDropdown(taskState, taskNotifier),
-                  ),
-                ),
-                SizedBox(
-                  width: 160,
-                  child: _buildDetailCard(
-                    icon: Icons.repeat_rounded,
-                    label: 'Recurrence',
-                    child: _buildRecurrenceDropdown(taskState, taskNotifier),
-                  ),
-                ),
-                SizedBox(
-                  width: 160,
-                  child: _buildDetailCard(
-                    icon: Icons.timer_outlined,
-                    label: 'Focus Timer',
-                    onTap: () {
-                      FocusScope.of(context).unfocus();
-                      _startFocusMode();
-                    },
-                    child: Text(
-                      'Start Focus',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-
-            // Subtasks Section
-            Row(
-              children: [
-                _buildSectionLabel('SUBTASKS (${widget.task.completedSubtaskCount}/${widget.task.subtaskCount})'),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: _isAILoading ? null : () => _handleAIBreakdown(taskNotifier),
-                  icon: _isAILoading 
-                    ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.auto_awesome_rounded, size: 16),
-                  label: Text(_isAILoading ? 'Thinking...' : 'AI Breakdown', style: const TextStyle(fontSize: 12)),
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    foregroundColor: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ...widget.task.subtasks.map((subtask) => _buildSubtaskItem(taskNotifier, subtask)),
-            _buildAddSubtaskField(taskNotifier),
-            const SizedBox(height: 32),
-
-            // Description Area
-            _buildSectionLabel('DESCRIPTION'),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: TextField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  hintText: 'Add more details about this task...',
-                  border: InputBorder.none,
-                ),
-                onTapOutside: (_) => FocusScope.of(context).unfocus(),
-                maxLines: 8,
-                style: TextStyle(height: 1.6, color: Theme.of(context).colorScheme.onSurface),
-                onChanged: (_) => _saveChanges(taskNotifier),
-              ),
-            ),
-            const SizedBox(height: 40),
-            
-            // Bottom Save Indicator
-            Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.cloud_done_outlined, size: 16, color: Colors.green.withValues(alpha: 0.7)),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Changes saved automatically',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
