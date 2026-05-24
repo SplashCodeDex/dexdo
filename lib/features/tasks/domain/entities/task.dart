@@ -15,6 +15,39 @@ class SubTask with _$SubTask {
   factory SubTask.fromJson(Map<String, dynamic> json) => _$SubTaskFromJson(json);
 }
 
+enum TaskPriority {
+  low,
+  medium,
+  high,
+  urgent;
+
+  String get label {
+    switch (this) {
+      case TaskPriority.low:
+        return 'Low';
+      case TaskPriority.medium:
+        return 'Medium';
+      case TaskPriority.high:
+        return 'High';
+      case TaskPriority.urgent:
+        return 'Urgent';
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case TaskPriority.low:
+        return Colors.green;
+      case TaskPriority.medium:
+        return Colors.orange;
+      case TaskPriority.high:
+        return Colors.red;
+      case TaskPriority.urgent:
+        return Colors.purple;
+    }
+  }
+}
+
 @freezed
 class Task with _$Task {
   const Task._();
@@ -34,6 +67,7 @@ class Task with _$Task {
     DateTime? dueDate,
     @Default(0) int orderIndex,
     @Default('none') String recurrence,
+    @Default(TaskPriority.medium) TaskPriority priority,
   }) = _Task;
 
   factory Task.fromJson(Map<String, dynamic> json) => _$TaskFromJson(json);

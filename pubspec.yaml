@@ -56,6 +56,11 @@ dependencies:
   google_fonts: ^8.0.2
   google_generative_ai: ^0.8.6
   flutter_staggered_animations: ^1.1.1
+  logger: ^2.5.0
+  equatable: ^2.0.7
+  fl_chart: ^0.70.2
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:
@@ -75,12 +80,21 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.5.0
 
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   image_path: "assets/images/DexDo.png"
   min_sdk_android: 21
+
+flutter_native_splash:
+  color: "#ffffff"
+  image: "assets/images/DexDo.png"
+  android_12:
+    image: "assets/images/DexDo.png"
+    color: "#ffffff"
+  fullscreen: true
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

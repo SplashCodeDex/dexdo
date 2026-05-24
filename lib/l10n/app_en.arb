@@ -1,0 +1,19 @@
+{
+  "@@locale": "en",
+  "appTitle": "DexDo",
+  "@appTitle": {
+    "description": "The name of the application"
+  },
+  "homeTitle": "Home",
+  "calendarTitle": "Calendar",
+  "tasksTitle": "Tasks",
+  "settingsTitle": "Settings",
+  "addNewTask": "Add New Task",
+  "deleteSelected": "Delete Selected",
+  "markCompleted": "Mark Completed",
+  "moveCategory": "Move to Category",
+  "clearDone": "Clear Done",
+  "selectTaskDetail": "Select a task to view details",
+  "noCategory": "No Category",
+  "allTasks": "All Tasks"
+}

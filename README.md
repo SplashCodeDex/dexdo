@@ -16,6 +16,8 @@ DexDo has been optimized and prepared for releases with Android / iOS. The follo
 To start contributing:
 ```bash
 flutter pub get
+# Generate boilerplate (Isar, Riverpod, etc.)
+dart run build_runner build --delete-conflicting-outputs
 flutter run
 ```
 

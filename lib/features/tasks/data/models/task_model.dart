@@ -24,6 +24,8 @@ class TaskModel {
   DateTime? dueDate;
   late int orderIndex;
   late String recurrence;
+  @enumerated
+  late TaskPriority priority;
 
   Task toEntity() {
     return Task(
@@ -41,6 +43,7 @@ class TaskModel {
       dueDate: dueDate,
       orderIndex: orderIndex,
       recurrence: recurrence,
+      priority: priority,
     );
   }
 
@@ -59,7 +62,8 @@ class TaskModel {
       ..subtasks = task.subtasks.map((s) => SubTaskModel.fromEntity(s)).toList()
       ..dueDate = task.dueDate
       ..orderIndex = task.orderIndex
-      ..recurrence = task.recurrence;
+      ..recurrence = task.recurrence
+      ..priority = task.priority;
   }
 }
 
