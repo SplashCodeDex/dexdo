@@ -57,7 +57,7 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
             backgroundColor: Theme.of(context).colorScheme.surface,
             elevation: innerBoxIsScrolled ? 2 : 0,
             shadowColor: Colors.black.withValues(alpha: 0.1),
-            expandedHeight: 180,
+            expandedHeight: 220,
             flexibleSpace: FlexibleSpaceBar(
               background: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
