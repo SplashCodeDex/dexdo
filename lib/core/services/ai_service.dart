@@ -53,4 +53,50 @@ class AIService {
       return [];
     }
   }
+
+  Future<String> suggestCategory(String taskTitle, List<String> categories) async {
+    final cleanCategories = categories.where((c) => c != 'All').toList();
+    if (cleanCategories.isEmpty) return 'Personal';
+    
+    final prompt = 'Given the task title "$taskTitle", select the single most appropriate category from this list: ${cleanCategories.join(", ")}. '
+        'Provide only the selected category name word, exactly as listed, with no extra punctuation, thoughts, or numbering. If none perfectly fit, reply "Personal".';
+
+    try {
+      final content = [Content.text(prompt)];
+      final response = await _model.generateContent(content);
+      
+      if (response.text == null || response.text!.isEmpty) {
+        return 'Personal';
+      }
+      final suggested = response.text!.trim();
+      if (cleanCategories.contains(suggested)) {
+        return suggested;
+      }
+      // Check case-insensitive match
+      for (var cat in cleanCategories) {
+        if (cat.toLowerCase() == suggested.toLowerCase()) {
+          return cat;
+        }
+      }
+      return 'Personal';
+    } catch (e, stack) {
+      AppLogger.e('Error suggesting category with AI', e, stack);
+      return 'Personal';
+    }
+  }
+
+  Future<String> estimateDuration(String taskTitle, String description) async {
+    final prompt = 'Given the task title "$taskTitle" and description "$description", '
+        'estimate how long this task should realistically take. Return a highly concise estimation (e.g., "30 mins", "2 hours", "1 day") '
+        'and a single short sentence explaining why. Be very brief (max 20 words total).';
+
+    try {
+      final content = [Content.text(prompt)];
+      final response = await _model.generateContent(content);
+      return response.text?.trim() ?? 'No estimate available';
+    } catch (e, stack) {
+      AppLogger.e('Error estimating task duration with AI', e, stack);
+      return 'No estimate available';
+    }
+  }
 }

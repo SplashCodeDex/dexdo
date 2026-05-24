@@ -1,6 +1,6 @@
 import 'package:animations/animations.dart';
-import 'package:dexdo/features/calendar/tasks/domain/entities/task.dart';
-import 'package:dexdo/features/calendar/tasks/presentation/providers/task_provider.dart';
+import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,7 +38,7 @@ class _CalendarPaneState extends ConsumerState<CalendarPane> {
   @override
   Widget build(BuildContext context) {
     final taskState = ref.watch(taskProvider);
-    final tasksWithDates = taskState.allTasks.where((t) => t.dueDate != null).toList();
+    final tasksWithDates = taskState.tasks.where((t) => t.dueDate != null).toList();
 
     // PERFORMANCE OPTIMIZATION: 
     // Group tasks into an O(1) lookup map to prevent O(N * 42) iterations 

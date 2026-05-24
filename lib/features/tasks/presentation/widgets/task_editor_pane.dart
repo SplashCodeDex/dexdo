@@ -27,12 +27,117 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
   final AIService _aiService = AIService();
   bool _isAILoading = false;
 
+  // Focus Timer & AI state variables
+  bool _isFocusActive = false;
+  bool _isFocusTimerRunning = false;
+  int _focusTimeRemaining = 25 * 60; // 25 mins
+  Timer? _focusTimer;
+  String? _aiTimeEstimate;
+
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.task.title);
     _descriptionController = TextEditingController(text: widget.task.description);
     _subtaskController = TextEditingController();
+  }
+
+  void _startFocusMode() {
+    setState(() {
+      _isFocusActive = true;
+      _isFocusTimerRunning = true;
+      _focusTimeRemaining = 25 * 60;
+    });
+    _tickFocusTimer();
+  }
+
+  void _tickFocusTimer() {
+    _focusTimer?.cancel();
+    _focusTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_focusTimeRemaining > 0) {
+        setState(() {
+          _focusTimeRemaining--;
+        });
+      } else {
+        timer.cancel();
+        setState(() {
+          _isFocusTimerRunning = false;
+          _isFocusActive = false;
+        });
+        HapticFeedback.vibrate();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Focus session complete! Take a break.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
+  }
+
+  void _toggleFocusTimer() {
+    if (_isFocusTimerRunning) {
+      _focusTimer?.cancel();
+      setState(() {
+        _isFocusTimerRunning = false;
+      });
+    } else {
+      setState(() {
+        _isFocusTimerRunning = true;
+      });
+      _tickFocusTimer();
+    }
+  }
+
+  void _exitFocusMode() {
+    _focusTimer?.cancel();
+    setState(() {
+      _isFocusActive = false;
+      _isFocusTimerRunning = false;
+    });
+  }
+
+  Future<void> _handleAICategorySuggest(TaskNotifier notifier, TaskState state) async {
+    if (_titleController.text.isEmpty) return;
+    setState(() => _isAILoading = true);
+    try {
+      final suggestedCategory = await _aiService.suggestCategory(_titleController.text, state.categories);
+      notifier.updateCategory(widget.task, suggestedCategory);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Auto-categorized task as "$suggestedCategory"'),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isAILoading = false);
+      }
+    }
+  }
+
+  Future<void> _handleAIEstimate(TaskState state) async {
+    if (_titleController.text.isEmpty) return;
+    setState(() => _isAILoading = true);
+    try {
+      final estimate = await _aiService.estimateDuration(_titleController.text, _descriptionController.text);
+      if (mounted) {
+        setState(() {
+          _aiTimeEstimate = estimate;
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isAILoading = false);
+      }
+    }
   }
 
   Future<void> _handleAIBreakdown(TaskNotifier notifier) async {
@@ -53,6 +158,8 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
   void didUpdateWidget(TaskEditorPane oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.task.id != widget.task.id) {
+      _aiTimeEstimate = null;
+      _exitFocusMode();
       // Flush changes for the previous task if a debounce was pending
       if (_debounce?.isActive ?? false) {
         _debounce!.cancel();
@@ -69,6 +176,7 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
 
   @override
   void dispose() {
+    _focusTimer?.cancel();
     // Flush any pending changes before disposing
     if (_debounce?.isActive ?? false) {
       _debounce!.cancel();
@@ -103,6 +211,10 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
   Widget build(BuildContext context) {
     final taskState = ref.watch(taskProvider);
     final taskNotifier = ref.read(taskProvider.notifier);
+
+    if (_isFocusActive) {
+      return _buildFocusModeUI();
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -163,6 +275,65 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
                   ),
               onChanged: (_) => _saveChanges(taskNotifier),
             ),
+            const SizedBox(height: 8),
+
+            // AI Actions Row
+            Row(
+              children: [
+                TextButton.icon(
+                  onPressed: _isAILoading ? null : () => _handleAICategorySuggest(taskNotifier, taskState),
+                  icon: const Icon(Icons.auto_awesome_rounded, size: 14),
+                  label: const Text('AI Categorize', style: TextStyle(fontSize: 11)),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    foregroundColor: Theme.of(context).colorScheme.secondary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: _isAILoading ? null : () => _handleAIEstimate(taskState),
+                  icon: const Icon(Icons.timer_outlined, size: 14),
+                  label: const Text('AI Time Estimate', style: TextStyle(fontSize: 11)),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    foregroundColor: Theme.of(context).colorScheme.secondary,
+                  ),
+                ),
+              ],
+            ),
+
+            if (_aiTimeEstimate != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.lightbulb_outline_rounded, color: Theme.of(context).colorScheme.primary, size: 18),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _aiTimeEstimate!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 16),
+                      onPressed: () => setState(() => _aiTimeEstimate = null),
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
 
             // Metadata Cards
@@ -237,6 +408,24 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
                     icon: Icons.repeat_rounded,
                     label: 'Recurrence',
                     child: _buildRecurrenceDropdown(taskState, taskNotifier),
+                  ),
+                ),
+                SizedBox(
+                  width: 160,
+                  child: _buildDetailCard(
+                    icon: Icons.timer_outlined,
+                    label: 'Focus Timer',
+                    onTap: () {
+                      FocusScope.of(context).unfocus();
+                      _startFocusMode();
+                    },
+                    child: Text(
+                      'Start Focus',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -792,6 +981,107 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFocusModeUI() {
+    final minutes = (_focusTimeRemaining ~/ 60).toString().padLeft(2, '0');
+    final seconds = (_focusTimeRemaining % 60).toString().padLeft(2, '0');
+    final percent = _focusTimeRemaining / (25 * 60);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(32),
+          bottomLeft: Radius.circular(32),
+        ),
+      ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'FOCUS MODE',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2.0,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                widget.task.title.isEmpty ? 'Untitled Task' : widget.task.title,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 48),
+              
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 200,
+                    height: 200,
+                    child: CircularProgressIndicator(
+                      value: percent,
+                      strokeWidth: 8,
+                      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+                    ),
+                  ),
+                  Text(
+                    '$minutes:$seconds',
+                    style: const TextStyle(
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 48),
+              
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FilledButton.icon(
+                    onPressed: _toggleFocusTimer,
+                    icon: Icon(_isFocusTimerRunning ? Icons.pause_rounded : Icons.play_arrow_rounded),
+                    label: Text(_isFocusTimerRunning ? 'Pause' : 'Resume'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  OutlinedButton.icon(
+                    onPressed: _exitFocusMode,
+                    icon: const Icon(Icons.stop_rounded),
+                    label: const Text('Exit'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Focus for 25 minutes. Deep breaths.',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

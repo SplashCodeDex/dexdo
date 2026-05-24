@@ -1,4 +1,4 @@
-import 'package:dexdo/core/features/tasks/data/models/task_model.dart';
+import 'package:dexdo/features/tasks/data/models/task_model.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 

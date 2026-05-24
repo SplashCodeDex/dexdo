@@ -101,7 +101,7 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
                 onReorder: (oldIndex, newIndex) {
                   if (taskState.searchQuery.isEmpty) {
                     HapticFeedback.mediumImpact();
-                    // taskNotifier.reorderTasks(oldIndex, newIndex);
+                    taskNotifier.reorderTasks(oldIndex, newIndex);
                   }
                 },
                 children: [
@@ -777,7 +777,7 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
               label: 'Duplicate Task',
               onTap: () {
                 Navigator.pop(context);
-                // notifier.duplicateTask(task);
+                notifier.duplicateTask(task);
               },
             ),
             _buildActionItem(

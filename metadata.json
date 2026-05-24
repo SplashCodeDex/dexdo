@@ -1,6 +1,6 @@
 {
   "name": "DexDo",
-  "description": "A Flutter-based To-Do List application.",
+  "description": "An interactive, elegant Flutter To-Do & habit application equipped with AI Task Breakdowns, AI Auto-Categorization, AI Time Estimation, and a immersive Focus Mode Pomodoro timer.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

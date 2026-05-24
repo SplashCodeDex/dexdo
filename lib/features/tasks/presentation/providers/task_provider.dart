@@ -233,6 +233,17 @@ class TaskNotifier extends Notifier<TaskState> {
       if (isMarkingDone) {
         AppHaptics.heavy();
         await _notifications.cancelTaskReminder(task.id);
+
+        final List<Task> pendingClones = [];
+        _handleRecurrence(task, DateTime.now(), pendingClones);
+        if (pendingClones.isNotEmpty) {
+          state = state.copyWith(tasks: [...state.tasks, ...pendingClones]);
+          if (state.selectedTask?.id == task.id) {
+            state = state.copyWith(selectedTask: pendingClones.first);
+          }
+          _updateFilteredTasks();
+          await _repository.saveTasks(state.tasks);
+        }
       } else {
         AppHaptics.medium();
         await _notifications.scheduleTaskReminder(updatedTask);
@@ -241,6 +252,173 @@ class TaskNotifier extends Notifier<TaskState> {
       await _repository.saveTask(updatedTask);
     } catch (e, stack) {
       _handleError(e, stack, 'Toggle task failed');
+    }
+  }
+
+  void _handleRecurrence(Task task, DateTime now, List<Task> newTasksList) {
+    if (task.recurrence != 'none') {
+      final bool exists = state.tasks.any((t) => t.title == task.title && !t.isCompleted && t.dueDate != null && t.dueDate!.isAfter(now));
+      if (exists) return;
+      DateTime nextDueDate = task.dueDate ?? now;
+      if (task.recurrence == 'daily') {
+        nextDueDate = nextDueDate.add(const Duration(days: 1));
+      } else if (task.recurrence == 'weekly') {
+        nextDueDate = nextDueDate.add(const Duration(days: 7));
+      } else if (task.recurrence == 'monthly') {
+        nextDueDate = DateTime(nextDueDate.year, nextDueDate.month + 1, nextDueDate.day, nextDueDate.hour, nextDueDate.minute);
+      } else if (task.recurrence == 'yearly') {
+        nextDueDate = DateTime(nextDueDate.year + 1, nextDueDate.month, nextDueDate.day, nextDueDate.hour, nextDueDate.minute);
+      }
+
+      final clone = Task(
+        id: _uuid.v4(),
+        title: task.title,
+        description: task.description,
+        isCompleted: false,
+        completionDate: null,
+        isStarred: task.isStarred,
+        icon: task.icon,
+        color: task.color,
+        category: task.category,
+        dueDate: nextDueDate,
+        recurrence: task.recurrence,
+        orderIndex: task.orderIndex - 1,
+        priority: task.priority,
+        subtasks: task.subtasks.map((s) => SubTask(id: _uuid.v4(), title: s.title, isCompleted: false)).toList(),
+      );
+      newTasksList.add(clone);
+    }
+  }
+
+  Future<void> addSubtask(Task task, String title) async {
+    try {
+      final newSubtask = SubTask(id: _uuid.v4(), title: title, isCompleted: false);
+      final updatedSubtasks = [...task.subtasks, newSubtask];
+      final updatedTask = task.copyWith(subtasks: updatedSubtasks);
+      _replaceTask(updatedTask);
+      await _repository.saveTask(updatedTask);
+    } catch (e, stack) {
+      _handleError(e, stack, 'Add subtask failed');
+    }
+  }
+
+  Future<void> toggleSubtask(Task task, SubTask subtask) async {
+    try {
+      final updatedSubtasks = task.subtasks.map((s) {
+        if (s.id == subtask.id) {
+          final isMarkingDone = !s.isCompleted;
+          if (isMarkingDone) {
+            AppHaptics.light();
+          }
+          return s.copyWith(isCompleted: isMarkingDone);
+        }
+        return s;
+      }).toList();
+      final updatedTask = task.copyWith(subtasks: updatedSubtasks);
+      _replaceTask(updatedTask);
+      await _repository.saveTask(updatedTask);
+    } catch (e, stack) {
+      _handleError(e, stack, 'Toggle subtask failed');
+    }
+  }
+
+  Future<void> deleteSubtask(Task task, SubTask subtask) async {
+    try {
+      final updatedSubtasks = task.subtasks.where((s) => s.id != subtask.id).toList();
+      final updatedTask = task.copyWith(subtasks: updatedSubtasks);
+      _replaceTask(updatedTask);
+      await _repository.saveTask(updatedTask);
+    } catch (e, stack) {
+      _handleError(e, stack, 'Delete subtask failed');
+    }
+  }
+
+  Future<void> updateCategory(Task task, String category) async {
+    try {
+      final updatedTask = task.copyWith(
+        category: category,
+        color: state.categoryColors[category] ?? Colors.blue,
+        icon: state.categoryIcons[category] ?? Icons.task_alt,
+      );
+      _replaceTask(updatedTask);
+      await _repository.saveTask(updatedTask);
+    } catch (e, stack) {
+      _handleError(e, stack, 'Update category failed');
+    }
+  }
+
+  Future<void> updateDueDate(Task task, DateTime? date) async {
+    try {
+      final updatedTask = task.copyWith(dueDate: date);
+      _replaceTask(updatedTask);
+      if (date == null) {
+        await _notifications.cancelTaskReminder(task.id);
+      } else if (!task.isCompleted) {
+        await _notifications.scheduleTaskReminder(updatedTask);
+      }
+      await _repository.saveTask(updatedTask);
+    } catch (e, stack) {
+      _handleError(e, stack, 'Update due date failed');
+    }
+  }
+
+  Future<void> updateRecurrence(Task task, String recurrence) async {
+    try {
+      final updatedTask = task.copyWith(recurrence: recurrence);
+      _replaceTask(updatedTask);
+      await _repository.saveTask(updatedTask);
+    } catch (e, stack) {
+      _handleError(e, stack, 'Update recurrence failed');
+    }
+  }
+
+  Future<void> duplicateTask(Task task) async {
+    try {
+      final updatedTasks = state.tasks.map((t) => t.copyWith(orderIndex: t.orderIndex + 1)).toList();
+      
+      final duplicatedTask = task.copyWith(
+        id: _uuid.v4(),
+        title: task.title.isEmpty ? 'Copy of New Task' : 'Copy of ${task.title}',
+        subtasks: task.subtasks.map((s) => s.copyWith(id: _uuid.v4())).toList(),
+        orderIndex: 0,
+      );
+
+      state = state.copyWith(
+        tasks: [duplicatedTask, ...updatedTasks],
+      );
+      _updateFilteredTasks();
+      AppHaptics.medium();
+      await _repository.saveTasks(state.tasks);
+    } catch (e, stack) {
+      _handleError(e, stack, 'Duplicate task failed');
+    }
+  }
+
+  Future<void> reorderTasks(int oldIndex, int newIndex) async {
+    try {
+      final activeTasks = state.filteredTasks.where((t) => !t.isCompleted).toList();
+      
+      if (oldIndex < newIndex) {
+        newIndex -= 1;
+      }
+      
+      final task = activeTasks.removeAt(oldIndex);
+      activeTasks.insert(newIndex, task);
+      
+      final updatedTasks = List<Task>.from(state.tasks);
+      for (int i = 0; i < activeTasks.length; i++) {
+        final current = activeTasks[i];
+        final indexInMain = updatedTasks.indexWhere((t) => t.id == current.id);
+        if (indexInMain != -1) {
+          updatedTasks[indexInMain] = updatedTasks[indexInMain].copyWith(orderIndex: i);
+        }
+      }
+      
+      state = state.copyWith(tasks: updatedTasks);
+      _updateFilteredTasks();
+      await _repository.saveTasks(state.tasks);
+    } catch (e, stack) {
+      _handleError(e, stack, 'Reorder tasks failed');
     }
   }
 
@@ -309,14 +487,22 @@ class TaskNotifier extends Notifier<TaskState> {
   // Simplified version of other methods for brevity, can expand later
   Future<void> markSelectedAsCompleted(bool completed) async {
     final now = DateTime.now();
+    final List<Task> pendingClones = [];
     final updatedTasks = state.tasks.map((task) {
       if (state.selectedTaskIds.contains(task.id)) {
-        return task.copyWith(isCompleted: completed, completionDate: completed ? now : null);
+        final updated = task.copyWith(isCompleted: completed, completionDate: completed ? now : null);
+        if (completed) {
+          _handleRecurrence(task, now, pendingClones);
+        }
+        return updated;
       }
       return task;
     }).toList();
 
-    state = state.copyWith(tasks: updatedTasks, selectedTaskIds: {});
+    state = state.copyWith(
+      tasks: [...updatedTasks, ...pendingClones],
+      selectedTaskIds: {},
+    );
     _updateFilteredTasks();
     await _repository.saveTasks(state.tasks);
   }
