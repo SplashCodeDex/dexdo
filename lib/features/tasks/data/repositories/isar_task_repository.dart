@@ -4,7 +4,7 @@ import 'package:dexdo/features/tasks/data/models/task_model.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
 import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 class IsarTaskRepository implements TaskRepository {
   Future<Isar> get _db => IsarService.instance;

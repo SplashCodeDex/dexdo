@@ -1,13 +1,10 @@
-import 'dart:ui';
-import 'package:dexdo/features/tasks/domain/entities/task.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_state.dart';
 import 'package:dexdo/features/tasks/presentation/widgets/category_dialog.dart';
-import 'package:dexdo/features/tasks/presentation/widgets/task_editor_pane.dart';
+import 'package:dexdo/features/tasks/presentation/widgets/task_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -25,7 +22,6 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
   @override
   void initState() {
     super.initState();
-    // Use Future.microtask or ref.read in a post-frame callback if initialization is needed
     _searchController = TextEditingController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final taskState = ref.read(taskProvider);
@@ -118,7 +114,14 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
                           child: FadeInAnimation(
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 16.0),
-                              child: _buildTaskCard(context, task, task.id == taskState.selectedTask?.id, taskState, taskNotifier, isLargeScreen, entry.key),
+                              child: TaskCard(
+                                task: task,
+                                isSelected: task.id == taskState.selectedTask?.id,
+                                state: taskState,
+                                notifier: taskNotifier,
+                                isLargeScreen: isLargeScreen,
+                                index: entry.key,
+                              ),
                             ),
                           ),
                         ),
@@ -140,7 +143,14 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
                           child: FadeInAnimation(
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 16.0),
-                              child: _buildTaskCard(context, task, task.id == taskState.selectedTask?.id, taskState, taskNotifier, isLargeScreen, absoluteIndex),
+                              child: TaskCard(
+                                task: task,
+                                isSelected: task.id == taskState.selectedTask?.id,
+                                state: taskState,
+                                notifier: taskNotifier,
+                                isLargeScreen: isLargeScreen,
+                                index: absoluteIndex,
+                              ),
                             ),
                           ),
                         ),
@@ -344,7 +354,7 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
                             Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: Icon(
-                                state.categoryIcons[category],
+                                state.categoryIcons[category] ?? Icons.category_rounded,
                                 size: 18,
                                 color: Theme.of(context).colorScheme.onPrimaryContainer,
                               ),
@@ -448,458 +458,4 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
       ),
     );
   }
-
-  Widget _buildTaskCard(
-    BuildContext context,
-    Task task,
-    bool isSelected,
-    TaskState state,
-    TaskNotifier notifier,
-    bool isLargeScreen,
-    int index,
-  ) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Slidable(
-      key: Key(task.id),
-      endActionPane: ActionPane(
-        motion: const StretchMotion(),
-        extentRatio: 0.25,
-        children: [
-          SlidableAction(
-            onPressed: (_) {
-              FocusScope.of(context).unfocus();
-              HapticFeedback.heavyImpact();
-              notifier.deleteTask(task);
-            },
-            backgroundColor: const Color(0xFFE53935),
-            foregroundColor: Colors.white,
-            icon: Icons.delete_outline,
-            label: 'Delete',
-            borderRadius: const BorderRadius.only(
-              topRight: Radius.circular(24),
-              bottomRight: Radius.circular(24),
-            ),
-          ),
-        ],
-      ),
-      startActionPane: ActionPane(
-        motion: const StretchMotion(),
-        extentRatio: 0.25,
-        children: [
-          SlidableAction(
-            onPressed: (_) {
-              FocusScope.of(context).unfocus();
-              HapticFeedback.mediumImpact();
-              notifier.toggleTask(task);
-            },
-            backgroundColor: Colors.green,
-            foregroundColor: Colors.white,
-            icon: task.isCompleted ? Icons.undo_rounded : Icons.check_circle_outline,
-            label: task.isCompleted ? 'Undo' : 'Complete',
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(24),
-              bottomLeft: Radius.circular(24),
-            ),
-          ),
-        ],
-      ),
-      child: GestureDetector(
-        onLongPress: () {
-          FocusScope.of(context).unfocus();
-          if (!state.isSelectionMode) {
-            _showQuickActions(context, task, state, notifier);
-          }
-        },
-        onTap: () {
-          FocusScope.of(context).unfocus();
-          if (state.isSelectionMode) {
-            notifier.toggleTaskSelection(task.id);
-          } else {
-            notifier.setSelectedTask(task);
-            if (!isLargeScreen) {
-              Navigator.of(context).push(
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) => TaskEditorPane(task: task),
-                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    );
-                  },
-                ),
-              );
-            }
-          }
-        },
-        child: AnimatedOpacity(
-          opacity: task.isCompleted ? 0.6 : 1.0,
-          duration: const Duration(milliseconds: 300),
-          child: Hero(
-            tag: 'task_${task.id}',
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    decoration: BoxDecoration(
-                      color: state.selectedTaskIds.contains(task.id)
-                          ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: isDark ? 0.4 : 0.6)
-                          : Theme.of(context).colorScheme.surface.withValues(alpha: isDark ? 0.7 : 0.8),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: state.selectedTaskIds.contains(task.id)
-                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
-                            : (isDark 
-                                ? Colors.white.withValues(alpha: 0.05)
-                                : Colors.black.withValues(alpha: 0.05)),
-                        width: 1,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // Selection Checkbox with Progress Ring for Subtasks
-                          GestureDetector(
-                            onTap: () {
-                              FocusScope.of(context).unfocus();
-                              if (state.isSelectionMode) {
-                                notifier.toggleTaskSelection(task.id);
-                              } else {
-                                HapticFeedback.lightImpact();
-                                notifier.toggleTask(task);
-                              }
-                            },
-                            onLongPress: () {
-                              FocusScope.of(context).unfocus();
-                              if (!state.isSelectionMode) {
-                                HapticFeedback.heavyImpact();
-                                notifier.toggleTaskSelection(task.id);
-                              }
-                            },
-                            child: AnimatedScale(
-                              scale: task.isCompleted || state.selectedTaskIds.contains(task.id) ? 1.05 : 1.0,
-                              duration: const Duration(milliseconds: 150),
-                              curve: Curves.easeOutBack,
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  if (task.subtasks.isNotEmpty && !task.isCompleted)
-                                    SizedBox(
-                                      width: 34,
-                                      height: 34,
-                                      child: CircularProgressIndicator(
-                                        value: task.progress,
-                                        strokeWidth: 2.5,
-                                        backgroundColor: task.color.withValues(alpha: 0.15),
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          task.progress == 1.0 ? Colors.green : task.color,
-                                        ),
-                                      ),
-                                    ),
-                                  AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    width: 24,
-                                    height: 24,
-                                    decoration: BoxDecoration(
-                                      color: state.selectedTaskIds.contains(task.id)
-                                          ? Theme.of(context).colorScheme.primary
-                                          : (task.isCompleted ? task.color.withValues(alpha: 0.15) : Colors.transparent),
-                                      shape: task.subtasks.isNotEmpty ? BoxShape.circle : BoxShape.rectangle,
-                                      borderRadius: task.subtasks.isNotEmpty ? null : BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: state.selectedTaskIds.contains(task.id)
-                                            ? Theme.of(context).colorScheme.primary
-                                            : (task.isCompleted ? task.color : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4)),
-                                        width: (state.selectedTaskIds.contains(task.id) || task.isCompleted) ? 0 : 1.5,
-                                      ),
-                                    ),
-                                    child: state.selectedTaskIds.contains(task.id)
-                                        ? Icon(Icons.check, size: 16, color: Theme.of(context).colorScheme.onPrimary)
-                                        : (task.isCompleted ? Icon(Icons.check, size: 16, color: task.color) : null),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 18),
-                          // Text content
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Row(
-                                  children: [
-                                    if (task.priority != TaskPriority.medium)
-                                      Padding(
-                                        padding: const EdgeInsets.only(right: 8.0),
-                                        child: Container(
-                                          width: 4,
-                                          height: 16,
-                                          decoration: BoxDecoration(
-                                            color: task.priority.color,
-                                            borderRadius: BorderRadius.circular(2),
-                                          ),
-                                        ),
-                                      ),
-                                    Expanded(
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        child: Text(
-                                          task.title.isEmpty ? 'New Task' : task.title,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 16,
-                                            color: task.isCompleted 
-                                                ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) 
-                                                : Theme.of(context).colorScheme.onSurface,
-                                            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  crossAxisAlignment: WrapCrossAlignment.center,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: task.isCompleted 
-                                            ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.1) 
-                                            : task.color.withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(24),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            task.icon, 
-                                            size: 12, 
-                                            color: task.isCompleted 
-                                                ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) 
-                                                : task.color
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            task.category,
-                                            style: TextStyle(
-                                              color: task.isCompleted 
-                                                  ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) 
-                                                  : task.color,
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (task.subtasks.isNotEmpty)
-                                      _buildInfoChip(
-                                        context,
-                                        Icons.checklist_rounded,
-                                        '${task.completedSubtaskCount}/${task.subtasks.length}',
-                                        task.progress == 1.0 
-                                            ? Colors.green 
-                                            : (task.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.primary),
-                                      ),
-                                    if (task.dueDate != null) 
-                                      _buildDueDateChip(context, task.dueDate!, task.isCompleted),
-                                    if (task.attachmentCount > 0)
-                                      _buildInfoChip(
-                                        context,
-                                        Icons.attach_file_rounded,
-                                        '${task.attachmentCount}',
-                                        Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Star
-                          IconButton(
-                            visualDensity: VisualDensity.compact,
-                            icon: Icon(
-                              task.isStarred ? Icons.star_rounded : Icons.star_outline_rounded,
-                              color: task.isStarred ? const Color(0xFFFFB300) : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                              size: 24,
-                            ),
-                            onPressed: () {
-                              FocusScope.of(context).unfocus();
-                              notifier.toggleStarred(task);
-                            },
-                          ),
-                          if (state.searchQuery.isEmpty && !state.isSelectionMode)
-                            ReorderableDragStartListener(
-                              index: index,
-                              child: Padding(
-                                padding: const EdgeInsets.only(left: 4.0),
-                                child: Icon(
-                                  Icons.drag_indicator_rounded,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                                  size: 26,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showQuickActions(BuildContext context, Task task, TaskState state, TaskNotifier notifier) {
-    HapticFeedback.mediumImpact();
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            _buildActionItem(
-              icon: Icons.copy_rounded,
-              color: Colors.blue,
-              label: 'Duplicate Task',
-              onTap: () {
-                Navigator.pop(context);
-                notifier.duplicateTask(task);
-              },
-            ),
-            _buildActionItem(
-              icon: task.isStarred ? Icons.star_outline_rounded : Icons.star_rounded,
-              color: const Color(0xFFFFB300),
-              label: task.isStarred ? 'Unstar Task' : 'Star Task',
-              onTap: () {
-                Navigator.pop(context);
-                notifier.toggleStarred(task);
-              },
-            ),
-            _buildActionItem(
-              icon: task.isCompleted ? Icons.radio_button_unchecked_rounded : Icons.check_circle_outline_rounded,
-              color: Colors.green,
-              label: task.isCompleted ? 'Mark as Pending' : 'Mark as Completed',
-              onTap: () {
-                Navigator.pop(context);
-                notifier.toggleTask(task);
-              },
-            ),
-            const Divider(height: 32, indent: 24, endIndent: 24),
-            _buildActionItem(
-              icon: Icons.delete_outline_rounded,
-              color: Colors.red,
-              label: 'Delete Task',
-              onTap: () {
-                Navigator.pop(context);
-                notifier.deleteTask(task);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionItem({
-    required IconData icon,
-    required Color color,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: color, size: 22),
-      ),
-      title: Text(
-        label,
-        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-      ),
-      onTap: onTap,
-    );
-  }
-
-  Widget _buildInfoChip(BuildContext context, IconData icon, String label, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: color,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDueDateChip(BuildContext context, DateTime date, bool isCompleted) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final taskDate = DateTime(date.year, date.month, date.day);
-    final isOverdue = taskDate.isBefore(today);
-    final isToday = taskDate.isAtSameMomentAs(today);
-
-    Color color = Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6);
-    String label = '${date.day}/${date.month}';
-
-    if (!isCompleted) {
-      if (isOverdue) {
-        color = Theme.of(context).colorScheme.error;
-        label = 'Overdue';
-      } else if (isToday) {
-        color = Theme.of(context).colorScheme.primary;
-        label = 'Today';
-      }
-    }
-
-    return _buildInfoChip(context, Icons.calendar_today_rounded, label, color);
-  }
 }
-

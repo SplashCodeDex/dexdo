@@ -5,7 +5,7 @@ part 'task.freezed.dart';
 part 'task.g.dart';
 
 @freezed
-class SubTask with _$SubTask {
+abstract class SubTask with _$SubTask {
   const factory SubTask({
     required String id,
     required String title,
@@ -49,7 +49,7 @@ enum TaskPriority {
 }
 
 @freezed
-class Task with _$Task {
+abstract class Task with _$Task {
   const Task._();
 
   const factory Task({

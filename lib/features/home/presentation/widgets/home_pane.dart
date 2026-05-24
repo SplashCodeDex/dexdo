@@ -385,7 +385,6 @@ class HomePane extends ConsumerWidget {
             enabled: true,
             touchTooltipData: BarTouchTooltipData(
               getTooltipColor: (_) => Theme.of(context).colorScheme.primary,
-              tooltipRoundedRadius: 8,
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 return BarTooltipItem(
                   rod.toY.round().toString(),

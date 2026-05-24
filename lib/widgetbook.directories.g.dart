@@ -1,3 +1,4 @@
+// dart format width=80
 // coverage:ignore-file
 // ignore_for_file: type=lint
 // ignore_for_file: unused_import, prefer_relative_imports, directives_ordering
@@ -13,6 +14,8 @@ import 'package:dexdo/features/settings/presentation/widgets/dynamic_avatar.dart
     as _dexdo_features_settings_presentation_widgets_dynamic_avatar;
 import 'package:dexdo/features/settings/presentation/widgets/productivity_rings.dart'
     as _dexdo_features_settings_presentation_widgets_productivity_rings;
+import 'package:dexdo/features/tasks/presentation/widgets/task_card.dart'
+    as _dexdo_features_tasks_presentation_widgets_task_card;
 import 'package:widgetbook/widgetbook.dart' as _widgetbook;
 
 final directories = <_widgetbook.WidgetbookNode>[
@@ -28,30 +31,60 @@ final directories = <_widgetbook.WidgetbookNode>[
               _widgetbook.WidgetbookFolder(
                 name: 'widgets',
                 children: [
-                  _widgetbook.WidgetbookLeafComponent(
+                  _widgetbook.WidgetbookComponent(
                     name: 'DynamicAvatar',
-                    useCase: _widgetbook.WidgetbookUseCase(
-                      name: 'Default',
-                      builder:
-                          _dexdo_features_settings_presentation_widgets_dynamic_avatar
-                              .buildDynamicAvatarUseCase,
-                    ),
+                    useCases: [
+                      _widgetbook.WidgetbookUseCase(
+                        name: 'Default',
+                        builder:
+                            _dexdo_features_settings_presentation_widgets_dynamic_avatar
+                                .buildDynamicAvatarUseCase,
+                      ),
+                    ],
                   ),
-                  _widgetbook.WidgetbookLeafComponent(
+                  _widgetbook.WidgetbookComponent(
                     name: 'ProductivityRings',
-                    useCase: _widgetbook.WidgetbookUseCase(
-                      name: 'Default',
-                      builder:
-                          _dexdo_features_settings_presentation_widgets_productivity_rings
-                              .buildProductivityRingsUseCase,
-                    ),
+                    useCases: [
+                      _widgetbook.WidgetbookUseCase(
+                        name: 'Default',
+                        builder:
+                            _dexdo_features_settings_presentation_widgets_productivity_rings
+                                .buildProductivityRingsUseCase,
+                      ),
+                    ],
                   ),
                 ],
-              )
+              ),
             ],
-          )
+          ),
         ],
-      )
+      ),
+      _widgetbook.WidgetbookFolder(
+        name: 'tasks',
+        children: [
+          _widgetbook.WidgetbookFolder(
+            name: 'presentation',
+            children: [
+              _widgetbook.WidgetbookFolder(
+                name: 'widgets',
+                children: [
+                  _widgetbook.WidgetbookComponent(
+                    name: 'TaskCard',
+                    useCases: [
+                      _widgetbook.WidgetbookUseCase(
+                        name: 'Default',
+                        builder:
+                            _dexdo_features_tasks_presentation_widgets_task_card
+                                .buildTaskCardUseCase,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
     ],
-  )
+  ),
 ];

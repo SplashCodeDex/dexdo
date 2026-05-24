@@ -1,6 +1,6 @@
 import 'package:dexdo/features/tasks/data/models/task_model.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 class IsarService {

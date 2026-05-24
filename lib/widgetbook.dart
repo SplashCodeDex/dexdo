@@ -1,14 +1,17 @@
-import 'package:flutter/material.dart';
-import 'package:widgetbook/widgetbook.dart';
-import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 import 'package:dexdo/core/theme/app_theme.dart';
 import 'package:dexdo/l10n/app_localizations.dart';
-
-// Import the generated directories for the components
-import 'widgetbook.directories.g.dart';
+import 'package:dexdo/widgetbook.directories.g.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:widgetbook/widgetbook.dart';
+import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 
 void main() {
-  runApp(const WidgetbookApp());
+  runApp(
+    const ProviderScope(
+      child: WidgetbookApp(),
+    ),
+  );
 }
 
 @widgetbook.App()
@@ -36,10 +39,10 @@ class WidgetbookApp extends StatelessWidget {
           locales: AppLocalizations.supportedLocales,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
         ),
-        DeviceFrameAddon(
-          devices: [
-            Devices.ios.iPhone13,
-            Devices.android.samsungGalaxyS20,
+        ViewportAddon(
+          [
+            ...IosViewports.all,
+            ...AndroidViewports.all,
           ],
         ),
       ],

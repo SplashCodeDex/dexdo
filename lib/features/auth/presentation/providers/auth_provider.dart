@@ -1,30 +1,26 @@
 import 'package:dexdo/features/auth/data/repositories/firebase_auth_repository.dart';
 import 'package:dexdo/features/auth/domain/repositories/auth_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
+part 'auth_provider.g.dart';
+
+@riverpod
+AuthRepository authRepository(Ref ref) {
   return FirebaseAuthRepository();
-});
+}
 
-final authStateChangesProvider = StreamProvider<User?>((ref) {
+@riverpod
+Stream<User?> authStateChanges(Ref ref) {
   return ref.watch(authRepositoryProvider).authStateChanges;
-});
+}
 
-final authControllerProvider = StateNotifierProvider<AuthController, AsyncValue<User?>>((ref) {
-  return AuthController(ref);
-});
-
-class AuthController extends StateNotifier<AsyncValue<User?>> {
-
-  AuthController(this.ref) : super(const AsyncValue.loading()) {
-    _init();
-  }
-  final Ref ref;
-
-  void _init() {
+@riverpod
+class AuthController extends _$AuthController {
+  @override
+  AsyncValue<User?> build() {
     final user = ref.read(authRepositoryProvider).currentUser;
-    state = AsyncValue.data(user);
+    return AsyncValue.data(user);
   }
 
   Future<UserCredential?> signInAnonymously() async {
