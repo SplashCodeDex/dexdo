@@ -11,7 +11,7 @@ class IsarService {
 
     final String directory;
     if (kIsWeb) {
-      directory = Isar.sqlitePath;
+      directory = '';
     } else {
       final dir = await getApplicationDocumentsDirectory();
       directory = dir.path;
