@@ -16,6 +16,7 @@ import 'package:dexdo/features/tasks/presentation/widgets/task_list_pane.dart';
 import 'package:dexdo/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:dexdo/l10n/app_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -80,20 +81,13 @@ class DeXDoApp extends rp.ConsumerWidget {
     final themeMode = ref.watch(themeNotifierProvider);
 
     return MaterialApp(
-      onGenerateTitle: (context) => 'DeXDo', // Use localization when generated
+      onGenerateTitle: (context) => AppLocalizations.of(context)?.appTitle ?? 'DeXDo',
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      localizationsDelegates: const [
-        // AppLocalizations.delegate, // Uncomment when generated
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('en', ''), // English
-      ],
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: const HomeScreen(),
     );
   }

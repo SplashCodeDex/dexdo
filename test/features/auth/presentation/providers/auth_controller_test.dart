@@ -38,7 +38,7 @@ void main() {
       when(mockAuthRepository.currentUser).thenReturn(user);
 
       final state = container.read(authControllerProvider);
-      expect(state, AsyncValue.data(user));
+      expect(state.value, user);
     });
 
     test('signInAnonymously sets loading then data on success', () async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dexdo/features/auth/domain/repositories/auth_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,7 +15,7 @@ class FirebaseAuthRepository implements AuthRepository {
         _googleSignIn = googleSignIn ?? GoogleSignIn.instance,
         _firestore = firestore ?? FirebaseFirestore.instance {
     if (!kIsWeb) {
-      _googleSignIn.initialize();
+      unawaited(_googleSignIn.initialize());
     }
   }
 
@@ -56,20 +58,15 @@ class FirebaseAuthRepository implements AuthRepository {
         }
       } else {
         final googleUser = await _googleSignIn.authenticate();
+        if (googleUser == null) return null;
 
         const scopes = ['email', 'profile', 'openid'];
 
-        final currentAuth = await googleUser.authorizationClient.authorizationForScopes(scopes);
+        // Use the new authorization API in 7.2.0
+        final authResult = await googleUser.authorizationClient.authorizeScopes(scopes);
+        final String? accessToken = authResult.accessToken;
 
-        String? accessToken;
-        if (currentAuth == null) {
-          final authResult = await googleUser.authorizationClient.authorizeScopes(scopes);
-          accessToken = authResult.accessToken;
-        } else {
-          accessToken = currentAuth.accessToken;
-        }
-
-        final googleAuth = googleUser.authentication;
+        final googleAuth = await googleUser.authentication;
 
         final credential = GoogleAuthProvider.credential(
           accessToken: accessToken,

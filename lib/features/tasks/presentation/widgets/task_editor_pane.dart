@@ -208,11 +208,11 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
 
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      notifier.updateTask(
+      unawaited(notifier.updateTask(
         taskToUpdate,
         newTitle,
         newDescription,
-      );
+      ));
     });
   }
 

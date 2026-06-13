@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -14,7 +16,7 @@ class AuthService extends ChangeNotifier {
     });
     // Mandatory initialization for v7.2.0
     if (!kIsWeb) {
-      _googleSignIn.initialize();
+      unawaited(_googleSignIn.initialize());
     }
   }
   final FirebaseAuth _auth;
@@ -51,22 +53,15 @@ class AuthService extends ChangeNotifier {
         }
       } else {
         final googleUser = await _googleSignIn.authenticate();
+        if (googleUser == null) return null;
 
         const scopes = ['email', 'profile', 'openid'];
-        
-        // Check if user has already granted required scopes
-        final currentAuth = await googleUser.authorizationClient.authorizationForScopes(scopes);
-        
-        String? accessToken;
-        if (currentAuth == null) {
-          // Trigger granular consent UI if scopes are not yet authorized
-          final authResult = await googleUser.authorizationClient.authorizeScopes(scopes);
-          accessToken = authResult.accessToken;
-        } else {
-          accessToken = currentAuth.accessToken;
-        }
 
-        final googleAuth = googleUser.authentication;
+        // Use the new authorization API in 7.2.0
+        final authResult = await googleUser.authorizationClient.authorizeScopes(scopes);
+        final String? accessToken = authResult.accessToken;
+
+        final googleAuth = await googleUser.authentication;
         
         final AuthCredential credential = GoogleAuthProvider.credential(
           accessToken: accessToken,

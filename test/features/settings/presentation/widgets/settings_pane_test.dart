@@ -1,3 +1,4 @@
+import 'package:dexdo/core/services/notification_service.dart';
 import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
 import 'package:dexdo/features/settings/presentation/widgets/settings_pane.dart';
 import 'package:dexdo/features/tasks/data/repositories/task_repository_provider.dart';
@@ -12,12 +13,14 @@ void main() {
     mockAuthRepo.simulateUser(MockUser(isAnonymous: true));
 
     final mockTaskRepo = MockTaskRepository();
+    final mockNotifications = MockNotificationService();
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           authRepositoryProvider.overrideWithValue(mockAuthRepo),
           taskRepositoryProvider.overrideWithValue(mockTaskRepo),
+          notificationServiceProvider.overrideWithValue(mockNotifications),
         ],
         child: const MaterialApp(
           home: Scaffold(body: SettingsPane()),

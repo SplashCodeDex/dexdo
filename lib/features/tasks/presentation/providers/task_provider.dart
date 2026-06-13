@@ -22,13 +22,19 @@ class TaskNotifier extends Notifier<TaskState> {
   late NotificationService _notifications;
   final _uuid = const Uuid();
   Timer? _searchDebounce;
+  bool _disposed = false;
 
   @override
   TaskState build() {
     _repository = ref.watch(taskRepositoryProvider);
     _notifications = ref.watch(notificationServiceProvider);
     
-    Future.microtask(() => _loadData());
+    ref.onDispose(() {
+      _disposed = true;
+      _searchDebounce?.cancel();
+    });
+
+    unawaited(Future.microtask(() => _loadData()));
     
     return TaskState(isLoading: true);
   }
@@ -44,6 +50,7 @@ class TaskNotifier extends Notifier<TaskState> {
   }
 
   void _handleError(dynamic e, StackTrace stack, String message) {
+    if (_disposed) return;
     AppLogger.e(message, e, stack);
     state = state.copyWith(
       error: FailureMapper.map(e),
@@ -56,6 +63,7 @@ class TaskNotifier extends Notifier<TaskState> {
   }
 
   Future<void> reloadFromStorage() async {
+    if (_disposed) return;
     state = state.copyWith(isLoading: true, clearError: true);
     
     try {
@@ -64,6 +72,7 @@ class TaskNotifier extends Notifier<TaskState> {
       final colors = await _repository.loadCategoryColors();
       final tasks = await _repository.loadTasks();
 
+      if (_disposed) return;
       state = state.copyWith(
         tasks: tasks,
         categories: categories.isNotEmpty ? categories : state.categories,

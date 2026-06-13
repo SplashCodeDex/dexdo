@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dexdo/core/utils/logger.dart';
@@ -30,7 +31,7 @@ class SubscriptionNotifier extends Notifier<SubscriptionState> {
 
   @override
   SubscriptionState build() {
-    _init();
+    unawaited(_init());
     return SubscriptionState();
   }
 
