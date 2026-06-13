@@ -10,6 +10,7 @@ import 'package:dexdo/features/home/presentation/widgets/home_pane.dart';
 import 'package:dexdo/features/settings/presentation/widgets/settings_pane.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_state.dart';
+import 'package:dexdo/features/tasks/presentation/widgets/quick_task_sheet.dart';
 import 'package:dexdo/features/tasks/presentation/widgets/task_editor_pane.dart';
 import 'package:dexdo/features/tasks/presentation/widgets/task_list_pane.dart';
 import 'package:dexdo/firebase_options.dart';
@@ -281,7 +282,12 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
             onInvoke: (NewTaskIntent intent) {
               FocusScope.of(context).unfocus();
               HapticFeedback.mediumImpact();
-              taskNotifier.addTask();
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => const QuickTaskSheet(),
+              );
               if (_selectedIndex != 2) {
                 setState(() => _selectedIndex = 2);
               }
@@ -433,7 +439,12 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
               onPressed: () {
                 FocusScope.of(context).unfocus();
                 HapticFeedback.mediumImpact();
-                taskNotifier.addTask();
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => const QuickTaskSheet(),
+                );
                 if (_selectedIndex != 2) {
                   setState(() => _selectedIndex = 2);
                 }

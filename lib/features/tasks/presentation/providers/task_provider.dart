@@ -157,20 +157,21 @@ class TaskNotifier extends Notifier<TaskState> {
     state = state.copyWith(selectedTask: task, clearSelectedTask: task == null);
   }
 
-  Future<void> addTask({DateTime? dueDate}) async {
+  Future<void> addTask({String title = '', DateTime? dueDate, TaskPriority? priority, String? category}) async {
     try {
-      final String category = state.selectedCategory == 'All' ? 'Personal' : state.selectedCategory;
+      final String taskCategory = category ?? (state.selectedCategory == 'All' ? 'Personal' : state.selectedCategory);
       
       final updatedTasks = state.tasks.map((t) => t.copyWith(orderIndex: t.orderIndex + 1)).toList();
 
       final newTask = Task(
         id: _uuid.v4(),
-        title: '',
-        category: category,
-        color: state.categoryColors[category] ?? Colors.blue,
-        icon: state.categoryIcons[category] ?? Icons.task_alt,
+        title: title,
+        category: taskCategory,
+        color: state.categoryColors[taskCategory] ?? Colors.blue,
+        icon: state.categoryIcons[taskCategory] ?? Icons.task_alt,
         orderIndex: 0,
         dueDate: dueDate,
+        priority: priority ?? TaskPriority.low,
       );
       
       state = state.copyWith(

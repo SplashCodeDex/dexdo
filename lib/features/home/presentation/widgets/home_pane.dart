@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:dexdo/core/theme/theme_provider.dart';
 import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
@@ -76,7 +77,7 @@ class HomePane extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               _buildCategoryOverview(context, taskState, taskNotifier),
-              const SizedBox(height: 100), // Bottom padding for FAB
+               const SizedBox(height: 100), // Bottom padding for FAB
             ]),
           ),
         ),
@@ -101,8 +102,10 @@ class HomePane extends ConsumerWidget {
       floating: false,
       pinned: true,
       stretch: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
       elevation: 0,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
       // Status bar brightness control
       systemOverlayStyle: Theme.of(context).brightness == Brightness.dark 
           ? SystemUiOverlayStyle.light 
@@ -142,100 +145,114 @@ class HomePane extends ConsumerWidget {
           ),
         ),
       ],
-      flexibleSpace: FlexibleSpaceBar(
-        stretchModes: const [
-          StretchMode.zoomBackground,
-          StretchMode.blurBackground,
-          StretchMode.fadeTitle,
-        ],
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Decorative Background Gradient
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-                    Theme.of(context).colorScheme.surface,
-                  ],
-                ),
+      flexibleSpace: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Persistent Glass/Blur Effect
+          ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                color: Colors.transparent,
               ),
             ),
-            // Content
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                24, 
-                MediaQuery.paddingOf(context).top + 40, 
-                24, 
-                24
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          greeting,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          userName,
-                          style: const TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -1.5,
-                            height: 1.1,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.stars_rounded,
-                                size: 16,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                total == 0 
-                                    ? 'No tasks yet' 
-                                    : '$completed/$total Daily Goals',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+          ),
+          FlexibleSpaceBar(
+            stretchModes: const [
+              StretchMode.zoomBackground,
+              StretchMode.blurBackground,
+              StretchMode.fadeTitle,
+            ],
+            background: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Decorative Background Gradient
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                        Theme.of(context).colorScheme.surface,
                       ],
                     ),
                   ),
-                  _buildAnimatedProgressIndicator(context, progress),
-                ],
-              ),
+                ),
+                // Content
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    24, 
+                    MediaQuery.paddingOf(context).top + 40, 
+                    24, 
+                    24
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              greeting,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              userName,
+                              style: const TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -1.5,
+                                height: 1.1,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.stars_rounded,
+                                    size: 16,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    total == 0 
+                                        ? 'No tasks yet' 
+                                        : '$completed/$total Daily Goals',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      _buildAnimatedProgressIndicator(context, progress),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
