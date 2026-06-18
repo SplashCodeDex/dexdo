@@ -64,6 +64,7 @@ dependencies:
   widgetbook: ^3.23.0
   widgetbook_annotation: ^3.11.0
   connectivity_plus: ^7.1.1
+  cloud_functions: ^6.3.3
 
 dev_dependencies:
   flutter_test:

@@ -37,17 +37,7 @@ class _CalendarPaneState extends ConsumerState<CalendarPane> {
 
   @override
   Widget build(BuildContext context) {
-    final tasksWithDates = ref.watch(taskProvider.select((s) => s.tasks.where((t) => t.dueDate != null).toList()));
-
-    // PERFORMANCE OPTIMIZATION: 
-    // Group tasks into an O(1) lookup map to prevent O(N * 42) iterations 
-    // per month when rendering the swiping PagerView grid.
-    final Map<DateTime, List<Task>> tasksByDate = {};
-    for (var task in tasksWithDates) {
-      final date = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
-      if (!tasksByDate.containsKey(date)) tasksByDate[date] = [];
-      tasksByDate[date]!.add(task);
-    }
+    final tasksByDate = ref.watch(tasksByDateProvider);
 
     return Column(
       children: [
@@ -118,19 +108,43 @@ class _CalendarPaneState extends ConsumerState<CalendarPane> {
                     _focusedDay = now;
                     _selectedDay = now;
                   });
-                  _pageController.animateToPage(_initialPage, duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+                  
+                  if (!_pageController.hasClients) return;
+                  final current = _pageController.page!.round();
+                  final target = _initialPage;
+                  final distance = (target - current).abs();
+                  
+                  if (distance > 1) {
+                    final jumpTarget = target > current ? target - 1 : target + 1;
+                    _pageController.jumpToPage(jumpTarget);
+                    Future.microtask(() {
+                      if (mounted) {
+                        _pageController.animateToPage(target, duration: const Duration(milliseconds: 250), curve: Curves.easeInOut);
+                      }
+                    });
+                  } else if (distance == 1) {
+                    _pageController.animateToPage(target, duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+                  }
                 },
                 tooltip: 'Today',
               ),
               const SizedBox(width: 8),
               _buildHeaderButton(
                 icon: Icons.chevron_left_rounded,
-                onPressed: () => _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut),
+                onPressed: () {
+                  if (_pageController.hasClients) {
+                    _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                  }
+                },
               ),
               const SizedBox(width: 8),
               _buildHeaderButton(
                 icon: Icons.chevron_right_rounded,
-                onPressed: () => _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut),
+                onPressed: () {
+                  if (_pageController.hasClients) {
+                    _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                  }
+                },
               ),
             ],
           ),
@@ -354,7 +368,7 @@ class _CalendarPaneState extends ConsumerState<CalendarPane> {
 
     final normalizedSelected = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
     final dayTasks = List<Task>.from(tasksByDate[normalizedSelected] ?? [])
-      ..sort((a, b) => (a.dueDate ?? DateTime.now()).compareTo(b.dueDate ?? DateTime.now()));
+      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
 
     return Column(
       key: ValueKey<String>(selectedDay.toIso8601String()),

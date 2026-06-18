@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dexdo/core/theme/theme_provider.dart';
 import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
+import 'package:dexdo/features/auth/data/verified_email_service.dart';
 import 'package:dexdo/features/settings/presentation/widgets/subscription_pane.dart';
 import 'package:dexdo/features/settings/presentation/widgets/user_profile_header.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
@@ -113,6 +114,32 @@ class SettingsPane extends ConsumerWidget {
               }
             },
           ),
+        _buildSettingTile(
+          context,
+          title: 'Verify Email (OTP-less)',
+          subtitle: 'Securely verify identity using Credential Manager',
+          trailing: const Icon(Icons.verified_user_rounded),
+          icon: Icons.mark_email_read_rounded,
+          iconColor: Colors.green,
+          onTap: () async {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Requesting verifiable credential...')),
+            );
+            final service = VerifiedEmailService();
+            final userInfo = await service.getVerifiedEmail();
+            if (context.mounted) {
+              if (userInfo != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Successfully logged in as ${userInfo.email}')),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Failed to get credential or cancelled.')),
+                );
+              }
+            }
+          },
+        ),
         const SizedBox(height: 24),
         _buildSectionHeader(context, 'Data Management'),
         _buildSettingTile(

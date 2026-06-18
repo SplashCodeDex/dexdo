@@ -663,7 +663,8 @@ class _CategoryOverviewSliver extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final categories = ref.watch(taskProvider.select((s) => s.categories.where((c) => c != 'All').toList()));
+    final allCategories = ref.watch(taskProvider.select((s) => s.categories));
+    final categories = allCategories.where((c) => c != 'All').toList();
     final categoryIcons = ref.watch(taskProvider.select((s) => s.categoryIcons));
     final categoryColors = ref.watch(taskProvider.select((s) => s.categoryColors));
     final selectedCategory = ref.watch(taskProvider.select((s) => s.selectedCategory));

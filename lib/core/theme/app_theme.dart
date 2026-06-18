@@ -32,12 +32,7 @@ class AppTheme {
       scaffoldBackgroundColor: isDark ? backgroundDark : backgroundLight,
       dividerColor: isDark ? borderDark : borderLight,
       
-      pageTransitionsTheme: const PageTransitionsTheme(
-        builders: {
-          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-        },
-      ),
+
 
       textTheme: GoogleFonts.plusJakartaSansTextTheme(baseTheme.textTheme).copyWith(
         titleLarge: GoogleFonts.plusJakartaSans(

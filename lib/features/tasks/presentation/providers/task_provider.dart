@@ -22,6 +22,18 @@ final taskProvider = NotifierProvider<TaskNotifier, TaskState>(() {
   return TaskNotifier();
 });
 
+final tasksByDateProvider = Provider<Map<DateTime, List<Task>>>((ref) {
+  final tasks = ref.watch(taskProvider.select((s) => s.tasks));
+  final Map<DateTime, List<Task>> tasksByDate = {};
+  for (var task in tasks) {
+    if (task.dueDate == null) continue;
+    final date = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+    if (!tasksByDate.containsKey(date)) tasksByDate[date] = [];
+    tasksByDate[date]!.add(task);
+  }
+  return tasksByDate;
+});
+
 class TaskNotifier extends Notifier<TaskState> {
   late TaskRepository _repository;
   late NotificationService _notifications;
