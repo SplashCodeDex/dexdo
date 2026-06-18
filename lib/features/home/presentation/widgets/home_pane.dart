@@ -152,8 +152,11 @@ class _HomeSliverAppBar extends ConsumerWidget {
           child: authState.when(
             data: (user) => CircleAvatar(
               radius: 16,
-              backgroundImage: NetworkImage(user?.photoURL ??
-                  'https://api.dicebear.com/7.x/avataaars/png?seed=${user?.uid ?? "Felix"}'),
+              backgroundImage: ResizeImage(
+                NetworkImage(user?.photoURL ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${user?.uid ?? "Felix"}'),
+                width: 120,
+                height: 120,
+              ),
             ),
             loading: () => const CircleAvatar(radius: 16, child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))),
             error: (_, _) => const CircleAvatar(radius: 16, child: Icon(Icons.error, size: 16)),

@@ -37,10 +37,17 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
   int _focusTimeRemaining = 25 * 60; // 25 mins
   Timer? _focusTimer;
   String? _aiTimeEstimate;
+  AppLifecycleListener? _lifecycleListener;
+  DateTime? _targetEndTime;
+  bool _wasTimerRunning = false;
 
   @override
   void initState() {
     super.initState();
+    _lifecycleListener = AppLifecycleListener(
+      onPause: _onPause,
+      onResume: _onResume,
+    );
     _titleController = TextEditingController(text: widget.task.title);
     _descriptionController = TextEditingController(text: widget.task.description);
     _subtaskController = TextEditingController();
@@ -56,6 +63,7 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
   }
 
   void _tickFocusTimer() {
+    _focusTimer?.cancel();
     _focusTimer?.cancel();
     _focusTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
@@ -94,6 +102,40 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
         _isFocusTimerRunning = true;
       });
       _tickFocusTimer();
+    }
+  }
+
+  void _onPause() {
+    _wasTimerRunning = _isFocusTimerRunning;
+    if (_wasTimerRunning) {
+      _focusTimer?.cancel();
+      _targetEndTime = DateTime.now().add(Duration(seconds: _focusTimeRemaining));
+    }
+  }
+
+  void _onResume() {
+    if (_wasTimerRunning && _targetEndTime != null) {
+      final remaining = _targetEndTime!.difference(DateTime.now()).inSeconds;
+      if (remaining > 0) {
+        setState(() {
+          _focusTimeRemaining = remaining;
+          _isFocusTimerRunning = true;
+        });
+        _tickFocusTimer();
+      } else {
+        setState(() {
+          _focusTimeRemaining = 0;
+          _isFocusTimerRunning = false;
+          _isFocusActive = false;
+        });
+        unawaited(HapticFeedback.vibrate());
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Focus session complete! Take a break.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -185,6 +227,7 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
 
   @override
   void dispose() {
+    _lifecycleListener?.dispose();
     _focusTimer?.cancel();
     // Flush any pending changes before disposing
     if (_debounce?.isActive ?? false) {

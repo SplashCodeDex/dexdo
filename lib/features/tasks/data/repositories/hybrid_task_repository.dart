@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dexdo/core/services/data_migration_service.dart';
 import 'package:dexdo/core/utils/logger.dart';
 import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
@@ -46,15 +47,23 @@ class HybridTaskRepository implements TaskRepository {
 
     // 2. Trigger background sync if logged in
     if (_isLoggedIn) {
-      _triggerSync();
+      unawaited(_triggerSync());
     }
 
     return activeLocal;
   }
 
-  void _triggerSync() {
+  Future<void> _triggerSync() async {
     if (_isSyncing) return;
     
+    // [Android 16] Check connectivity first to avoid dead-radio wakeups
+    try {
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult.contains(ConnectivityResult.none)) {
+        return; // Halt completely if offline
+      }
+    } catch (_) {}
+
     final now = DateTime.now();
     // 5-minute debounce
     if (_lastSyncTime != null && now.difference(_lastSyncTime!).inMinutes < 5) {

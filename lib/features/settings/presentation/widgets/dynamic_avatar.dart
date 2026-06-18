@@ -39,14 +39,14 @@ class DynamicAvatar extends StatelessWidget {
       ),
       child: ClipOval(
         child: photoUrl != null
-            ? Image.network(
-                photoUrl!,
+            ? Image(
+                image: ResizeImage(
+                  NetworkImage(photoUrl!),
+                  width: 300,
+                  height: 300,
+                ),
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => _buildFallback(initial),
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return _buildFallback(initial);
-                },
               )
             : _buildFallback(initial),
       ),

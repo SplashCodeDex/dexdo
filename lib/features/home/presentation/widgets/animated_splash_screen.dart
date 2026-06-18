@@ -130,15 +130,17 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
               _path2FillController,
             ]),
             builder: (context, _) {
-              return CustomPaint(
-                painter: _DeXDoLogoPainter(
-                  circleStroke: _circleStrokeController.value,
-                  circleFill: _circleFillController.value,
-                  smallCircle: _smallCircleController.value,
-                  path1Stroke: _path1StrokeController.value,
-                  path1Fill: _path1FillController.value,
-                  path2Stroke: _path2StrokeController.value,
-                  path2Fill: _path2FillController.value,
+              return RepaintBoundary(
+                child: CustomPaint(
+                  painter: _DeXDoLogoPainter(
+                    circleStroke: _circleStrokeController.value,
+                    circleFill: _circleFillController.value,
+                    smallCircle: _smallCircleController.value,
+                    path1Stroke: _path1StrokeController.value,
+                    path1Fill: _path1FillController.value,
+                    path2Stroke: _path2StrokeController.value,
+                    path2Fill: _path2FillController.value,
+                  ),
                 ),
               );
             },

@@ -4,8 +4,8 @@ import 'package:animations/animations.dart';
 import 'package:dexdo/core/app_bootstrap.dart';
 import 'package:dexdo/core/theme/app_theme.dart';
 import 'package:dexdo/core/theme/theme_provider.dart';
-import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
 import 'package:dexdo/core/widgets/deferred_widget.dart';
+import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
 import 'package:dexdo/features/calendar/presentation/widgets/calendar_pane.dart' deferred as calendar_pane;
 import 'package:dexdo/features/home/presentation/widgets/home_pane.dart';
 import 'package:dexdo/features/home/presentation/widgets/statistics_pane.dart' deferred as statistics_pane;
@@ -20,9 +20,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
+import 'package:flutter_svg/flutter_svg.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Enforce rigid global RAM ceilings to prevent background OS kills
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 1024 * 1024 * 20; // 20 MB max
+  svg.cache.maximumSize = 150; // 150 SVGs max
   
   // Enable Edge-to-Edge mode to "get rid of" the status bar background
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -425,7 +430,11 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                         return authState.when(
                           data: (user) => CircleAvatar(
                             radius: 18,
-                            backgroundImage: NetworkImage(user?.photoURL ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${user?.uid ?? "Felix"}'),
+                            backgroundImage: ResizeImage(
+                              NetworkImage(user?.photoURL ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${user?.uid ?? "Felix"}'),
+                              width: 120,
+                              height: 120,
+                            ),
                           ),
                           loading: () => const CircleAvatar(radius: 18, child: CircularProgressIndicator()),
                           error: (_, _) => const CircleAvatar(radius: 18, child: Icon(Icons.error)),

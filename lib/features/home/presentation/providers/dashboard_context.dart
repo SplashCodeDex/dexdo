@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum DashboardMode {
@@ -38,12 +39,22 @@ final dashboardProvider = NotifierProvider<DashboardNotifier, DashboardState>(()
 
 class DashboardNotifier extends Notifier<DashboardState> {
   Timer? _timer;
+  AppLifecycleListener? _lifecycleListener;
+  DateTime? _targetEndTime;
+  bool _wasTimerRunning = false;
+  
   static const int _defaultFocusDuration = 25 * 60; // Pomodoro default
 
   @override
   DashboardState build() {
+    _lifecycleListener = AppLifecycleListener(
+      onPause: _onPause,
+      onResume: _onResume,
+    );
+    
     ref.onDispose(() {
       _timer?.cancel();
+      _lifecycleListener?.dispose();
     });
 
     return const DashboardState(
@@ -80,6 +91,26 @@ class DashboardNotifier extends Notifier<DashboardState> {
         // In a real app, we might trigger a notification here
       }
     });
+  }
+
+  void _onPause() {
+    _wasTimerRunning = _timer?.isActive ?? false;
+    if (_wasTimerRunning) {
+      _timer?.cancel();
+      _targetEndTime = DateTime.now().add(Duration(seconds: state.secondsRemaining));
+    }
+  }
+
+  void _onResume() {
+    if (_wasTimerRunning && _targetEndTime != null) {
+      final remaining = _targetEndTime!.difference(DateTime.now()).inSeconds;
+      if (remaining > 0) {
+        state = state.copyWith(secondsRemaining: remaining);
+        _startTimer();
+      } else {
+        state = state.copyWith(secondsRemaining: 0);
+      }
+    }
   }
 
   void toggleTimer() {

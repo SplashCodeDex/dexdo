@@ -66,8 +66,14 @@ class FirebaseTaskRepository implements TaskRepository {
     final tasksRef = _db.collection('users').doc(_userId).collection('tasks');
 
     var count = 0;
-    for (var task in tasks) {
-      batch.set(tasksRef.doc(task.id), task.toJson());
+    
+    // [Android 16] Offload heavy JSON serialization to an isolate to prevent UI thread AutoFDO throttling
+    final mappedTasks = await Isolate.run(() {
+      return tasks.map((t) => {'id': t.id, 'json': t.toJson()}).toList();
+    });
+
+    for (var taskMap in mappedTasks) {
+      batch.set(tasksRef.doc(taskMap['id'] as String), taskMap['json'] as Map<String, dynamic>);
       count++;
       if (count >= 490) {
         try {
