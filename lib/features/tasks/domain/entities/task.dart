@@ -68,6 +68,8 @@ abstract class Task with _$Task {
     @Default(0) int orderIndex,
     @Default('none') String recurrence,
     @Default(TaskPriority.medium) TaskPriority priority,
+    @Default(false) bool isDeleted,
+    DateTime? updatedAt,
   }) = _Task;
 
   factory Task.fromJson(Map<String, dynamic> json) => _$TaskFromJson(json);

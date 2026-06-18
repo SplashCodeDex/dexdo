@@ -92,7 +92,7 @@ class _QuickTaskSheetState extends ConsumerState<QuickTaskSheet> {
                   decoration: InputDecoration(
                     hintText: 'I want to...',
                     hintStyle: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                       fontSize: 18,
                     ),
                     border: InputBorder.none,
@@ -179,12 +179,12 @@ class _QuickTaskSheetState extends ConsumerState<QuickTaskSheet> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected 
-              ? (color ?? theme.colorScheme.primary).withOpacity(0.1)
-              : theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              ? (color ?? theme.colorScheme.primary).withValues(alpha: 0.1)
+              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected 
-                ? (color ?? theme.colorScheme.primary).withOpacity(0.2)
+                ? (color ?? theme.colorScheme.primary).withValues(alpha: 0.2)
                 : Colors.transparent,
           ),
         ),

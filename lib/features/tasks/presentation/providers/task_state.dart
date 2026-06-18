@@ -1,5 +1,6 @@
 import 'package:dexdo/core/error/failures.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/tasks/domain/entities/task_statistics.dart';
 import 'package:flutter/material.dart';
 
 enum TaskSortOption {
@@ -14,6 +15,13 @@ class TaskState {
   TaskState({
     this.tasks = const [],
     this.filteredTasks = const [],
+    this.activeTasks = const [],
+    this.completedTasks = const [],
+    this.todayTasks = const [],
+    this.upcomingTasks = const [],
+    this.deepWorkTasks = const [],
+    this.recoveryTasks = const [],
+    this.completedTodayCount = 0,
     this.selectedTask,
     this.selectedCategory = 'All',
     this.searchQuery = '',
@@ -38,10 +46,19 @@ class TaskState {
       'All': Color(0xFF2196F3),
     },
     this.isLoading = false,
+    this.isAILoading = false,
+    TaskStatistics? statistics,
     this.error,
-  });
+  }) : statistics = statistics ?? const TaskStatistics();
   final List<Task> tasks;
   final List<Task> filteredTasks;
+  final List<Task> activeTasks;
+  final List<Task> completedTasks;
+  final List<Task> todayTasks;
+  final List<Task> upcomingTasks;
+  final List<Task> deepWorkTasks;
+  final List<Task> recoveryTasks;
+  final int completedTodayCount;
   final Task? selectedTask;
   final String selectedCategory;
   final String searchQuery;
@@ -52,10 +69,10 @@ class TaskState {
   final Map<String, IconData> categoryIcons;
   final Map<String, Color> categoryColors;
   final bool isLoading;
+  final bool isAILoading;
+  final TaskStatistics statistics;
   final Failure? error;
 
-  List<Task> get activeTasks => filteredTasks.where((t) => !t.isCompleted).toList();
-  List<Task> get completedTasks => filteredTasks.where((t) => t.isCompleted).toList();
   List<Task> get allTasks => tasks;
   bool get hasCompleted => tasks.any((t) => t.isCompleted);
   bool get isSelectionMode => selectedTaskIds.isNotEmpty;
@@ -63,6 +80,13 @@ class TaskState {
   TaskState copyWith({
     List<Task>? tasks,
     List<Task>? filteredTasks,
+    List<Task>? activeTasks,
+    List<Task>? completedTasks,
+    List<Task>? todayTasks,
+    List<Task>? upcomingTasks,
+    List<Task>? deepWorkTasks,
+    List<Task>? recoveryTasks,
+    int? completedTodayCount,
     Task? selectedTask,
     bool clearSelectedTask = false,
     String? selectedCategory,
@@ -74,12 +98,21 @@ class TaskState {
     Map<String, IconData>? categoryIcons,
     Map<String, Color>? categoryColors,
     bool? isLoading,
+    bool? isAILoading,
+    TaskStatistics? statistics,
     Failure? error,
     bool clearError = false,
   }) {
     return TaskState(
       tasks: tasks ?? this.tasks,
       filteredTasks: filteredTasks ?? this.filteredTasks,
+      activeTasks: activeTasks ?? this.activeTasks,
+      completedTasks: completedTasks ?? this.completedTasks,
+      todayTasks: todayTasks ?? this.todayTasks,
+      upcomingTasks: upcomingTasks ?? this.upcomingTasks,
+      deepWorkTasks: deepWorkTasks ?? this.deepWorkTasks,
+      recoveryTasks: recoveryTasks ?? this.recoveryTasks,
+      completedTodayCount: completedTodayCount ?? this.completedTodayCount,
       selectedTask: clearSelectedTask ? null : (selectedTask ?? this.selectedTask),
       selectedCategory: selectedCategory ?? this.selectedCategory,
       searchQuery: searchQuery ?? this.searchQuery,
@@ -90,6 +123,8 @@ class TaskState {
       categoryIcons: categoryIcons ?? this.categoryIcons,
       categoryColors: categoryColors ?? this.categoryColors,
       isLoading: isLoading ?? this.isLoading,
+      isAILoading: isAILoading ?? this.isAILoading,
+      statistics: statistics ?? this.statistics,
       error: clearError ? null : (error ?? this.error),
     );
   }

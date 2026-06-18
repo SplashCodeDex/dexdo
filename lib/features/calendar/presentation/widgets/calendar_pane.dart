@@ -37,8 +37,7 @@ class _CalendarPaneState extends ConsumerState<CalendarPane> {
 
   @override
   Widget build(BuildContext context) {
-    final taskState = ref.watch(taskProvider);
-    final tasksWithDates = taskState.tasks.where((t) => t.dueDate != null).toList();
+    final tasksWithDates = ref.watch(taskProvider.select((s) => s.tasks.where((t) => t.dueDate != null).toList()));
 
     // PERFORMANCE OPTIMIZATION: 
     // Group tasks into an O(1) lookup map to prevent O(N * 42) iterations 

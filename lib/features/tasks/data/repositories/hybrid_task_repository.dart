@@ -1,27 +1,26 @@
+import 'dart:async';
 import 'package:dexdo/core/services/data_migration_service.dart';
+import 'package:dexdo/core/utils/logger.dart';
 import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
 import 'package:dexdo/features/tasks/data/repositories/firebase_task_repository.dart';
 import 'package:dexdo/features/tasks/data/repositories/isar_task_repository.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
 import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
+import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class HybridTaskRepository implements TaskRepository {
-
   HybridTaskRepository(this._ref);
+
   final FirebaseTaskRepository _firebase = FirebaseTaskRepository();
   final IsarTaskRepository _local = IsarTaskRepository();
   final Ref _ref;
 
-  TaskRepository get _currentRepo => 
-      _ref.read(authStateChangesProvider).value == null ? _local : _firebase;
+  DateTime? _lastSyncTime;
+  bool _isSyncing = false;
 
-  Future<void> migrate() async {
-    if (_ref.read(authStateChangesProvider).value != null) {
-      await DataMigrationService.performMigrationIfNeeded(_firebase);
-    }
-  }
+  bool get _isLoggedIn => _ref.read(authStateChangesProvider).value != null;
 
   @override
   Future<void> init() async {
@@ -30,40 +29,151 @@ class HybridTaskRepository implements TaskRepository {
     await migrate();
   }
 
-  // Then delegate all methods to _currentRepo
-  @override
-  Future<List<Task>> loadTasks() => _currentRepo.loadTasks();
+  Future<void> migrate() async {
+    if (_isLoggedIn) {
+      await DataMigrationService.performMigrationIfNeeded(_firebase);
+      _triggerSync();
+    }
+  }
+
+  TaskRepository get _legacyRepo => _isLoggedIn ? _firebase : _local;
 
   @override
-  Future<void> saveTasks(List<Task> tasks) => _currentRepo.saveTasks(tasks);
+  Future<List<Task>> loadTasks() async {
+    // 1. Immediately return local tasks, filtering out Tombstones
+    final allLocal = await _local.loadTasks();
+    final activeLocal = allLocal.where((t) => !t.isDeleted).toList();
+
+    // 2. Trigger background sync if logged in
+    if (_isLoggedIn) {
+      _triggerSync();
+    }
+
+    return activeLocal;
+  }
+
+  void _triggerSync() {
+    if (_isSyncing) return;
+    
+    final now = DateTime.now();
+    // 5-minute debounce
+    if (_lastSyncTime != null && now.difference(_lastSyncTime!).inMinutes < 5) {
+      return;
+    }
+    
+    _isSyncing = true;
+    _syncFromCloud().whenComplete(() {
+      _isSyncing = false;
+      _lastSyncTime = DateTime.now();
+    });
+  }
+
+  Future<void> _syncFromCloud() async {
+    try {
+      // 1. Push pending local tombstones
+      final allLocal = await _local.loadTasks();
+      final pendingDeletes = allLocal.where((t) => t.isDeleted).toList();
+      
+      for (final t in pendingDeletes) {
+        await _firebase.deleteTask(t.id).catchError((_) {});
+      }
+      
+      if (pendingDeletes.isNotEmpty) {
+        await _local.batchDeleteTasks(pendingDeletes.map((t) => t.id).toList());
+      }
+      
+      // 2. Fetch remote tasks
+      final remoteTasks = await _firebase.loadTasks();
+      
+      // Merge remote tasks into Isar
+      await _local.saveTasks(remoteTasks);
+      
+      // 3. Silently update UI
+      final newLocal = await _local.loadTasks();
+      final activeTasks = newLocal.where((t) => !t.isDeleted).toList();
+      
+      try {
+        _ref.read(taskProvider.notifier).silentUpdate(activeTasks);
+      } catch (e) {
+        // Ignored
+      }
+    } catch (e, stack) {
+      AppLogger.e('Background Sync Error', e, stack);
+    }
+  }
 
   @override
-  Future<void> saveTask(Task task) => _currentRepo.saveTask(task);
+  Future<void> saveTask(Task task) async {
+    final updatedTask = task.copyWith(updatedAt: DateTime.now());
+    await _local.saveTask(updatedTask);
+    if (_isLoggedIn) {
+      _firebase.saveTask(updatedTask).catchError((_) {});
+    }
+  }
 
   @override
-  Future<void> deleteTask(String taskId) => _currentRepo.deleteTask(taskId);
+  Future<void> deleteTask(String taskId) async {
+    try {
+      final tasks = await _local.loadTasks();
+      final task = tasks.firstWhere((t) => t.id == taskId);
+      
+      final tombstone = task.copyWith(
+        isDeleted: true, 
+        updatedAt: DateTime.now(),
+      );
+      
+      await _local.saveTask(tombstone);
+      
+      if (_isLoggedIn) {
+        _firebase.deleteTask(taskId).then((_) {
+          _local.deleteTask(taskId);
+        }).catchError((_) {});
+      }
+    } catch (e) {
+      // Task not found locally, ignore
+    }
+  }
 
   @override
-  Future<void> batchUpdateTasks(List<Task> tasks) => _currentRepo.batchUpdateTasks(tasks);
+  Future<void> saveTasks(List<Task> tasks) async {
+    final updated = tasks.map((t) => t.copyWith(updatedAt: DateTime.now())).toList();
+    await _local.saveTasks(updated);
+    if (_isLoggedIn) {
+      _firebase.saveTasks(updated).catchError((_) {});
+    }
+  }
 
   @override
-  Future<void> batchDeleteTasks(List<String> taskIds) => _currentRepo.batchDeleteTasks(taskIds);
+  Future<void> batchUpdateTasks(List<Task> tasks) async {
+    final updated = tasks.map((t) => t.copyWith(updatedAt: DateTime.now())).toList();
+    await _local.batchUpdateTasks(updated);
+    if (_isLoggedIn) {
+      _firebase.batchUpdateTasks(updated).catchError((_) {});
+    }
+  }
 
   @override
-  Future<List<String>> loadCategories() => _currentRepo.loadCategories();
+  Future<void> batchDeleteTasks(List<String> taskIds) async {
+    for (final id in taskIds) {
+      await deleteTask(id);
+    }
+  }
 
   @override
-  Future<void> saveCategories(List<String> categories) => _currentRepo.saveCategories(categories);
+  Future<List<String>> loadCategories() => _legacyRepo.loadCategories();
 
   @override
-  Future<Map<String, IconData>> loadCategoryIcons() => _currentRepo.loadCategoryIcons();
+  Future<void> saveCategories(List<String> categories) => _legacyRepo.saveCategories(categories);
 
   @override
-  Future<void> saveCategoryIcons(Map<String, IconData> icons) => _currentRepo.saveCategoryIcons(icons);
+  Future<Map<String, IconData>> loadCategoryIcons() => _legacyRepo.loadCategoryIcons();
 
   @override
-  Future<Map<String, Color>> loadCategoryColors() => _currentRepo.loadCategoryColors();
+  Future<void> saveCategoryIcons(Map<String, IconData> icons) => _legacyRepo.saveCategoryIcons(icons);
 
   @override
-  Future<void> saveCategoryColors(Map<String, Color> colors) => _currentRepo.saveCategoryColors(colors);
+  Future<Map<String, Color>> loadCategoryColors() => _legacyRepo.loadCategoryColors();
+
+  @override
+  Future<void> saveCategoryColors(Map<String, Color> colors) => _legacyRepo.saveCategoryColors(colors);
 }

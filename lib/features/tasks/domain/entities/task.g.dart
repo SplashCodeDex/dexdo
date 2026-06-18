@@ -48,6 +48,10 @@ _Task _$TaskFromJson(Map<String, dynamic> json) => _Task(
   priority:
       $enumDecodeNullable(_$TaskPriorityEnumMap, json['priority']) ??
       TaskPriority.medium,
+  isDeleted: json['isDeleted'] as bool? ?? false,
+  updatedAt: json['updatedAt'] == null
+      ? null
+      : DateTime.parse(json['updatedAt'] as String),
 );
 
 Map<String, dynamic> _$TaskToJson(_Task instance) => <String, dynamic>{
@@ -66,6 +70,8 @@ Map<String, dynamic> _$TaskToJson(_Task instance) => <String, dynamic>{
   'orderIndex': instance.orderIndex,
   'recurrence': instance.recurrence,
   'priority': _$TaskPriorityEnumMap[instance.priority]!,
+  'isDeleted': instance.isDeleted,
+  'updatedAt': instance.updatedAt?.toIso8601String(),
 };
 
 const _$TaskPriorityEnumMap = {

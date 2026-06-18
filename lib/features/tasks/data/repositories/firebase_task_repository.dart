@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dexdo/core/utils/logger.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
@@ -28,18 +30,26 @@ class FirebaseTaskRepository implements TaskRepository {
           .collection('tasks')
           .get();
 
-      final List<Task> activeTasks = [];
+      // Extract raw maps on the main thread
+      final rawDataList = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id; // Force ID to match the document key
+        return data;
+      }).toList();
 
-      for (var doc in snapshot.docs) {
-        try {
-          final data = doc.data();
-          data['id'] = doc.id; // Force ID to match the document key
-          final task = Task.fromJson(data);
-          activeTasks.add(task);
-        } catch (e, stack) {
-          AppLogger.e('Error parsing firestore task', e, stack);
+      // Offload heavy JSON parsing to a background isolate
+      final activeTasks = await Isolate.run(() {
+        final List<Task> parsedTasks = [];
+        for (var data in rawDataList) {
+          try {
+            parsedTasks.add(Task.fromJson(data));
+          } catch (e) {
+            // Cannot use AppLogger directly inside isolate, fail gracefully
+            debugPrint('Error parsing firestore task in isolate: $e');
+          }
         }
-      }
+        return parsedTasks;
+      });
 
       return activeTasks;
     } catch (e, stack) {

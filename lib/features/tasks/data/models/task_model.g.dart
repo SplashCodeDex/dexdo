@@ -39,12 +39,38 @@ final TaskModelSchema = IsarGeneratedSchema(
       IsarPropertySchema(name: 'orderIndex', type: IsarType.long),
       IsarPropertySchema(name: 'recurrence', type: IsarType.string),
       IsarPropertySchema(name: 'priorityIndex', type: IsarType.long),
+      IsarPropertySchema(name: 'isDeleted', type: IsarType.bool),
+      IsarPropertySchema(name: 'updatedAt', type: IsarType.dateTime),
     ],
     indexes: [
       IsarIndexSchema(
         name: 'taskId',
         properties: ["taskId"],
         unique: true,
+        hash: false,
+      ),
+      IsarIndexSchema(
+        name: 'isCompleted',
+        properties: ["isCompleted"],
+        unique: false,
+        hash: false,
+      ),
+      IsarIndexSchema(
+        name: 'isStarred',
+        properties: ["isStarred"],
+        unique: false,
+        hash: false,
+      ),
+      IsarIndexSchema(
+        name: 'category',
+        properties: ["category"],
+        unique: false,
+        hash: false,
+      ),
+      IsarIndexSchema(
+        name: 'isDeleted',
+        properties: ["isDeleted"],
+        unique: false,
         hash: false,
       ),
     ],
@@ -95,6 +121,12 @@ int serializeTaskModel(IsarWriter writer, TaskModel object) {
   IsarCore.writeLong(writer, 13, object.orderIndex);
   IsarCore.writeString(writer, 14, object.recurrence);
   IsarCore.writeLong(writer, 15, object.priorityIndex);
+  IsarCore.writeBool(writer, 16, value: object.isDeleted);
+  IsarCore.writeLong(
+    writer,
+    17,
+    object.updatedAt?.toUtc().microsecondsSinceEpoch ?? -9223372036854775808,
+  );
   return object.isarId;
 }
 
@@ -165,6 +197,18 @@ TaskModel deserializeTaskModel(IsarReader reader) {
   object.orderIndex = IsarCore.readLong(reader, 13);
   object.recurrence = IsarCore.readString(reader, 14) ?? '';
   object.priorityIndex = IsarCore.readLong(reader, 15);
+  object.isDeleted = IsarCore.readBool(reader, 16);
+  {
+    final value = IsarCore.readLong(reader, 17);
+    if (value == -9223372036854775808) {
+      object.updatedAt = null;
+    } else {
+      object.updatedAt = DateTime.fromMicrosecondsSinceEpoch(
+        value,
+        isUtc: true,
+      ).toLocal();
+    }
+  }
   return object;
 }
 
@@ -251,6 +295,20 @@ dynamic deserializeTaskModelProp(IsarReader reader, int property) {
       return IsarCore.readString(reader, 14) ?? '';
     case 15:
       return IsarCore.readLong(reader, 15);
+    case 16:
+      return IsarCore.readBool(reader, 16);
+    case 17:
+      {
+        final value = IsarCore.readLong(reader, 17);
+        if (value == -9223372036854775808) {
+          return null;
+        } else {
+          return DateTime.fromMicrosecondsSinceEpoch(
+            value,
+            isUtc: true,
+          ).toLocal();
+        }
+      }
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -273,6 +331,8 @@ sealed class _TaskModelUpdate {
     int? orderIndex,
     String? recurrence,
     int? priorityIndex,
+    bool? isDeleted,
+    DateTime? updatedAt,
   });
 }
 
@@ -298,6 +358,8 @@ class _TaskModelUpdateImpl implements _TaskModelUpdate {
     Object? orderIndex = ignore,
     Object? recurrence = ignore,
     Object? priorityIndex = ignore,
+    Object? isDeleted = ignore,
+    Object? updatedAt = ignore,
   }) {
     return collection.updateProperties(
           [isarId],
@@ -316,6 +378,8 @@ class _TaskModelUpdateImpl implements _TaskModelUpdate {
             if (orderIndex != ignore) 13: orderIndex as int?,
             if (recurrence != ignore) 14: recurrence as String?,
             if (priorityIndex != ignore) 15: priorityIndex as int?,
+            if (isDeleted != ignore) 16: isDeleted as bool?,
+            if (updatedAt != ignore) 17: updatedAt as DateTime?,
           },
         ) >
         0;
@@ -339,6 +403,8 @@ sealed class _TaskModelUpdateAll {
     int? orderIndex,
     String? recurrence,
     int? priorityIndex,
+    bool? isDeleted,
+    DateTime? updatedAt,
   });
 }
 
@@ -364,6 +430,8 @@ class _TaskModelUpdateAllImpl implements _TaskModelUpdateAll {
     Object? orderIndex = ignore,
     Object? recurrence = ignore,
     Object? priorityIndex = ignore,
+    Object? isDeleted = ignore,
+    Object? updatedAt = ignore,
   }) {
     return collection.updateProperties(isarId, {
       if (taskId != ignore) 1: taskId as String?,
@@ -380,6 +448,8 @@ class _TaskModelUpdateAllImpl implements _TaskModelUpdateAll {
       if (orderIndex != ignore) 13: orderIndex as int?,
       if (recurrence != ignore) 14: recurrence as String?,
       if (priorityIndex != ignore) 15: priorityIndex as int?,
+      if (isDeleted != ignore) 16: isDeleted as bool?,
+      if (updatedAt != ignore) 17: updatedAt as DateTime?,
     });
   }
 }
@@ -406,6 +476,8 @@ sealed class _TaskModelQueryUpdate {
     int? orderIndex,
     String? recurrence,
     int? priorityIndex,
+    bool? isDeleted,
+    DateTime? updatedAt,
   });
 }
 
@@ -431,6 +503,8 @@ class _TaskModelQueryUpdateImpl implements _TaskModelQueryUpdate {
     Object? orderIndex = ignore,
     Object? recurrence = ignore,
     Object? priorityIndex = ignore,
+    Object? isDeleted = ignore,
+    Object? updatedAt = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (taskId != ignore) 1: taskId as String?,
@@ -447,6 +521,8 @@ class _TaskModelQueryUpdateImpl implements _TaskModelQueryUpdate {
       if (orderIndex != ignore) 13: orderIndex as int?,
       if (recurrence != ignore) 14: recurrence as String?,
       if (priorityIndex != ignore) 15: priorityIndex as int?,
+      if (isDeleted != ignore) 16: isDeleted as bool?,
+      if (updatedAt != ignore) 17: updatedAt as DateTime?,
     });
   }
 }
@@ -480,6 +556,8 @@ class _TaskModelQueryBuilderUpdateImpl implements _TaskModelQueryUpdate {
     Object? orderIndex = ignore,
     Object? recurrence = ignore,
     Object? priorityIndex = ignore,
+    Object? isDeleted = ignore,
+    Object? updatedAt = ignore,
   }) {
     final q = query.build();
     try {
@@ -498,6 +576,8 @@ class _TaskModelQueryBuilderUpdateImpl implements _TaskModelQueryUpdate {
         if (orderIndex != ignore) 13: orderIndex as int?,
         if (recurrence != ignore) 14: recurrence as String?,
         if (priorityIndex != ignore) 15: priorityIndex as int?,
+        if (isDeleted != ignore) 16: isDeleted as bool?,
+        if (updatedAt != ignore) 17: updatedAt as DateTime?,
       });
     } finally {
       q.close();
@@ -1796,6 +1876,87 @@ extension TaskModelQueryFilter
       );
     });
   }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterFilterCondition> isDeletedEqualTo(
+    bool value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(property: 16, value: value),
+      );
+    });
+  }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterFilterCondition> updatedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 17));
+    });
+  }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterFilterCondition>
+  updatedAtIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 17));
+    });
+  }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterFilterCondition> updatedAtEqualTo(
+    DateTime? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(property: 17, value: value),
+      );
+    });
+  }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterFilterCondition>
+  updatedAtGreaterThan(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(property: 17, value: value),
+      );
+    });
+  }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterFilterCondition>
+  updatedAtGreaterThanOrEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(property: 17, value: value),
+      );
+    });
+  }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterFilterCondition> updatedAtLessThan(
+    DateTime? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(property: 17, value: value),
+      );
+    });
+  }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterFilterCondition>
+  updatedAtLessThanOrEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(property: 17, value: value),
+      );
+    });
+  }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterFilterCondition> updatedAtBetween(
+    DateTime? lower,
+    DateTime? upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(property: 17, lower: lower, upper: upper),
+      );
+    });
+  }
 }
 
 extension TaskModelQueryObject
@@ -2001,6 +2162,30 @@ extension TaskModelQuerySortBy on QueryBuilder<TaskModel, TaskModel, QSortBy> {
       return query.addSortBy(15, sort: Sort.desc);
     });
   }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterSortBy> sortByIsDeleted() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(16);
+    });
+  }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterSortBy> sortByIsDeletedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(16, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterSortBy> sortByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(17);
+    });
+  }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterSortBy> sortByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(17, sort: Sort.desc);
+    });
+  }
 }
 
 extension TaskModelQuerySortThenBy
@@ -2204,6 +2389,30 @@ extension TaskModelQuerySortThenBy
       return query.addSortBy(15, sort: Sort.desc);
     });
   }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterSortBy> thenByIsDeleted() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(16);
+    });
+  }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterSortBy> thenByIsDeletedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(16, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterSortBy> thenByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(17);
+    });
+  }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterSortBy> thenByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(17, sort: Sort.desc);
+    });
+  }
 }
 
 extension TaskModelQueryWhereDistinct
@@ -2301,6 +2510,18 @@ extension TaskModelQueryWhereDistinct
   QueryBuilder<TaskModel, TaskModel, QAfterDistinct> distinctByPriorityIndex() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(15);
+    });
+  }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterDistinct> distinctByIsDeleted() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(16);
+    });
+  }
+
+  QueryBuilder<TaskModel, TaskModel, QAfterDistinct> distinctByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(17);
     });
   }
 }
@@ -2401,6 +2622,18 @@ extension TaskModelQueryProperty1
   QueryBuilder<TaskModel, int, QAfterProperty> priorityIndexProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(15);
+    });
+  }
+
+  QueryBuilder<TaskModel, bool, QAfterProperty> isDeletedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(16);
+    });
+  }
+
+  QueryBuilder<TaskModel, DateTime?, QAfterProperty> updatedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(17);
     });
   }
 }
@@ -2504,6 +2737,18 @@ extension TaskModelQueryProperty2<R>
       return query.addProperty(15);
     });
   }
+
+  QueryBuilder<TaskModel, (R, bool), QAfterProperty> isDeletedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(16);
+    });
+  }
+
+  QueryBuilder<TaskModel, (R, DateTime?), QAfterProperty> updatedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(17);
+    });
+  }
 }
 
 extension TaskModelQueryProperty3<R1, R2>
@@ -2604,6 +2849,19 @@ extension TaskModelQueryProperty3<R1, R2>
   QueryBuilder<TaskModel, (R1, R2, int), QOperations> priorityIndexProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(15);
+    });
+  }
+
+  QueryBuilder<TaskModel, (R1, R2, bool), QOperations> isDeletedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(16);
+    });
+  }
+
+  QueryBuilder<TaskModel, (R1, R2, DateTime?), QOperations>
+  updatedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(17);
     });
   }
 }

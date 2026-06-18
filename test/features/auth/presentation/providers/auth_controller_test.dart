@@ -9,13 +9,13 @@ import 'package:mockito/mockito.dart';
 import '../../auth_test_utils.dart';
 import 'auth_controller_test.mocks.dart';
 
-@GenerateMocks([UserCredential])
+@GenerateMocks([UserCredential, AuthRepository])
 void main() {
-  late MockitoAuthRepository mockAuthRepository;
+  late MockAuthRepository mockAuthRepository;
   late ProviderContainer container;
 
   setUp(() {
-    mockAuthRepository = MockitoAuthRepository();
+    mockAuthRepository = MockAuthRepository();
     
     // Default behaviors
     when(mockAuthRepository.authStateChanges).thenAnswer((_) => Stream.value(null));
@@ -57,7 +57,7 @@ void main() {
       final result = await future;
       
       expect(result, userCredential);
-      expect(container.read(authControllerProvider), AsyncValue.data(user));
+      expect(container.read(authControllerProvider).value, user);
       verify(mockAuthRepository.signInAnonymously()).called(1);
     });
 
@@ -84,7 +84,7 @@ void main() {
       
       await future;
       
-      expect(container.read(authControllerProvider), AsyncValue.data(user));
+      expect(container.read(authControllerProvider).value, user);
       verify(mockAuthRepository.linkWithGoogle()).called(1);
     });
 
@@ -98,7 +98,7 @@ void main() {
       
       await future;
       
-      expect(container.read(authControllerProvider), const AsyncValue.data(null));
+      expect(container.read(authControllerProvider).value, null);
       verify(mockAuthRepository.signOut()).called(1);
     });
   });

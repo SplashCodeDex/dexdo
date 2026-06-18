@@ -3,6 +3,10 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'dart:async' as _i4;
+
+import 'package:dexdo/features/auth/domain/repositories/auth_repository.dart'
+    as _i3;
 import 'package:firebase_auth/firebase_auth.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
 
@@ -28,4 +32,51 @@ class MockUserCredential extends _i1.Mock implements _i2.UserCredential {
   MockUserCredential() {
     _i1.throwOnMissingStub(this);
   }
+}
+
+/// A class which mocks [AuthRepository].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockAuthRepository extends _i1.Mock implements _i3.AuthRepository {
+  MockAuthRepository() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i4.Stream<_i2.User?> get authStateChanges =>
+      (super.noSuchMethod(
+            Invocation.getter(#authStateChanges),
+            returnValue: _i4.Stream<_i2.User?>.empty(),
+          )
+          as _i4.Stream<_i2.User?>);
+
+  @override
+  bool get isAnonymous =>
+      (super.noSuchMethod(Invocation.getter(#isAnonymous), returnValue: false)
+          as bool);
+
+  @override
+  _i4.Future<_i2.UserCredential?> signInAnonymously() =>
+      (super.noSuchMethod(
+            Invocation.method(#signInAnonymously, []),
+            returnValue: _i4.Future<_i2.UserCredential?>.value(),
+          )
+          as _i4.Future<_i2.UserCredential?>);
+
+  @override
+  _i4.Future<_i2.UserCredential?> linkWithGoogle() =>
+      (super.noSuchMethod(
+            Invocation.method(#linkWithGoogle, []),
+            returnValue: _i4.Future<_i2.UserCredential?>.value(),
+          )
+          as _i4.Future<_i2.UserCredential?>);
+
+  @override
+  _i4.Future<void> signOut() =>
+      (super.noSuchMethod(
+            Invocation.method(#signOut, []),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
 }

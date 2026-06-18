@@ -58,15 +58,14 @@ class FirebaseAuthRepository implements AuthRepository {
         }
       } else {
         final googleUser = await _googleSignIn.authenticate();
-        if (googleUser == null) return null;
 
         const scopes = ['email', 'profile', 'openid'];
 
         // Use the new authorization API in 7.2.0
         final authResult = await googleUser.authorizationClient.authorizeScopes(scopes);
-        final String? accessToken = authResult.accessToken;
+        final String accessToken = authResult.accessToken;
 
-        final googleAuth = await googleUser.authentication;
+        final googleAuth = googleUser.authentication;
 
         final credential = GoogleAuthProvider.credential(
           accessToken: accessToken,

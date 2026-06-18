@@ -4,6 +4,18 @@ import 'package:isar_plus/isar_plus.dart';
 
 part 'task_model.g.dart';
 
+/// Fast hash function for converting String IDs to 64-bit integers for Isar.
+int fastHash(String string) {
+  var hash = 0xcbf29ce484222325;
+  var i = 0;
+  while (i < string.length) {
+    final codeUnit = string.codeUnitAt(i++);
+    hash ^= codeUnit;
+    hash *= 0x100000001b3;
+  }
+  return hash.toSigned(64);
+}
+
 @collection
 class TaskModel {
   @id
@@ -14,11 +26,17 @@ class TaskModel {
 
   late String title;
   late String description;
+  @Index()
   late bool isCompleted;
   DateTime? completionDate;
+
+  @Index()
   late bool isStarred;
+
   late int iconCodePoint;
   late int colorValue;
+
+  @Index()
   late String category;
   late int attachmentCount;
   late List<SubTaskModel> subtasks;
@@ -27,6 +45,10 @@ class TaskModel {
   late String recurrence;
   
   late int priorityIndex;
+
+  @Index()
+  late bool isDeleted = false;
+  DateTime? updatedAt;
 
   Task toEntity() {
     return Task(
@@ -45,11 +67,14 @@ class TaskModel {
       orderIndex: orderIndex,
       recurrence: recurrence,
       priority: TaskPriority.values[priorityIndex],
+      isDeleted: isDeleted,
+      updatedAt: updatedAt,
     );
   }
 
   static TaskModel fromEntity(Task task) {
     return TaskModel()
+      ..isarId = fastHash(task.id)
       ..taskId = task.id
       ..title = task.title
       ..description = task.description
@@ -64,7 +89,9 @@ class TaskModel {
       ..dueDate = task.dueDate
       ..orderIndex = task.orderIndex
       ..recurrence = task.recurrence
-      ..priorityIndex = task.priority.index;
+      ..priorityIndex = task.priority.index
+      ..isDeleted = task.isDeleted
+      ..updatedAt = task.updatedAt;
   }
 }
 
@@ -78,6 +105,14 @@ class CategoryModel {
 
   late int iconCodePoint;
   late int colorValue;
+
+  static CategoryModel fromData(String name, int iconCodePoint, int colorValue) {
+    return CategoryModel()
+      ..isarId = fastHash(name)
+      ..name = name
+      ..iconCodePoint = iconCodePoint
+      ..colorValue = colorValue;
+  }
 }
 
 @embedded

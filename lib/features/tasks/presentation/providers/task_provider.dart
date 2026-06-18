@@ -1,14 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:dexdo/core/error/failures.dart';
+import 'package:dexdo/core/services/ai_service.dart';
 import 'package:dexdo/core/services/notification_service.dart';
 import 'package:dexdo/core/utils/haptics.dart';
 import 'package:dexdo/core/utils/logger.dart';
 import 'package:dexdo/features/tasks/data/repositories/task_repository_provider.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/tasks/domain/entities/task_statistics.dart';
 import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_state.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -20,6 +25,7 @@ final taskProvider = NotifierProvider<TaskNotifier, TaskState>(() {
 class TaskNotifier extends Notifier<TaskState> {
   late TaskRepository _repository;
   late NotificationService _notifications;
+  final _aiService = AIService();
   final _uuid = const Uuid();
   Timer? _searchDebounce;
   bool _disposed = false;
@@ -81,9 +87,17 @@ class TaskNotifier extends Notifier<TaskState> {
         isLoading: false,
       );
       _updateFilteredTasks();
+      _calculateStats();
     } catch (e, stack) {
       _handleError(e, stack, 'Reload from storage failed');
     }
+  }
+
+  void silentUpdate(List<Task> updatedTasks) {
+    if (_disposed) return;
+    state = state.copyWith(tasks: updatedTasks);
+    _updateFilteredTasks();
+    _calculateStats();
   }
 
   void setCategory(String category) {
@@ -159,7 +173,141 @@ class TaskNotifier extends Notifier<TaskState> {
       return state.sortAscending ? comparison : -comparison;
     });
     
-    state = state.copyWith(filteredTasks: filtered);
+    final active = filtered.where((t) => !t.isCompleted).toList();
+    final completed = filtered.where((t) => t.isCompleted).toList();
+
+    // Logic for Dashboard-specific lists
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final completedTodayCount = state.tasks.where((t) {
+      if (t.isCompleted && t.completionDate != null) {
+        final cDate = DateTime(t.completionDate!.year, t.completionDate!.month, t.completionDate!.day);
+        return cDate.isAtSameMomentAs(today);
+      }
+      return false;
+    }).length;
+
+    final todayTasks = active.where((t) {
+      if (t.dueDate != null) {
+        final taskDate = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
+        return taskDate.isBefore(today) || taskDate.isAtSameMomentAs(today);
+      }
+      return t.isStarred;
+    }).toList();
+
+    final deepWork = active.where((t) =>
+      t.isStarred ||
+      t.priority == TaskPriority.high ||
+      t.subtasks.length >= 3
+    ).toList();
+
+    final recovery = active.where((t) =>
+      t.priority == TaskPriority.low &&
+      t.subtasks.isEmpty &&
+      !t.isStarred
+    ).toList();
+
+    // Logic for Upcoming Tasks (Optimized: pre-sort for UI)
+    final upcoming = List<Task>.from(active)
+      ..sort((a, b) {
+        if (a.dueDate == null && b.dueDate == null) return 0;
+        if (a.dueDate == null) return 1;
+        if (b.dueDate == null) return -1;
+        return a.dueDate!.compareTo(b.dueDate!);
+      });
+
+    state = state.copyWith(
+      filteredTasks: filtered,
+      activeTasks: active,
+      completedTasks: completed,
+      todayTasks: todayTasks,
+      upcomingTasks: upcoming,
+      deepWorkTasks: deepWork,
+      recoveryTasks: recovery,
+      completedTodayCount: completedTodayCount,
+    );
+  }
+
+  Future<void> _calculateStats() async {
+    final tasks = state.tasks;
+    if (tasks.isEmpty || _disposed) return;
+
+    try {
+      final stats = await compute(_performStatsCalculation, tasks);
+      if (!_disposed) {
+        state = state.copyWith(statistics: stats);
+      }
+    } catch (e, stack) {
+      if (!_disposed) {
+        AppLogger.e('Stats calculation failed', e, stack);
+      }
+    }
+  }
+
+  static TaskStatistics _performStatsCalculation(List<Task> allTasks) {
+    final now = DateTime.now();
+    final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+
+    // 1. Completion Rate & Velocity
+    final recentCompleted = allTasks.where((t) =>
+      t.isCompleted &&
+      t.completionDate != null &&
+      t.completionDate!.isAfter(thirtyDaysAgo)
+    ).toList();
+
+    final completionRate = allTasks.isEmpty ? 0.0 : recentCompleted.length / allTasks.length;
+
+    // Map completions to days for velocity chart
+    final Map<int, int> dailyCounts = {};
+    for (var i = 0; i < 30; i++) {
+      dailyCounts[i] = 0;
+    }
+
+    for (var task in recentCompleted) {
+      final daysAgo = now.difference(task.completionDate!).inDays;
+      if (daysAgo >= 0 && daysAgo < 30) {
+        dailyCounts[29 - daysAgo] = (dailyCounts[29 - daysAgo] ?? 0) + 1;
+      }
+    }
+
+    final velocitySpots = dailyCounts.entries
+        .map((e) => FlSpot(e.key.toDouble(), e.value.toDouble()))
+        .toList();
+
+    // 2. Category Distribution
+    final Map<String, int> catCounts = {};
+    for (var task in allTasks) {
+      catCounts[task.category] = (catCounts[task.category] ?? 0) + 1;
+    }
+    final categoryDistribution = catCounts.map((k, v) => MapEntry(k, v / allTasks.length));
+
+    // 3. Habit Strength (Exponential Decay Consistency)
+    // PERFORMANCE OPTIMIZATION: Pre-calculate a Set of completion date keys (O(N))
+    // to allow O(1) lookups in the 30-day loop, reducing total complexity from O(30*N) to O(N).
+    final Set<String> completionDateKeys = allTasks
+        .where((t) => t.isCompleted && t.completionDate != null)
+        .map((t) => '${t.completionDate!.year}-${t.completionDate!.month}-${t.completionDate!.day}')
+        .toSet();
+
+    double strength = 0.0;
+    for (var i = 0; i < 30; i++) {
+      final date = now.subtract(Duration(days: i));
+      final dateKey = '${date.year}-${date.month}-${date.day}';
+
+      if (completionDateKeys.contains(dateKey)) {
+        strength += pow(0.9, i); // Recent days have more weight
+      }
+    }
+    // Normalize strength (max possible is sum of 0.9^i for i=0 to 29 approx 10)
+    strength = (strength / 10.0).clamp(0.0, 1.0);
+
+    return TaskStatistics(
+      habitStrength: strength,
+      completionRate: completionRate,
+      categoryDistribution: categoryDistribution,
+      completionVelocitySpots: velocitySpots,
+    );
   }
 
   void setSelectedTask(Task? task) {
@@ -188,6 +336,7 @@ class TaskNotifier extends Notifier<TaskState> {
         selectedTask: newTask,
       );
       _updateFilteredTasks();
+      _calculateStats();
       unawaited(AppHaptics.light());
       await _repository.saveTasks(state.tasks);
     } catch (e, stack) {
@@ -234,7 +383,8 @@ class TaskNotifier extends Notifier<TaskState> {
       );
       
       _replaceTask(updatedTask);
-      
+      _calculateStats();
+
       if (isMarkingDone) {
         unawaited(AppHaptics.heavy());
         await _notifications.cancelTaskReminder(task.id);
@@ -392,6 +542,7 @@ class TaskNotifier extends Notifier<TaskState> {
         tasks: [duplicatedTask, ...updatedTasks],
       );
       _updateFilteredTasks();
+      _calculateStats();
       unawaited(AppHaptics.medium());
       await _repository.saveTasks(state.tasks);
     } catch (e, stack) {
@@ -421,6 +572,7 @@ class TaskNotifier extends Notifier<TaskState> {
       
       state = state.copyWith(tasks: updatedTasks);
       _updateFilteredTasks();
+      _calculateStats();
       await _repository.saveTasks(state.tasks);
     } catch (e, stack) {
       _handleError(e, stack, 'Reorder tasks failed');
@@ -450,6 +602,7 @@ class TaskNotifier extends Notifier<TaskState> {
       );
       
       _updateFilteredTasks();
+      _calculateStats();
       unawaited(AppHaptics.heavy());
       await _repository.deleteTask(task.id);
       await _notifications.cancelTaskReminder(task.id);
@@ -483,6 +636,7 @@ class TaskNotifier extends Notifier<TaskState> {
     );
     
     _updateFilteredTasks();
+    _calculateStats();
     await _repository.batchDeleteTasks(toDeleteIds);
     for (var id in toDeleteIds) {
       await _notifications.cancelTaskReminder(id);
@@ -509,7 +663,42 @@ class TaskNotifier extends Notifier<TaskState> {
       selectedTaskIds: {},
     );
     _updateFilteredTasks();
+    _calculateStats();
     await _repository.saveTasks(state.tasks);
+  }
+
+  Future<void> breakdownSelectedTasks() async {
+    if (state.selectedTaskIds.isEmpty) return;
+
+    state = state.copyWith(isAILoading: true);
+    try {
+      final selectedTasks = state.tasks.where((t) => state.selectedTaskIds.contains(t.id)).toList();
+      final titles = selectedTasks.map((t) => t.title).toList();
+
+      final roadmap = await _aiService.generateBatchRoadmap(titles);
+
+      final updatedTasks = List<Task>.from(state.tasks);
+      for (var i = 0; i < updatedTasks.length; i++) {
+        final task = updatedTasks[i];
+        if (state.selectedTaskIds.contains(task.id)) {
+          final suggestedSubtasks = roadmap[task.title] ?? roadmap.values.firstWhere((v) => roadmap.keys.any((k) => k.contains(task.title)), orElse: () => []);
+
+          if (suggestedSubtasks.isNotEmpty) {
+            final newSubtasks = suggestedSubtasks.map((s) => SubTask(id: _uuid.v4(), title: s, isCompleted: false)).toList();
+            updatedTasks[i] = task.copyWith(subtasks: [...task.subtasks, ...newSubtasks]);
+          }
+        }
+      }
+
+      state = state.copyWith(tasks: updatedTasks, isAILoading: false, selectedTaskIds: {});
+      _updateFilteredTasks();
+      _calculateStats();
+      await _repository.saveTasks(state.tasks);
+      unawaited(AppHaptics.success());
+    } catch (e, stack) {
+      _handleError(e, stack, 'Batch breakdown failed');
+      state = state.copyWith(isAILoading: false);
+    }
   }
 
   Future<void> clearAllTasks() async {
@@ -517,6 +706,7 @@ class TaskNotifier extends Notifier<TaskState> {
       final taskIds = state.tasks.map((t) => t.id).toList();
       state = state.copyWith(tasks: [], selectedTaskIds: {}, clearSelectedTask: true);
       _updateFilteredTasks();
+      _calculateStats();
       await _repository.batchDeleteTasks(taskIds);
       for (var id in taskIds) {
         await _notifications.cancelTaskReminder(id);
@@ -539,6 +729,7 @@ class TaskNotifier extends Notifier<TaskState> {
       );
       
       _updateFilteredTasks();
+      _calculateStats();
       await _repository.batchDeleteTasks(completedIds);
     } catch (e, stack) {
       _handleError(e, stack, 'Clear completed failed');
@@ -667,3 +858,50 @@ class TaskNotifier extends Notifier<TaskState> {
     }
   }
 }
+
+// Derived State Providers (Performance Optimization)
+
+final weeklyProductivityProvider = Provider<List<double>>((ref) {
+  final tasks = ref.watch(taskProvider.select((s) => s.tasks));
+  final today = DateTime.now();
+  final last7Days = List.generate(7, (i) => today.subtract(Duration(days: 6 - i)));
+  
+  final List<double> data = List.filled(7, 0);
+  
+  for (var i = 0; i < 7; i++) {
+    final date = last7Days[i];
+    final completedOnDate = tasks.where((t) {
+      if (!t.isCompleted || t.completionDate == null) return false;
+      return t.completionDate!.year == date.year &&
+             t.completionDate!.month == date.month &&
+             t.completionDate!.day == date.day;
+    }).length;
+    data[i] = completedOnDate.toDouble();
+  }
+  return data;
+});
+
+class CategoryStats {
+  CategoryStats({
+    required this.activeCount,
+    required this.totalCount,
+    required this.progress,
+  });
+  final int activeCount;
+  final int totalCount;
+  final double progress;
+}
+
+final categoryStatsProvider = Provider.family<CategoryStats, String>((ref, category) {
+  final tasks = ref.watch(taskProvider.select((s) => s.tasks));
+  final categoryTasks = tasks.where((t) => t.category == category).toList();
+  final activeCount = categoryTasks.where((t) => !t.isCompleted).length;
+  final totalCount = categoryTasks.length;
+  final progress = totalCount == 0 ? 0.0 : (totalCount - activeCount) / totalCount;
+  
+  return CategoryStats(
+    activeCount: activeCount,
+    totalCount: totalCount,
+    progress: progress,
+  );
+});

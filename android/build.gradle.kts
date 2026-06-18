@@ -1,3 +1,5 @@
+apply(from = "force_ndk.gradle")
+
 allprojects {
     repositories {
         google()

@@ -1,15 +1,15 @@
 import 'dart:ui';
 import 'package:dexdo/core/theme/theme_provider.dart';
 import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
+import 'package:dexdo/features/home/presentation/providers/dashboard_context.dart';
+import 'package:dexdo/features/home/presentation/widgets/adaptive_dashboard.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
-import 'package:dexdo/features/tasks/presentation/providers/task_state.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:intl/intl.dart';
 
 class HomePane extends ConsumerWidget {
@@ -19,73 +19,91 @@ class HomePane extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final taskState = ref.watch(taskProvider);
-    final taskNotifier = ref.read(taskProvider.notifier);
-    final activeTasks = taskState.activeTasks;
-    final allTasks = taskState.allTasks;
-    final now = DateTime.now();
-    
-    final completedToday = allTasks.where((t) {
-      if (t.isCompleted && t.completionDate != null) {
-        return t.completionDate!.year == now.year &&
-            t.completionDate!.month == now.month &&
-            t.completionDate!.day == now.day;
-      }
-      return false;
-    }).toList();
+    final dashboardState = ref.watch(dashboardProvider.select((s) => s.mode));
 
-    final activeToday = allTasks.where((t) {
-      if (t.isCompleted) return false;
-      if (t.dueDate != null) {
-        final taskDate = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
-        final todayDate = DateTime(now.year, now.month, now.day);
-        return taskDate.isBefore(todayDate) || taskDate.isAtSameMomentAs(todayDate);
-      }
-      return t.isStarred;
-    }).toList();
-
-    final totalToday = completedToday.length + activeToday.length;
-    final progressToday = totalToday == 0 ? 0.0 : completedToday.length / totalToday;
+    if (dashboardState == DashboardMode.deepWork) {
+      return const Scaffold(
+        backgroundColor: Colors.transparent,
+        body: AdaptiveDashboard(),
+      );
+    }
 
     return CustomScrollView(
       controller: scrollController,
       physics: const BouncingScrollPhysics(),
       slivers: [
-        _buildSliverAppBar(context, ref, progressToday, completedToday.length, totalToday),
+        const _HomeSliverAppBar(),
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              _buildSectionTitle(context, 'Weekly Completion'),
+              const _SectionTitle(title: 'Weekly Completion'),
               const SizedBox(height: 16),
-              _buildProductivityChart(context, allTasks),
+              const _ProductivityChart(),
               const SizedBox(height: 32),
-              _buildSectionTitle(context, 'Upcoming Tasks'),
+              const _SectionTitle(title: 'Upcoming Tasks'),
               const SizedBox(height: 16),
-              _buildUpcomingTasks(context, ref, activeTasks),
+              _UpcomingTasks(onTaskTap: onTaskTap),
               const SizedBox(height: 32),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildSectionTitle(context, 'Categories'),
-                  if (taskState.selectedCategory != 'All')
-                    TextButton(
-                      onPressed: () => taskNotifier.setCategory('All'),
-                      child: const Text('Clear Filter'),
-                    ),
+                  const _SectionTitle(title: 'Categories'),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final selectedCategory = ref.watch(taskProvider.select((s) => s.selectedCategory));
+                      if (selectedCategory != 'All') {
+                        return TextButton(
+                          onPressed: () => ref.read(taskProvider.notifier).setCategory('All'),
+                          child: const Text('Clear Filter'),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
-              _buildCategoryOverview(context, taskState, taskNotifier),
-               const SizedBox(height: 100), // Bottom padding for FAB
             ]),
           ),
         ),
+        const SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: 24),
+          sliver: _CategoryOverviewSliver(),
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 100)),
       ],
     );
   }
+}
 
-  Widget _buildSliverAppBar(BuildContext context, WidgetRef ref, double progress, int completed, int total) {
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.title});
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.2,
+      ),
+    );
+  }
+}
+
+class _HomeSliverAppBar extends ConsumerWidget {
+  const _HomeSliverAppBar();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeToday = ref.watch(taskProvider.select((s) => s.todayTasks));
+    final completedTodayCount = ref.watch(taskProvider.select((s) => s.completedTodayCount));
+    final totalToday = completedTodayCount + activeToday.length;
+    final progressToday = totalToday == 0 ? 0.0 : completedTodayCount / totalToday;
+
     final hour = DateTime.now().hour;
     String greeting = 'Good Morning';
     if (hour >= 12 && hour < 17) greeting = 'Good Afternoon';
@@ -106,12 +124,10 @@ class HomePane extends ConsumerWidget {
       elevation: 0,
       scrolledUnderElevation: 0,
       surfaceTintColor: Colors.transparent,
-      // Status bar brightness control
       systemOverlayStyle: Theme.of(context).brightness == Brightness.dark 
           ? SystemUiOverlayStyle.light 
           : SystemUiOverlayStyle.dark,
       actions: [
-        // Theme Toggle
         IconButton(
           onPressed: () {
             HapticFeedback.lightImpact();
@@ -131,7 +147,6 @@ class HomePane extends ConsumerWidget {
             ),
           ),
         ),
-        // User Avatar
         Padding(
           padding: const EdgeInsets.only(right: 16, left: 8),
           child: authState.when(
@@ -148,13 +163,10 @@ class HomePane extends ConsumerWidget {
       flexibleSpace: Stack(
         fit: StackFit.expand,
         children: [
-          // Persistent Glass/Blur Effect
           ClipRect(
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: Container(
-                color: Colors.transparent,
-              ),
+              child: Container(color: Colors.transparent),
             ),
           ),
           FlexibleSpaceBar(
@@ -166,7 +178,6 @@ class HomePane extends ConsumerWidget {
             background: Stack(
               fit: StackFit.expand,
               children: [
-                // Decorative Background Gradient
                 DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -179,7 +190,6 @@ class HomePane extends ConsumerWidget {
                     ),
                   ),
                 ),
-                // Content
                 Padding(
                   padding: EdgeInsets.fromLTRB(
                     24, 
@@ -230,9 +240,9 @@ class HomePane extends ConsumerWidget {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    total == 0 
+                                    totalToday == 0 
                                         ? 'No tasks yet' 
-                                        : '$completed/$total Daily Goals',
+                                        : '$completedTodayCount/$totalToday Daily Goals',
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
@@ -245,7 +255,7 @@ class HomePane extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      _buildAnimatedProgressIndicator(context, progress),
+                      _AnimatedProgressIndicator(progress: progressToday),
                     ],
                   ),
                 ),
@@ -256,8 +266,14 @@ class HomePane extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildAnimatedProgressIndicator(BuildContext context, double progress) {
+class _AnimatedProgressIndicator extends StatelessWidget {
+  const _AnimatedProgressIndicator({required this.progress});
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: progress),
       duration: const Duration(milliseconds: 1500),
@@ -266,7 +282,6 @@ class HomePane extends ConsumerWidget {
         return Stack(
           alignment: Alignment.center,
           children: [
-            // Outer Ring
             SizedBox(
               width: 120,
               height: 120,
@@ -278,7 +293,6 @@ class HomePane extends ConsumerWidget {
                 strokeCap: StrokeCap.round,
               ),
             ),
-            // Inner Circle with Percentage
             Container(
               width: 85,
               height: 85,
@@ -319,7 +333,6 @@ class HomePane extends ConsumerWidget {
                 ),
               ),
             ),
-            // Celebrating Icon
             if (value >= 1.0)
               Positioned(
                 top: 0,
@@ -347,55 +360,37 @@ class HomePane extends ConsumerWidget {
       },
     );
   }
+}
 
-  Widget _buildSectionTitle(BuildContext context, String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.2, // Slightly increased to avoid 'W' looking like 'vv'
-      ),
-    );
-  }
+class _ProductivityChart extends ConsumerWidget {
+  const _ProductivityChart();
 
-  Widget _buildProductivityChart(BuildContext context, List<Task> tasks) {
-    final now = DateTime.now();
-    final last7Days = List.generate(7, (index) {
-      return now.subtract(Duration(days: 6 - index));
-    });
-
-    final data = last7Days.map((day) {
-      final completedOnDay = tasks.where((t) {
-        if (t.isCompleted && t.completionDate != null) {
-          return t.completionDate!.year == day.year &&
-              t.completionDate!.month == day.month &&
-              t.completionDate!.day == day.day;
-        }
-        return false;
-      }).length;
-      return double.parse(completedOnDay.toString());
-    }).toList();
-
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final data = ref.watch(weeklyProductivityProvider);
+    final today = DateTime.now();
+    final last7Days = List.generate(7, (i) => today.subtract(Duration(days: 6 - i)));
+    
     final maxVal = data.isEmpty ? 5.0 : data.reduce((a, b) => a > b ? a : b);
 
-    return Container(
-      height: 200,
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(12, 24, 12, 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: BarChart(
-        BarChartData(
+    return RepaintBoundary(
+      child: Container(
+        height: 200,
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(12, 24, 12, 12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: BarChart(
+          BarChartData(
           alignment: BarChartAlignment.spaceAround,
           maxY: (maxVal == 0 ? 5 : maxVal) * 1.2,
           barTouchData: BarTouchData(
@@ -405,10 +400,7 @@ class HomePane extends ConsumerWidget {
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 return BarTooltipItem(
                   rod.toY.round().toString(),
-                  const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 );
               },
             ),
@@ -447,7 +439,7 @@ class HomePane extends ConsumerWidget {
               x: entry.key,
               barRods: [
                 BarChartRodData(
-                  toY: entry.value == 0 ? 0.2 : entry.value, // Minimal height for visibility
+                  toY: entry.value == 0 ? 0.2 : entry.value,
                   gradient: LinearGradient(
                     colors: [
                       Theme.of(context).colorScheme.primary,
@@ -469,20 +461,19 @@ class HomePane extends ConsumerWidget {
           }).toList(),
         ),
       ),
-    );
+    ));
   }
+}
 
+class _UpcomingTasks extends ConsumerWidget {
+  const _UpcomingTasks({this.onTaskTap});
+  final Function(Task)? onTaskTap;
 
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final upcomingTasks = ref.watch(taskProvider.select((s) => s.upcomingTasks));
+    final upcoming = upcomingTasks.take(3).toList();
 
-  Widget _buildUpcomingTasks(BuildContext context, WidgetRef ref, List<Task> tasks) {
-    final sortedTasks = List<Task>.from(tasks)
-      ..sort((a, b) {
-        if (a.dueDate == null && b.dueDate == null) return 0;
-        if (a.dueDate == null) return 1;
-        if (b.dueDate == null) return -1;
-        return a.dueDate!.compareTo(b.dueDate!);
-      });
-    final upcoming = sortedTasks.take(3).toList();
     if (upcoming.isEmpty) {
       return Container(
         width: double.infinity,
@@ -542,27 +533,26 @@ class HomePane extends ConsumerWidget {
       );
     }
 
-    return AnimationLimiter(
-      child: Column(
-        children: upcoming.asMap().entries.map((entry) {
-          final index = entry.key;
-          final task = entry.value;
-          return AnimationConfiguration.staggeredList(
-            position: index,
-            duration: const Duration(milliseconds: 375),
-            child: SlideAnimation(
-              verticalOffset: 50.0,
-              child: FadeInAnimation(
-                child: _buildSimpleTaskTile(context, ref, task),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
+    return Column(
+      children: upcoming.asMap().entries.map((entry) {
+        final index = entry.key;
+        final task = entry.value;
+        return _SimpleTaskTile(task: task, onTaskTap: onTaskTap)
+            .animate()
+            .fadeIn(duration: 375.ms, delay: (index * 100).ms)
+            .slideY(begin: 0.2, end: 0, duration: 375.ms, curve: Curves.easeOutQuad);
+      }).toList(),
     );
   }
+}
 
-  Widget _buildSimpleTaskTile(BuildContext context, WidgetRef ref, Task task) {
+class _SimpleTaskTile extends ConsumerWidget {
+  const _SimpleTaskTile({required this.task, this.onTaskTap});
+  final Task task;
+  final Function(Task)? onTaskTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
@@ -621,6 +611,18 @@ class HomePane extends ConsumerWidget {
                     ],
                   ),
                 ),
+                IconButton(
+                  onPressed: () {
+                    HapticFeedback.heavyImpact();
+                    ref.read(dashboardProvider.notifier).enterFocusMode(task);
+                  },
+                  icon: Icon(
+                    Icons.bolt_rounded,
+                    color: Colors.amber[600],
+                    size: 20,
+                  ),
+                  tooltip: 'Enter Focus Mode',
+                ),
                 if (task.dueDate != null)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -651,120 +653,122 @@ class HomePane extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildCategoryOverview(BuildContext context, TaskState state, TaskNotifier notifier) {
-    final activeCategories = state.categories.where((c) => c != 'All').toList();
-    
-    return AnimationLimiter(
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.1,
-        ),
-        itemCount: activeCategories.length,
-        itemBuilder: (context, index) {
-          final category = activeCategories[index];
-          final tasks = state.tasks.where((t) => t.category == category).toList();
-          final activeCount = tasks.where((t) => !t.isCompleted).length;
-          final totalCount = tasks.length;
-          final progress = totalCount == 0 ? 0.0 : (totalCount - activeCount) / totalCount;
-  
-          return AnimationConfiguration.staggeredGrid(
-            position: index,
-            duration: const Duration(milliseconds: 375),
-            columnCount: 2,
-            child: ScaleAnimation(
-              child: FadeInAnimation(
-                child: InkWell(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    notifier.setCategory(category);
-                  },
-                  borderRadius: BorderRadius.circular(24),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: state.selectedCategory == category 
-                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
-                            : Theme.of(context).dividerColor,
-                        width: state.selectedCategory == category ? 2 : 1,
+class _CategoryOverviewSliver extends ConsumerWidget {
+  const _CategoryOverviewSliver();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final categories = ref.watch(taskProvider.select((s) => s.categories.where((c) => c != 'All').toList()));
+    final categoryIcons = ref.watch(taskProvider.select((s) => s.categoryIcons));
+    final categoryColors = ref.watch(taskProvider.select((s) => s.categoryColors));
+    final selectedCategory = ref.watch(taskProvider.select((s) => s.selectedCategory));
+    final notifier = ref.read(taskProvider.notifier);
+
+    return SliverGrid(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 1.1,
+      ),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final category = categories[index];
+          
+          return Consumer(
+            builder: (context, ref, _) {
+              final stats = ref.watch(categoryStatsProvider(category));
+              
+              return InkWell(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  notifier.setCategory(category);
+                },
+                borderRadius: BorderRadius.circular(24),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: selectedCategory == category
+                          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
+                          : Theme.of(context).dividerColor,
+                      width: selectedCategory == category ? 2 : 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: selectedCategory == category
+                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05)
+                            : Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: state.selectedCategory == category
-                              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05)
-                              : Colors.black.withValues(alpha: 0.02),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: state.categoryColors[category]!.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Icon(
-                                state.categoryIcons[category],
-                                color: state.categoryColors[category],
-                                size: 20,
-                              ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: categoryColors[category]!.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            Text(
-                              '${(progress * 100).toInt()}%',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: state.categoryColors[category],
-                              ),
+                            child: Icon(
+                              categoryIcons[category],
+                              color: categoryColors[category],
+                              size: 20,
                             ),
-                          ],
-                        ),
-                        const Spacer(),
-                        Text(
-                          category,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        const SizedBox(height: 4),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            minHeight: 6,
-                            backgroundColor: state.categoryColors[category]!.withValues(alpha: 0.1),
-                            valueColor: AlwaysStoppedAnimation<Color>(state.categoryColors[category]!),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '$activeCount active tasks',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          Text(
+                            '${(stats.progress * 100).toInt()}%',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: categoryColors[category],
+                            ),
                           ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Text(
+                        category,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: stats.progress,
+                          minHeight: 6,
+                          backgroundColor: categoryColors[category]!.withValues(alpha: 0.1),
+                          valueColor: AlwaysStoppedAnimation<Color>(categoryColors[category]!),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${stats.activeCount} active tasks',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ),
+              ).animate()
+               .scale(duration: 375.ms, delay: (index * 100).ms, curve: Curves.easeOutBack)
+               .fadeIn(duration: 375.ms);
+            },
           );
         },
+        childCount: categories.length,
       ),
     );
   }

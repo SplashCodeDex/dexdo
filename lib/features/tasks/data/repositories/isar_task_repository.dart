@@ -31,12 +31,8 @@ class IsarTaskRepository implements TaskRepository {
   Future<void> saveTasks(List<Task> tasks) async {
     final isar = await _db;
     await isar.writeAsync((isar) {
-      for (var task in tasks) {
-        final model = TaskModel.fromEntity(task);
-        final existing = isar.taskModels.where().taskIdEqualTo(task.id).findFirst();
-        if (existing != null) model.isarId = existing.isarId;
-        isar.taskModels.put(model);
-      }
+      final models = tasks.map((t) => TaskModel.fromEntity(t)).toList();
+      isar.taskModels.putAll(models);
     });
   }
 
@@ -45,8 +41,6 @@ class IsarTaskRepository implements TaskRepository {
     final isar = await _db;
     final model = TaskModel.fromEntity(task);
     await isar.writeAsync((isar) {
-      final existing = isar.taskModels.where().taskIdEqualTo(task.id).findFirst();
-      if (existing != null) model.isarId = existing.isarId;
       isar.taskModels.put(model);
     });
   }
@@ -54,8 +48,9 @@ class IsarTaskRepository implements TaskRepository {
   @override
   Future<void> deleteTask(String taskId) async {
     final isar = await _db;
+    final id = fastHash(taskId);
     await isar.writeAsync((isar) {
-      isar.taskModels.where().taskIdEqualTo(taskId).deleteAll();
+      isar.taskModels.delete(id);
     });
   }
 
@@ -67,10 +62,9 @@ class IsarTaskRepository implements TaskRepository {
   @override
   Future<void> batchDeleteTasks(List<String> taskIds) async {
     final isar = await _db;
+    final ids = taskIds.map((id) => fastHash(id)).toList();
     await isar.writeAsync((isar) {
-      for (var id in taskIds) {
-        isar.taskModels.where().taskIdEqualTo(id).deleteAll();
-      }
+      isar.taskModels.deleteAll(ids);
     });
   }
 
@@ -104,12 +98,13 @@ class IsarTaskRepository implements TaskRepository {
   Future<void> saveCategoryIcons(Map<String, IconData> icons) async {
     final isar = await _db;
     await isar.writeAsync((isar) {
-      for (var entry in icons.entries) {
-        final existing = isar.categoryModels.where().nameEqualTo(entry.key).findFirst();
-        final model = existing ?? (CategoryModel()..name = entry.key);
+      final models = icons.entries.map((entry) {
+        final existing = isar.categoryModels.get(fastHash(entry.key));
+        final model = existing ?? (CategoryModel()..isarId = fastHash(entry.key)..name = entry.key);
         model.iconCodePoint = entry.value.codePoint;
-        isar.categoryModels.put(model);
-      }
+        return model;
+      }).toList();
+      isar.categoryModels.putAll(models);
     });
   }
 
@@ -128,12 +123,13 @@ class IsarTaskRepository implements TaskRepository {
   Future<void> saveCategoryColors(Map<String, Color> colors) async {
     final isar = await _db;
     await isar.writeAsync((isar) {
-      for (var entry in colors.entries) {
-        final existing = isar.categoryModels.where().nameEqualTo(entry.key).findFirst();
-        final model = existing ?? (CategoryModel()..name = entry.key);
+      final models = colors.entries.map((entry) {
+        final existing = isar.categoryModels.get(fastHash(entry.key));
+        final model = existing ?? (CategoryModel()..isarId = fastHash(entry.key)..name = entry.key);
         model.colorValue = entry.value.toARGB32();
-        isar.categoryModels.put(model);
-      }
+        return model;
+      }).toList();
+      isar.categoryModels.putAll(models);
     });
   }
 }

@@ -98,4 +98,41 @@ class AIService {
       return 'No estimate available';
     }
   }
+
+  Future<Map<String, List<String>>> generateBatchRoadmap(List<String> taskTitles) async {
+    final prompt = 'I have a set of tasks: ${taskTitles.join(", ")}. '
+        'For each task, provide 3 actionable subtasks. '
+        'Format your response exactly as follows for each task:\n'
+        'TASK: [Task Title]\n'
+        'SUB: [Subtask 1]\n'
+        'SUB: [Subtask 2]\n'
+        'SUB: [Subtask 3]\n'
+        'Repeat this for all tasks.';
+
+    try {
+      final content = [Content.text(prompt)];
+      final response = await _model.generateContent(content);
+
+      if (response.text == null || response.text!.isEmpty) {
+        return {};
+      }
+
+      final lines = response.text!.split('\n');
+      final Map<String, List<String>> roadmap = {};
+      String? currentTask;
+
+      for (var line in lines) {
+        if (line.startsWith('TASK:')) {
+          currentTask = line.replaceFirst('TASK:', '').trim();
+          roadmap[currentTask] = [];
+        } else if (line.startsWith('SUB:') && currentTask != null) {
+          roadmap[currentTask]!.add(line.replaceFirst('SUB:', '').trim());
+        }
+      }
+      return roadmap;
+    } catch (e, stack) {
+      AppLogger.e('Error generating batch roadmap with AI', e, stack);
+      return {};
+    }
+  }
 }

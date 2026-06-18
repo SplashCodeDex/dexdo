@@ -21,7 +21,7 @@ plugins {
 android {
     namespace = "com.dexify.dexdo"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "29.0.14206865"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true

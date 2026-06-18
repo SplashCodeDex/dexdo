@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 class DateTimePickerSheet extends StatefulWidget {
-  final DateTime? initialDate;
-  final bool includeTime;
-
   const DateTimePickerSheet({
     super.key,
     this.initialDate,
     this.includeTime = true,
   });
+
+  final DateTime? initialDate;
+  final bool includeTime;
 
   @override
   State<DateTimePickerSheet> createState() => _DateTimePickerSheetState();
@@ -18,7 +17,6 @@ class DateTimePickerSheet extends StatefulWidget {
 class _DateTimePickerSheetState extends State<DateTimePickerSheet> {
   late DateTime _selectedDate;
   TimeOfDay? _selectedTime;
-  bool _showTimePicker = false;
 
   @override
   void initState() {
@@ -26,7 +24,6 @@ class _DateTimePickerSheetState extends State<DateTimePickerSheet> {
     _selectedDate = widget.initialDate ?? DateTime.now();
     if (widget.initialDate != null) {
       _selectedTime = TimeOfDay.fromDateTime(widget.initialDate!);
-      _showTimePicker = true;
     }
   }
 
@@ -60,7 +57,7 @@ class _DateTimePickerSheetState extends State<DateTimePickerSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.2),
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

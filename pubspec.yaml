@@ -55,7 +55,6 @@ dependencies:
   purchases_flutter: ^10.1.1
   google_fonts: ^8.1.0
   google_generative_ai: ^0.4.7
-  flutter_staggered_animations: ^1.1.1
   logger: ^2.5.0
   equatable: ^2.0.7
   fl_chart: ^1.2.0

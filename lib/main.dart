@@ -1,30 +1,25 @@
 import 'dart:ui';
+
 import 'package:animations/animations.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dexdo/core/app_bootstrap.dart';
 import 'package:dexdo/core/theme/app_theme.dart';
 import 'package:dexdo/core/theme/theme_provider.dart';
-import 'package:dexdo/core/utils/logger.dart';
 import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
-import 'package:dexdo/features/calendar/presentation/widgets/calendar_pane.dart';
+import 'package:dexdo/core/widgets/deferred_widget.dart';
+import 'package:dexdo/features/calendar/presentation/widgets/calendar_pane.dart' deferred as calendar_pane;
 import 'package:dexdo/features/home/presentation/widgets/home_pane.dart';
-import 'package:dexdo/features/settings/presentation/widgets/settings_pane.dart';
+import 'package:dexdo/features/home/presentation/widgets/statistics_pane.dart' deferred as statistics_pane;
+import 'package:dexdo/features/settings/presentation/widgets/settings_pane.dart' deferred as settings_pane;
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_state.dart';
 import 'package:dexdo/features/tasks/presentation/widgets/quick_task_sheet.dart';
 import 'package:dexdo/features/tasks/presentation/widgets/task_editor_pane.dart';
 import 'package:dexdo/features/tasks/presentation/widgets/task_list_pane.dart';
-import 'package:dexdo/firebase_options.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:dexdo/l10n/app_localizations.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
-// Note: Import will be valid after build/generation
-// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,39 +33,11 @@ void main() async {
     ),
   );
   
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    
-    // Pass all uncaught "fatal" errors from the framework to Crashlytics
-    FlutterError.onError = (errorDetails) {
-      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-      AppLogger.e('Flutter Error', errorDetails.exception, errorDetails.stack);
-    };
-
-    // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
-    PlatformDispatcher.instance.onError = (error, stack) {
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-      AppLogger.e('Platform Error', error, stack);
-      return true;
-    };
-
-    FirebaseFirestore.instance.settings = const Settings(
-      persistenceEnabled: true,
-    );
-
-    AppLogger.i('Application successfully initialized');
-    
-    runApp(
-      const rp.ProviderScope(
-        child: DeXDoApp(),
-      ),
-    );
-  } catch (e, stack) {
-    AppLogger.e('Initialization failed', e, stack);
-    // In a real app, you might show a minimal error UI here
-  }
+  runApp(
+    const rp.ProviderScope(
+      child: DeXDoApp(),
+    ),
+  );
 }
 
 class DeXDoApp extends rp.ConsumerWidget {
@@ -88,7 +55,7 @@ class DeXDoApp extends rp.ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const HomeScreen(),
+      home: const BootstrapScreen(),
     );
   }
 }
@@ -121,13 +88,13 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
           
           // Content Area
           Expanded(
-            child: _buildMainContent(isLargeScreen, taskState, notifier),
+            child: _buildMainContent(isLargeScreen),
           ),
         ],
       );
     }
 
-    return _buildMainContent(isLargeScreen, taskState, notifier);
+    return _buildMainContent(isLargeScreen);
   }
 
   Widget _buildDesktopNavigationRail() {
@@ -162,6 +129,11 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
           label: Text('Tasks'),
         ),
         NavigationRailDestination(
+          icon: Icon(Icons.insights_outlined),
+          selectedIcon: Icon(Icons.insights_rounded),
+          label: Text('Insights'),
+        ),
+        NavigationRailDestination(
           icon: Icon(Icons.settings_outlined),
           selectedIcon: Icon(Icons.settings_rounded),
           label: Text('Settings'),
@@ -170,7 +142,7 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildMainContent(bool isLargeScreen, TaskState taskState, TaskNotifier taskNotifier) {
+  Widget _buildMainContent(bool isLargeScreen) {
     if (_selectedIndex != 2) {
       Widget content;
       switch (_selectedIndex) {
@@ -180,12 +152,27 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
           );
           break;
         case 1:
-          content = CalendarPane(
-            onTaskTap: (task) => setState(() => _selectedIndex = 2),
+          content = DeferredWidget(
+            libraryKey: 'calendar',
+            libraryLoader: calendar_pane.loadLibrary,
+            builder: () => calendar_pane.CalendarPane(
+              onTaskTap: (task) => setState(() => _selectedIndex = 2),
+            ),
           );
           break;
         case 3:
-          content = const SettingsPane();
+          content = DeferredWidget(
+            libraryKey: 'statistics',
+            libraryLoader: statistics_pane.loadLibrary,
+            builder: () => statistics_pane.StatisticsPane(),
+          );
+          break;
+        case 4:
+          content = DeferredWidget(
+            libraryKey: 'settings',
+            libraryLoader: settings_pane.loadLibrary,
+            builder: () => settings_pane.SettingsPane(),
+          );
           break;
         default:
           content = const Center(child: Text('Coming Soon'));
@@ -219,34 +206,40 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
             flex: 3,
             child: Container(
               color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
-              child: PageTransitionSwitcher(
-                transitionBuilder: (child, primaryAnimation, secondaryAnimation) {
-                  return SharedAxisTransition(
-                    animation: primaryAnimation,
-                    secondaryAnimation: secondaryAnimation,
-                    transitionType: SharedAxisTransitionType.horizontal,
-                    child: child,
+              child: rp.Consumer(
+                builder: (context, ref, _) {
+                  final selectedTask = ref.watch(taskProvider.select((s) => s.selectedTask));
+                  return PageTransitionSwitcher(
+                    transitionBuilder: (child, primaryAnimation, secondaryAnimation) {
+                      return SharedAxisTransition(
+                        animation: primaryAnimation,
+                        secondaryAnimation: secondaryAnimation,
+                        transitionType: SharedAxisTransitionType.horizontal,
+                        child: child,
+                      );
+                    },
+                    child: selectedTask != null
+                        ? TaskEditorPane(
+                            key: ValueKey(selectedTask.id),
+                            task: selectedTask,
+                          )
+                        : const Center(
+                            key: ValueKey('empty_editor'),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.edit_note_rounded, size: 64, color: Colors.grey),
+                                SizedBox(height: 16),
+                                Text(
+                                  'Select a task to view details',
+                                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                                ),
+                              ],
+                            ),
+                          ),
                   );
                 },
-                child: taskState.selectedTask != null
-                    ? TaskEditorPane(
-                        key: ValueKey(taskState.selectedTask!.id),
-                        task: taskState.selectedTask!,
-                      )
-                    : const Center(
-                        key: ValueKey('empty_editor'),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.edit_note_rounded, size: 64, color: Colors.grey),
-                            SizedBox(height: 16),
-                            Text(
-                              'Select a task to view details',
-                              style: TextStyle(color: Colors.grey, fontSize: 16),
-                            ),
-                          ],
-                        ),
-                      ),
               ),
             ),
           ),
@@ -259,7 +252,6 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final taskState = ref.watch(taskProvider);
     final taskNotifier = ref.read(taskProvider.notifier);
     final themeNotifier = ref.read(themeNotifierProvider.notifier);
 
@@ -291,10 +283,11 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
           DeleteSelectedIntent: CallbackAction<DeleteSelectedIntent>(
             onInvoke: (DeleteSelectedIntent intent) {
               FocusScope.of(context).unfocus();
-              if (taskState.isSelectionMode) {
+              final state = ref.read(taskProvider);
+              if (state.isSelectionMode) {
                 taskNotifier.deleteSelectedTasks();
-              } else if (taskState.selectedTask != null) {
-                taskNotifier.deleteTask(taskState.selectedTask!);
+              } else if (state.selectedTask != null) {
+                taskNotifier.deleteTask(state.selectedTask!);
               }
               return null;
             },
@@ -309,10 +302,19 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
           behavior: HitTestBehavior.translucent,
           child: Scaffold(
             extendBody: true,
-            appBar: (_selectedIndex == 0 && !taskState.isSelectionMode)
-                ? null
-                : AppBar(
-                    leading: taskState.isSelectionMode
+            appBar: PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight),
+              child: rp.Consumer(
+                builder: (context, ref, _) {
+                  final isSelectionMode = ref.watch(taskProvider.select((s) => s.isSelectionMode));
+                  if (_selectedIndex == 0 && !isSelectionMode) return const SizedBox.shrink();
+
+                  final selectedTaskIds = ref.watch(taskProvider.select((s) => s.selectedTaskIds));
+                  final hasCompleted = ref.watch(taskProvider.select((s) => s.hasCompleted));
+                  final categories = ref.watch(taskProvider.select((s) => s.categories));
+
+                  return AppBar(
+                    leading: isSelectionMode
                   ? IconButton(
                       icon: const Icon(Icons.close),
                       onPressed: () {
@@ -321,11 +323,11 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                       },
                     )
                   : null,
-              title: taskState.isSelectionMode
-                  ? Text('${taskState.selectedTaskIds.length} Selected')
+              title: isSelectionMode
+                  ? Text('${selectedTaskIds.length} Selected')
                   : null,
               actions: [
-                if (taskState.isSelectionMode) ...[
+                if (isSelectionMode) ...[
                   IconButton(
                     icon: const Icon(Icons.delete_outline),
                     onPressed: () {
@@ -351,11 +353,20 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                       FocusScope.of(context).unfocus();
                       taskNotifier.moveSelectedToCategory(category);
                     },
-                    itemBuilder: (context) => taskState.categories
+                    itemBuilder: (context) => categories
                         .where((c) => c != 'All')
                         .map((c) => PopupMenuItem(value: c, child: Text(c)))
                         .toList(),
                   ),
+                  if (selectedTaskIds.length > 1)
+                    IconButton(
+                      icon: const Icon(Icons.auto_awesome_rounded),
+                      onPressed: () {
+                        FocusScope.of(context).unfocus();
+                        taskNotifier.breakdownSelectedTasks();
+                      },
+                      tooltip: 'AI Roadmap',
+                    ),
                 ] else ...[
                   // Premium Theme Toggle
                   GestureDetector(
@@ -398,7 +409,7 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  if (taskState.hasCompleted && _selectedIndex == 2)
+                  if (hasCompleted && _selectedIndex == 2)
                     IconButton(
                       onPressed: () {
                         FocusScope.of(context).unfocus();
@@ -424,10 +435,47 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                 ],
                 const SizedBox(width: 16),
               ],
+            );
+          }),
+        ),
+            body: rp.Consumer(
+              builder: (context, ref, _) {
+                final isAILoading = ref.watch(taskProvider.select((s) => s.isAILoading));
+                return Stack(
+                  children: [
+                    _buildMainContent(isLargeScreen)
+                        .animate()
+                        .fadeIn(duration: 400.ms, curve: Curves.easeOut),
+                    if (isAILoading)
+                      Container(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(),
+                              const SizedBox(height: 16),
+                              Text(
+                                'AI is generating your roadmap...',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withValues(alpha: 0.5),
+                                      blurRadius: 4,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
-            body: _buildBody(isLargeScreen, taskState, taskNotifier)
-                .animate()
-                .fadeIn(duration: 400.ms, curve: Curves.easeOut),
             bottomNavigationBar: !isLargeScreen ? _buildBottomNav() : null,
             floatingActionButton: FloatingActionButton(
               onPressed: () {
@@ -477,15 +525,16 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(32),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface.withValues(alpha: isDark ? 0.7 : 0.8),
-                borderRadius: BorderRadius.circular(32),
+        child: RepaintBoundary(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface.withValues(alpha: isDark ? 0.7 : 0.8),
+                  borderRadius: BorderRadius.circular(32),
                 border: Border.all(
                   color: isDark 
                       ? Colors.white.withValues(alpha: 0.05)
@@ -499,15 +548,17 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                   _buildNavItem(Icons.space_dashboard_outlined, Icons.space_dashboard_rounded, 0, 'Home'),
                   _buildNavItem(Icons.calendar_today_outlined, Icons.calendar_today_rounded, 1, 'Schedule'),
                   _buildNavItem(Icons.check_circle_outline_rounded, Icons.check_circle_rounded, 2, 'Tasks'),
-                  _buildNavItem(Icons.tune_outlined, Icons.tune_rounded, 3, 'Settings'),
+                  _buildNavItem(Icons.insights_outlined, Icons.insights_rounded, 3, 'Insights'),
+                  _buildNavItem(Icons.tune_outlined, Icons.tune_rounded, 4, 'Settings'),
                 ],
               ),
             ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildNavItem(IconData unselectedIcon, IconData selectedIcon, int index, String label) {
     final isSelected = _selectedIndex == index;
