@@ -1,3 +1,4 @@
+import 'package:dexdo/core/constants/app_icons.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,20 +43,7 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
     final notifier = ref.read(taskProvider.notifier);
     final isEditing = widget.initialName != null;
 
-    final List<IconData> availableIcons = [
-      Icons.work_rounded,
-      Icons.account_balance_wallet_rounded,
-      Icons.fitness_center_rounded,
-      Icons.home_rounded,
-      Icons.person_rounded,
-      Icons.shopping_cart_rounded,
-      Icons.book_rounded,
-      Icons.movie_rounded,
-      Icons.restaurant_rounded,
-      Icons.flight_rounded,
-      Icons.code_rounded,
-      Icons.brush_rounded,
-    ];
+    final List<IconData> availableIcons = AppIcons.availableIcons.values.toList();
 
     final List<Color> availableColors = [
       const Color(0xFFF44336), // Red

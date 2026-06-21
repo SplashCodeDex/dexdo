@@ -81,7 +81,7 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
               sliver: SliverReorderableList(
                 key: ValueKey('list_$selectedCategory'),
                 itemCount: totalItems,
-                onReorder: (oldIndex, newIndex) {
+                onReorderItem: (oldIndex, newIndex) {
                   if (searchQuery.isEmpty) {
                     HapticFeedback.mediumImpact();
                     taskNotifier.reorderTasks(oldIndex, newIndex);

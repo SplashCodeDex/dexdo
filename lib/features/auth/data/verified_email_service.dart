@@ -1,14 +1,16 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:flutter/services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:dexdo/core/utils/logger.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 
 class VerifiedUserInfo {
+  VerifiedUserInfo({required this.email, required this.displayName});
+
   final String email;
   final String displayName;
-
-  VerifiedUserInfo({required this.email, required this.displayName});
 }
 
 class VerifiedEmailService {
@@ -52,7 +54,7 @@ class VerifiedEmailService {
         displayName: userMap['name'] ?? userMap['email'] ?? 'Unknown Name',
       );
     } catch (e) {
-      print('Error getting verified email: $e');
+      AppLogger.e('Error getting verified email', e);
       return null;
     }
   }

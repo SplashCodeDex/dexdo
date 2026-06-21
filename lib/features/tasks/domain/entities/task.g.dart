@@ -29,7 +29,7 @@ _Task _$TaskFromJson(Map<String, dynamic> json) => _Task(
   isStarred: json['isStarred'] as bool? ?? false,
   icon: json['icon'] == null
       ? Icons.task_alt
-      : const IconDataConverter().fromJson((json['icon'] as num).toInt()),
+      : const IconDataConverter().fromJson(json['icon']),
   color: json['color'] == null
       ? Colors.blue
       : const ColorConverter().fromJson((json['color'] as num).toInt()),

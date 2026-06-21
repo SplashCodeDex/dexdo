@@ -1,3 +1,4 @@
+import 'package:dexdo/core/constants/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -79,14 +80,21 @@ abstract class Task with _$Task {
   double get progress => subtasks.isEmpty ? 0 : completedSubtaskCount / subtaskCount;
 }
 
-class IconDataConverter implements JsonConverter<IconData, int> {
+class IconDataConverter implements JsonConverter<IconData, dynamic> {
   const IconDataConverter();
 
   @override
-  IconData fromJson(int json) => IconData(json, fontFamily: 'MaterialIcons');
+  IconData fromJson(dynamic json) {
+    if (json is String) {
+      return AppIcons.fromString(json);
+    } else if (json is int) {
+      return AppIcons.fromLegacyCodePoint(json);
+    }
+    return AppIcons.defaultIcon;
+  }
 
   @override
-  int toJson(IconData object) => object.codePoint;
+  dynamic toJson(IconData object) => AppIcons.toStringKey(object);
 }
 
 class ColorConverter implements JsonConverter<Color, int> {

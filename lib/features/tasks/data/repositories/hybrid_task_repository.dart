@@ -6,6 +6,7 @@ import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
 import 'package:dexdo/features/tasks/data/repositories/firebase_task_repository.dart';
 import 'package:dexdo/features/tasks/data/repositories/isar_task_repository.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/tasks/domain/entities/task_templates.dart';
 import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +34,7 @@ class HybridTaskRepository implements TaskRepository {
   Future<void> migrate() async {
     if (_isLoggedIn) {
       await DataMigrationService.performMigrationIfNeeded(_firebase);
-      _triggerSync();
+      unawaited(_triggerSync());
     }
   }
 
@@ -71,10 +72,10 @@ class HybridTaskRepository implements TaskRepository {
     }
     
     _isSyncing = true;
-    _syncFromCloud().whenComplete(() {
+    unawaited(_syncFromCloud().whenComplete(() {
       _isSyncing = false;
       _lastSyncTime = DateTime.now();
-    });
+    }));
   }
 
   Future<void> _syncFromCloud() async {
@@ -116,7 +117,7 @@ class HybridTaskRepository implements TaskRepository {
     final updatedTask = task.copyWith(updatedAt: DateTime.now());
     await _local.saveTask(updatedTask);
     if (_isLoggedIn) {
-      _firebase.saveTask(updatedTask).catchError((_) {});
+      unawaited(_firebase.saveTask(updatedTask).catchError((_) {}));
     }
   }
 
@@ -134,9 +135,9 @@ class HybridTaskRepository implements TaskRepository {
       await _local.saveTask(tombstone);
       
       if (_isLoggedIn) {
-        _firebase.deleteTask(taskId).then((_) {
+        unawaited(_firebase.deleteTask(taskId).then((_) {
           _local.deleteTask(taskId);
-        }).catchError((_) {});
+        }).catchError((_) {}));
       }
     } catch (e) {
       // Task not found locally, ignore
@@ -148,7 +149,7 @@ class HybridTaskRepository implements TaskRepository {
     final updated = tasks.map((t) => t.copyWith(updatedAt: DateTime.now())).toList();
     await _local.saveTasks(updated);
     if (_isLoggedIn) {
-      _firebase.saveTasks(updated).catchError((_) {});
+      unawaited(_firebase.saveTasks(updated).catchError((_) {}));
     }
   }
 
@@ -157,7 +158,7 @@ class HybridTaskRepository implements TaskRepository {
     final updated = tasks.map((t) => t.copyWith(updatedAt: DateTime.now())).toList();
     await _local.batchUpdateTasks(updated);
     if (_isLoggedIn) {
-      _firebase.batchUpdateTasks(updated).catchError((_) {});
+      unawaited(_firebase.batchUpdateTasks(updated).catchError((_) {}));
     }
   }
 
@@ -185,4 +186,13 @@ class HybridTaskRepository implements TaskRepository {
 
   @override
   Future<void> saveCategoryColors(Map<String, Color> colors) => _legacyRepo.saveCategoryColors(colors);
+
+  @override
+  Future<List<TaskTemplate>> loadTemplates() => _local.loadTemplates();
+
+  @override
+  Future<void> saveTemplate(TaskTemplate template) => _local.saveTemplate(template);
+
+  @override
+  Future<void> deleteTemplate(String id) => _local.deleteTemplate(id);
 }

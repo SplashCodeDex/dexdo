@@ -1,13 +1,14 @@
 import 'dart:io';
 
 import 'package:dexdo/core/theme/theme_provider.dart';
-import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
 import 'package:dexdo/features/auth/data/verified_email_service.dart';
+import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
 import 'package:dexdo/features/settings/presentation/widgets/subscription_pane.dart';
 import 'package:dexdo/features/settings/presentation/widgets/user_profile_header.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -64,6 +65,29 @@ class SettingsPane extends ConsumerWidget {
           ),
           icon: Icons.dark_mode_rounded,
           iconColor: Colors.deepPurple,
+        ),
+        _buildSettingTile(
+          context,
+          title: 'Pin Home Screen Widget',
+          subtitle: 'Add a task tracker widget to your home screen',
+          trailing: const Icon(Icons.add_to_home_screen_rounded),
+          icon: Icons.widgets_rounded,
+          iconColor: Colors.blue,
+          onTap: () async {
+            final isSupported = await HomeWidget.isRequestPinWidgetSupported();
+            if (isSupported == true) {
+              await HomeWidget.requestPinWidget(
+                androidName: 'DexDoWidgetProvider',
+                qualifiedAndroidName: 'com.dexify.dexdo.DexDoWidgetProvider',
+              );
+            } else {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Pinning widget is not supported on this device/platform.')),
+                );
+              }
+            }
+          },
         ),
         const SizedBox(height: 24),
         _buildSectionHeader(context, 'Account'),

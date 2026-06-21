@@ -21,4 +21,19 @@ class AppHaptics {
   static Future<void> success() async {
     await HapticFeedback.vibrate();
   }
+
+  /// Provides feedback when entering Level 2 voice mode.
+  static Future<void> voiceModeEnter() async {
+    await HapticFeedback.heavyImpact();
+  }
+
+  /// Provides feedback while listening (periodic ticks).
+  static Future<void> voiceModeListening() async {
+    await HapticFeedback.selectionClick();
+  }
+
+  /// Provides feedback when a task is successfully created.
+  static Future<void> taskCreatedFromVoice() async {
+    await HapticFeedback.vibrate();
+  }
 }

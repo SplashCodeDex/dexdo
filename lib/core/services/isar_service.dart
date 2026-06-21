@@ -18,7 +18,7 @@ class IsarService {
     }
 
     _instance = Isar.open(
-      schemas: [TaskModelSchema, CategoryModelSchema],
+      schemas: [TaskModelSchema, CategoryModelSchema, TemplateModelSchema],
       directory: directory,
     );
     return _instance!;

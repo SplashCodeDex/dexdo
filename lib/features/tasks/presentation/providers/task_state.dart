@@ -1,6 +1,7 @@
 import 'package:dexdo/core/error/failures.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
 import 'package:dexdo/features/tasks/domain/entities/task_statistics.dart';
+import 'package:dexdo/features/tasks/domain/entities/task_templates.dart';
 import 'package:flutter/material.dart';
 
 enum TaskSortOption {
@@ -49,6 +50,7 @@ class TaskState {
     this.isAILoading = false,
     TaskStatistics? statistics,
     this.error,
+    this.templates = const [],
   }) : statistics = statistics ?? const TaskStatistics();
   final List<Task> tasks;
   final List<Task> filteredTasks;
@@ -72,6 +74,7 @@ class TaskState {
   final bool isAILoading;
   final TaskStatistics statistics;
   final Failure? error;
+  final List<TaskTemplate> templates;
 
   List<Task> get allTasks => tasks;
   bool get hasCompleted => tasks.any((t) => t.isCompleted);
@@ -102,6 +105,7 @@ class TaskState {
     TaskStatistics? statistics,
     Failure? error,
     bool clearError = false,
+    List<TaskTemplate>? templates,
   }) {
     return TaskState(
       tasks: tasks ?? this.tasks,
@@ -126,6 +130,7 @@ class TaskState {
       isAILoading: isAILoading ?? this.isAILoading,
       statistics: statistics ?? this.statistics,
       error: clearError ? null : (error ?? this.error),
+      templates: templates ?? this.templates,
     );
   }
 }

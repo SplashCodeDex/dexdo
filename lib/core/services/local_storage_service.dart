@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:dexdo/core/constants/app_icons.dart';
 import 'package:dexdo/core/utils/logger.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/tasks/domain/entities/task_templates.dart';
 import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -101,7 +103,14 @@ class LocalStorageService implements TaskRepository {
     
     try {
       final Map<String, dynamic> decoded = jsonDecode(iconsJson);
-      return decoded.map((key, value) => MapEntry(key, IconData(value as int, fontFamily: 'MaterialIcons')));
+      return decoded.map((key, value) {
+        if (value is String) {
+          return MapEntry(key, AppIcons.fromString(value));
+        } else if (value is int) {
+          return MapEntry(key, AppIcons.fromLegacyCodePoint(value));
+        }
+        return MapEntry(key, AppIcons.defaultIcon);
+      });
     } catch (e) {
       return {};
     }
@@ -109,7 +118,7 @@ class LocalStorageService implements TaskRepository {
 
   @override
   Future<void> saveCategoryIcons(Map<String, IconData> icons) async {
-    final Map<String, int> iconsData = icons.map((key, value) => MapEntry(key, value.codePoint));
+    final Map<String, dynamic> iconsData = icons.map((key, value) => MapEntry(key, AppIcons.toStringKey(value)));
     await _prefs.setString(_categoryIconsKey, jsonEncode(iconsData));
   }
 
@@ -130,5 +139,64 @@ class LocalStorageService implements TaskRepository {
   Future<void> saveCategoryColors(Map<String, Color> colors) async {
     final Map<String, int> colorsData = colors.map((key, value) => MapEntry(key, value.toARGB32()));
     await _prefs.setString(_categoryColorsKey, jsonEncode(colorsData));
+  }
+
+  // ── Templates ──────────────────────────────────────────────────────────
+
+  static const String _templatesKey = 'templates';
+
+  @override
+  Future<List<TaskTemplate>> loadTemplates() async {
+    final String? templatesJson = _prefs.getString(_templatesKey);
+    if (templatesJson == null) return [];
+
+    try {
+      final List<dynamic> decoded = jsonDecode(templatesJson);
+      return decoded.map((item) {
+        final map = item as Map<String, dynamic>;
+        final int codePoint = map['iconCodePoint'] as int;
+        return TaskTemplate(
+          id: map['id'] as String,
+          name: map['name'] as String,
+          // ignore: non_const_argument_for_const_parameter
+          icon: IconData(codePoint, fontFamily: 'MaterialIcons'),
+          category: map['category'] as String,
+          subtaskTitles: List<String>.from(map['subtaskTitles'] as List),
+        );
+      }).toList();
+    } catch (e, stack) {
+      AppLogger.e('Error loading templates from SharedPreferences', e, stack);
+      return [];
+    }
+  }
+
+  @override
+  Future<void> saveTemplate(TaskTemplate template) async {
+    final templates = await loadTemplates();
+    final index = templates.indexWhere((t) => t.id == template.id);
+    if (index >= 0) {
+      templates[index] = template;
+    } else {
+      templates.add(template);
+    }
+    await _saveAllTemplates(templates);
+  }
+
+  @override
+  Future<void> deleteTemplate(String id) async {
+    final templates = await loadTemplates();
+    templates.removeWhere((t) => t.id == id);
+    await _saveAllTemplates(templates);
+  }
+
+  Future<void> _saveAllTemplates(List<TaskTemplate> templates) async {
+    final List<Map<String, dynamic>> encoded = templates.map((t) => {
+      'id': t.id,
+      'name': t.name,
+      'iconCodePoint': t.icon.codePoint,
+      'category': t.category,
+      'subtaskTitles': t.subtaskTitles,
+    }).toList();
+    await _prefs.setString(_templatesKey, jsonEncode(encoded));
   }
 }

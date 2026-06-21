@@ -9,13 +9,16 @@ import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
 import 'package:dexdo/features/calendar/presentation/widgets/calendar_pane.dart' deferred as calendar_pane;
 import 'package:dexdo/features/home/presentation/widgets/home_pane.dart';
 import 'package:dexdo/features/home/presentation/widgets/statistics_pane.dart' deferred as statistics_pane;
+import 'package:dexdo/features/settings/presentation/widgets/avatar_dropdown_overlay.dart';
 import 'package:dexdo/features/settings/presentation/widgets/settings_pane.dart' deferred as settings_pane;
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
-
 import 'package:dexdo/features/tasks/presentation/widgets/quick_task_sheet.dart';
 import 'package:dexdo/features/tasks/presentation/widgets/task_editor_pane.dart';
 import 'package:dexdo/features/tasks/presentation/widgets/task_list_pane.dart';
 import 'package:dexdo/l10n/app_localizations.dart';
+import 'package:dexdo/shared/widgets/smart_fab.dart';
+import 'package:dexdo/shared/widgets/toast_overlay.dart';
+import 'package:dexdo/shared/widgets/voice_glow_overlay.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -61,6 +64,15 @@ class DeXDoApp extends rp.ConsumerWidget {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: const BootstrapScreen(),
+      builder: (context, child) {
+        return Stack(
+          children: [
+            child ?? const SizedBox.shrink(),
+            const AppVoiceOverlay(),
+            const AppToastOverlay(),
+          ],
+        );
+      },
     );
   }
 }
@@ -193,7 +205,6 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final taskNotifier = ref.read(taskProvider.notifier);
-    final themeNotifier = ref.read(themeNotifierProvider.notifier);
 
     return Shortcuts(
       shortcuts: <LogicalKeySet, Intent>{
@@ -308,47 +319,6 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                       tooltip: 'AI Roadmap',
                     ),
                 ] else ...[
-                  // Premium Theme Toggle
-                  GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      final isDark = Theme.of(context).brightness == Brightness.dark;
-                      themeNotifier.setThemeMode(isDark ? ThemeMode.light : ThemeMode.dark);
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 400),
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.amber.withValues(alpha: 0.1) 
-                            : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 400),
-                        transitionBuilder: (Widget child, Animation<double> animation) {
-                          return ScaleTransition(
-                            scale: animation,
-                            child: RotationTransition(
-                              turns: animation,
-                              child: FadeTransition(opacity: animation, child: child),
-                            ),
-                          );
-                        },
-                        child: Icon(
-                          Theme.of(context).brightness == Brightness.dark
-                              ? Icons.wb_sunny_rounded 
-                              : Icons.nightlight_round,
-                          key: ValueKey(Theme.of(context).brightness == Brightness.dark),
-                          size: 20,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.amber[400] 
-                              : Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
                   if (hasCompleted && _selectedIndex == 2)
                     IconButton(
                       onPressed: () {
@@ -358,23 +328,56 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                       icon: const Icon(Icons.delete_sweep_outlined),
                       tooltip: 'Clear Done',
                     ),
+                  const SizedBox(width: 8),
                   if (_selectedIndex != 0)
                     rp.Consumer(
                       builder: (context, ref, child) {
                         final authState = ref.watch(authStateChangesProvider);
-                        return authState.when(
-                          data: (user) => CircleAvatar(
-                            radius: 18,
-                            backgroundImage: ResizeImage(
-                              NetworkImage(user?.photoURL ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${user?.uid ?? "Felix"}'),
-                              width: 120,
-                              height: 120,
+                        
+                        return InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: () {
+                            showAvatarDropdown(context, ref, onMenuSelected: (value) {
+                              switch (value) {
+                                case 0: // Profile
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text('My Profile is coming soon!'),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                  );
+                                  break;
+                                case 1: // Stats
+                                  setState(() => _selectedIndex = 3);
+                                  break;
+                                case 2: // Settings
+                                  setState(() => _selectedIndex = 4);
+                                  break;
+                              }
+                            });
+                          },
+                          child: authState.when(
+                            data: (user) => CircleAvatar(
+                              radius: 18,
+                              backgroundImage: ResizeImage(
+                                NetworkImage(user?.photoURL ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${user?.uid ?? "Felix"}'),
+                                width: 120,
+                                height: 120,
+                              ),
                             ),
+                            loading: () => const CircleAvatar(
+                              radius: 18,
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                            error: (_, _) => const CircleAvatar(radius: 18, child: Icon(Icons.error)),
                           ),
-                          loading: () => const CircleAvatar(radius: 18, child: CircularProgressIndicator()),
-                          error: (_, _) => const CircleAvatar(radius: 18, child: Icon(Icons.error)),
                         );
-                      }
+                      },
                     ),
                 ],
                 const SizedBox(width: 16),
@@ -421,27 +424,7 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
               },
             ),
             bottomNavigationBar: !isLargeScreen ? _buildBottomNav() : null,
-            floatingActionButton: FloatingActionButton(
-              onPressed: () {
-                FocusScope.of(context).unfocus();
-                HapticFeedback.mediumImpact();
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (context) => const QuickTaskSheet(),
-                );
-                if (_selectedIndex != 2) {
-                  setState(() => _selectedIndex = 2);
-                }
-              },
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              elevation: 0,
-              highlightElevation: 0,
-              child: const Icon(Icons.add, size: 32),
-            ),
+            floatingActionButton: const SmartFab(),
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           ),
         );
@@ -493,7 +476,6 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                   _buildNavItem(Icons.calendar_today_outlined, Icons.calendar_today_rounded, 1, 'Schedule'),
                   _buildNavItem(Icons.check_circle_outline_rounded, Icons.check_circle_rounded, 2, 'Tasks'),
                   _buildNavItem(Icons.insights_outlined, Icons.insights_rounded, 3, 'Insights'),
-                  _buildNavItem(Icons.tune_outlined, Icons.tune_rounded, 4, 'Settings'),
                 ],
               ),
             ),

@@ -48,8 +48,8 @@ class DexDoWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    private fun setTaskTextOrHide(views: RemoteViews, viewId: Int, text: String) {
-        if (text.isNotEmpty()) {
+    private fun setTaskTextOrHide(views: RemoteViews, viewId: Int, text: String?) {
+        if (!text.isNullOrEmpty()) {
             views.setViewVisibility(viewId, View.VISIBLE)
             views.setTextViewText(viewId, "• $text")
         } else {

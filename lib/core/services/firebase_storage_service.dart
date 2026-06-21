@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dexdo/core/constants/app_icons.dart';
 import 'package:dexdo/core/services/storage_service.dart';
 import 'package:dexdo/core/utils/logger.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
@@ -105,7 +106,13 @@ class FirebaseStorageService implements StorageService {
         final data = doc.data() ?? {};
         final Map<String, IconData> result = {};
         data.forEach((key, value) {
-          result[key] = IconData(value as int, fontFamily: 'MaterialIcons');
+          if (value is String) {
+            result[key] = AppIcons.fromString(value);
+          } else if (value is int) {
+            result[key] = AppIcons.fromLegacyCodePoint(value);
+          } else {
+            result[key] = AppIcons.defaultIcon;
+          }
         });
         return result;
       }
@@ -119,8 +126,8 @@ class FirebaseStorageService implements StorageService {
   Future<void> saveCategoryIcons(Map<String, IconData> icons) async {
     if (_auth.currentUser == null) return;
     try {
-      final Map<String, int> iconMap = {};
-      icons.forEach((key, value) => iconMap[key] = value.codePoint);
+      final Map<String, dynamic> iconMap = {};
+      icons.forEach((key, value) => iconMap[key] = AppIcons.toStringKey(value));
       await _db.collection('users').doc(_userId).collection('settings').doc('categoryIcons').set(iconMap);
     } catch (e, stack) {
       AppLogger.e('Firestore saveCategoryIcons Error', e, stack);

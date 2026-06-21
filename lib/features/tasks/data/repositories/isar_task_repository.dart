@@ -1,10 +1,13 @@
+import 'package:dexdo/core/constants/app_icons.dart';
 import 'package:dexdo/core/services/isar_service.dart';
 import 'package:dexdo/core/utils/logger.dart';
 import 'package:dexdo/features/tasks/data/models/task_model.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/tasks/domain/entities/task_templates.dart';
 import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:isar_plus/isar_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class IsarTaskRepository implements TaskRepository {
   Future<Isar> get _db => IsarService.instance;
@@ -12,7 +15,20 @@ class IsarTaskRepository implements TaskRepository {
   @override
   Future<void> init() async {
     try {
-      await _db;
+      final isar = await _db;
+      final prefs = await SharedPreferences.getInstance();
+      final hasTemplates = prefs.getBool('has_initialized_templates') ?? false;
+      if (!hasTemplates) {
+        final count = await isar.readAsync((isar) => isar.templateModels.where().count());
+        if (count == 0) {
+          final defaults = TaskTemplate.defaultTemplates;
+          await isar.writeAsync((isar) {
+            final models = defaults.map((t) => TemplateModel.fromEntity(t)).toList();
+            isar.templateModels.putAll(models);
+          });
+        }
+        await prefs.setBool('has_initialized_templates', true);
+      }
     } catch (e, stack) {
       AppLogger.e('Isar initialization failed', e, stack);
     }
@@ -89,7 +105,7 @@ class IsarTaskRepository implements TaskRepository {
     return isar.readAsync((isar) {
       final models = isar.categoryModels.where().findAll();
       return {
-        for (var m in models) m.name: IconData(m.iconCodePoint, fontFamily: 'MaterialIcons')
+        for (var m in models) m.name: AppIcons.fromLegacyCodePoint(m.iconCodePoint)
       };
     });
   }
@@ -130,6 +146,33 @@ class IsarTaskRepository implements TaskRepository {
         return model;
       }).toList();
       isar.categoryModels.putAll(models);
+    });
+  }
+
+  @override
+  Future<List<TaskTemplate>> loadTemplates() async {
+    final isar = await _db;
+    return isar.readAsync((isar) {
+      final models = isar.templateModels.where().findAll();
+      return models.map((m) => m.toEntity()).toList();
+    });
+  }
+
+  @override
+  Future<void> saveTemplate(TaskTemplate template) async {
+    final isar = await _db;
+    final model = TemplateModel.fromEntity(template);
+    await isar.writeAsync((isar) {
+      isar.templateModels.put(model);
+    });
+  }
+
+  @override
+  Future<void> deleteTemplate(String id) async {
+    final isar = await _db;
+    final hashId = fastHash(id);
+    await isar.writeAsync((isar) {
+      isar.templateModels.delete(hashId);
     });
   }
 }

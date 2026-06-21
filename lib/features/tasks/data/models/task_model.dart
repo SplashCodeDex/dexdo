@@ -1,4 +1,6 @@
+import 'package:dexdo/core/constants/app_icons.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/tasks/domain/entities/task_templates.dart';
 import 'package:flutter/material.dart';
 import 'package:isar_plus/isar_plus.dart';
 
@@ -58,7 +60,7 @@ class TaskModel {
       isCompleted: isCompleted,
       completionDate: completionDate,
       isStarred: isStarred,
-      icon: IconData(iconCodePoint, fontFamily: 'MaterialIcons'),
+      icon: AppIcons.fromLegacyCodePoint(iconCodePoint),
       color: Color(colorValue),
       category: category,
       attachmentCount: attachmentCount,
@@ -134,5 +136,39 @@ class SubTaskModel {
       ..id = subTask.id
       ..title = subTask.title
       ..isCompleted = subTask.isCompleted;
+  }
+}
+
+@collection
+class TemplateModel {
+  @id
+  int isarId = 0;
+
+  @Index(unique: true)
+  late String templateId;
+
+  late String name;
+  late int iconCodePoint;
+  late List<String> subtaskTitles;
+  late String category;
+
+  TaskTemplate toEntity() {
+    return TaskTemplate(
+      id: templateId,
+      name: name,
+      icon: AppIcons.fromLegacyCodePoint(iconCodePoint),
+      category: category,
+      subtaskTitles: subtaskTitles,
+    );
+  }
+
+  static TemplateModel fromEntity(TaskTemplate template) {
+    return TemplateModel()
+      ..isarId = fastHash(template.id)
+      ..templateId = template.id
+      ..name = template.name
+      ..iconCodePoint = template.icon.codePoint
+      ..category = template.category
+      ..subtaskTitles = template.subtaskTitles;
   }
 }

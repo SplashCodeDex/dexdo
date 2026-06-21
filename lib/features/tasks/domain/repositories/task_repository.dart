@@ -1,4 +1,5 @@
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/tasks/domain/entities/task_templates.dart';
 import 'package:flutter/material.dart';
 
 abstract class TaskRepository {
@@ -21,4 +22,9 @@ abstract class TaskRepository {
   
   Future<Map<String, Color>> loadCategoryColors();
   Future<void> saveCategoryColors(Map<String, Color> colors);
+
+  // Templates
+  Future<List<TaskTemplate>> loadTemplates();
+  Future<void> saveTemplate(TaskTemplate template);
+  Future<void> deleteTemplate(String id);
 }

@@ -33,6 +33,15 @@ class MainActivity: FlutterActivity() {
                 result.notImplemented()
             }
         }
+        
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.dexify.dexdo/audio").setMethodCallHandler { call, result ->
+            if (call.method == "playVoiceTrigger") {
+                playChime()
+                result.success(null)
+            } else {
+                result.notImplemented()
+            }
+        }
     }
 
     @kotlin.OptIn(androidx.credentials.ExperimentalDigitalCredentialApi::class)
@@ -92,6 +101,56 @@ class MainActivity: FlutterActivity() {
             } catch (e: Exception) {
                 result.error("CREDENTIAL_ERROR", e.message, null)
             }
+        }
+    }
+
+    private fun playChime() {
+        val sampleRate = 44100
+        val duration1 = 0.12 // seconds
+        val duration2 = 0.28 // seconds
+        val numSamples1 = (duration1 * sampleRate).toInt()
+        val numSamples2 = (duration2 * sampleRate).toInt()
+        val totalSamples = numSamples1 + numSamples2
+        val sample = DoubleArray(totalSamples)
+        val generatedSnd = ByteArray(2 * totalSamples)
+
+        val freqOfTone1 = 523.25 // C5
+        val freqOfTone2 = 659.25 // E5
+
+        // Generate C5 tone (fade out)
+        for (i in 0 until numSamples1) {
+            val t = i.toDouble() / sampleRate
+            val envelope = (numSamples1 - i).toDouble() / numSamples1
+            sample[i] = Math.sin(2.0 * Math.PI * freqOfTone1 * t) * envelope * 0.4
+        }
+
+        // Generate E5 tone (fade out)
+        for (i in 0 until numSamples2) {
+            val t = i.toDouble() / sampleRate
+            val envelope = (numSamples2 - i).toDouble() / numSamples2
+            sample[numSamples1 + i] = Math.sin(2.0 * Math.PI * freqOfTone2 * t) * envelope * 0.4
+        }
+
+        var idx = 0
+        for (dVal in sample) {
+            val valShort = (dVal * 32767).toInt().toShort()
+            generatedSnd[idx++] = (valShort.toInt() and 0x00ff).toByte()
+            generatedSnd[idx++] = ((valShort.toInt() and 0xff00) ushr 8).toByte()
+        }
+
+        try {
+            val audioTrack = android.media.AudioTrack(
+                android.media.AudioManager.STREAM_MUSIC,
+                sampleRate,
+                android.media.AudioFormat.CHANNEL_OUT_MONO,
+                android.media.AudioFormat.ENCODING_PCM_16BIT,
+                generatedSnd.size,
+                android.media.AudioTrack.MODE_STATIC
+            )
+            audioTrack.write(generatedSnd, 0, generatedSnd.size)
+            audioTrack.play()
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivityChime", "Error playing chime: ${e.message}", e)
         }
     }
 }

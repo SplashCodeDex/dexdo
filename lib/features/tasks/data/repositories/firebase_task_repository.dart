@@ -1,8 +1,10 @@
 import 'dart:isolate';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dexdo/core/constants/app_icons.dart';
 import 'package:dexdo/core/utils/logger.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
+import 'package:dexdo/features/tasks/domain/entities/task_templates.dart';
 import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -73,7 +75,7 @@ class FirebaseTaskRepository implements TaskRepository {
     });
 
     for (var taskMap in mappedTasks) {
-      batch.set(tasksRef.doc(taskMap['id'] as String), taskMap['json'] as Map<String, dynamic>);
+      batch.set(tasksRef.doc(taskMap['id']! as String), taskMap['json']! as Map<String, dynamic>);
       count++;
       if (count >= 490) {
         try {
@@ -188,7 +190,13 @@ class FirebaseTaskRepository implements TaskRepository {
         final data = doc.data() ?? {};
         final Map<String, IconData> result = {};
         data.forEach((key, value) {
-          result[key] = IconData(value as int, fontFamily: 'MaterialIcons');
+          if (value is String) {
+            result[key] = AppIcons.fromString(value);
+          } else if (value is int) {
+            result[key] = AppIcons.fromLegacyCodePoint(value);
+          } else {
+            result[key] = AppIcons.defaultIcon;
+          }
         });
         return result;
       }
@@ -201,8 +209,8 @@ class FirebaseTaskRepository implements TaskRepository {
   @override
   Future<void> saveCategoryIcons(Map<String, IconData> icons) async {
     if (_auth.currentUser == null) return;
-    final Map<String, int> iconMap = {};
-    icons.forEach((key, value) => iconMap[key] = value.codePoint);
+    final Map<String, dynamic> iconMap = {};
+    icons.forEach((key, value) => iconMap[key] = AppIcons.toStringKey(value));
     await _db.collection('users').doc(_userId).collection('settings').doc('categoryIcons').set(iconMap);
   }
 
@@ -232,4 +240,15 @@ class FirebaseTaskRepository implements TaskRepository {
     colors.forEach((key, value) => colorMap[key] = value.toARGB32());
     await _db.collection('users').doc(_userId).collection('settings').doc('categoryColors').set(colorMap);
   }
+
+  @override
+  Future<List<TaskTemplate>> loadTemplates() async {
+    return [];
+  }
+
+  @override
+  Future<void> saveTemplate(TaskTemplate template) async {}
+
+  @override
+  Future<void> deleteTemplate(String id) async {}
 }

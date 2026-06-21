@@ -4,12 +4,15 @@ import 'dart:math';
 
 import 'package:dexdo/core/error/failures.dart';
 import 'package:dexdo/core/services/ai_service.dart';
+import 'package:dexdo/core/services/calendar_sync_service.dart';
 import 'package:dexdo/core/services/notification_service.dart';
+import 'package:dexdo/core/services/parsed_voice_task.dart';
 import 'package:dexdo/core/utils/haptics.dart';
 import 'package:dexdo/core/utils/logger.dart';
 import 'package:dexdo/features/tasks/data/repositories/task_repository_provider.dart';
 import 'package:dexdo/features/tasks/domain/entities/task.dart';
 import 'package:dexdo/features/tasks/domain/entities/task_statistics.dart';
+import 'package:dexdo/features/tasks/domain/entities/task_templates.dart';
 import 'package:dexdo/features/tasks/domain/repositories/task_repository.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_state.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -90,6 +93,7 @@ class TaskNotifier extends Notifier<TaskState> {
       final icons = await _repository.loadCategoryIcons();
       final colors = await _repository.loadCategoryColors();
       final tasks = await _repository.loadTasks();
+      final templates = await _repository.loadTemplates();
 
       if (_disposed) return;
       state = state.copyWith(
@@ -97,6 +101,7 @@ class TaskNotifier extends Notifier<TaskState> {
         categories: categories.isNotEmpty ? categories : state.categories,
         categoryIcons: icons.isNotEmpty ? icons : state.categoryIcons,
         categoryColors: colors.isNotEmpty ? colors : state.categoryColors,
+        templates: templates,
         isLoading: false,
       );
       _updateFilteredTasks();
@@ -352,6 +357,9 @@ class TaskNotifier extends Notifier<TaskState> {
       _updateFilteredTasks();
       unawaited(_calculateStats());
       unawaited(AppHaptics.light());
+      if (newTask.dueDate != null) {
+        unawaited(ref.read(calendarSyncServiceProvider).syncTaskToCalendar(newTask));
+      }
       await _repository.saveTasks(state.tasks);
     } catch (e, stack) {
       _handleError(e, stack, 'Add task failed');
@@ -402,6 +410,7 @@ class TaskNotifier extends Notifier<TaskState> {
       if (isMarkingDone) {
         unawaited(AppHaptics.heavy());
         await _notifications.cancelTaskReminder(task.id);
+        unawaited(ref.read(calendarSyncServiceProvider).deleteTaskFromCalendar(task));
 
         final List<Task> pendingClones = [];
         _handleRecurrence(task, DateTime.now(), pendingClones);
@@ -416,6 +425,9 @@ class TaskNotifier extends Notifier<TaskState> {
       } else {
         unawaited(AppHaptics.medium());
         await _notifications.scheduleTaskReminder(updatedTask);
+        if (updatedTask.dueDate != null) {
+          unawaited(ref.read(calendarSyncServiceProvider).syncTaskToCalendar(updatedTask));
+        }
       }
       
       await _repository.saveTask(updatedTask);
@@ -522,8 +534,10 @@ class TaskNotifier extends Notifier<TaskState> {
       _replaceTask(updatedTask);
       if (date == null) {
         await _notifications.cancelTaskReminder(task.id);
+        unawaited(ref.read(calendarSyncServiceProvider).deleteTaskFromCalendar(task));
       } else if (!task.isCompleted) {
         await _notifications.scheduleTaskReminder(updatedTask);
+        unawaited(ref.read(calendarSyncServiceProvider).syncTaskToCalendar(updatedTask));
       }
       await _repository.saveTask(updatedTask);
     } catch (e, stack) {
@@ -614,6 +628,7 @@ class TaskNotifier extends Notifier<TaskState> {
       _updateFilteredTasks();
       unawaited(_calculateStats());
       unawaited(AppHaptics.heavy());
+      unawaited(ref.read(calendarSyncServiceProvider).deleteTaskFromCalendar(task));
       await _repository.deleteTask(task.id);
       await _notifications.cancelTaskReminder(task.id);
     } catch (e, stack) {
@@ -889,6 +904,79 @@ class TaskNotifier extends Notifier<TaskState> {
     } catch (e) {
       AppLogger.e('Failed to update home widget data', e);
     }
+  }
+
+  Future<void> saveTemplate(TaskTemplate template) async {
+    try {
+      await _repository.saveTemplate(template);
+      final updatedTemplates = await _repository.loadTemplates();
+      state = state.copyWith(templates: updatedTemplates);
+    } catch (e, stack) {
+      _handleError(e, stack, 'Save template failed');
+    }
+  }
+
+  Future<void> deleteTemplate(String id) async {
+    try {
+      await _repository.deleteTemplate(id);
+      final updatedTemplates = await _repository.loadTemplates();
+      state = state.copyWith(templates: updatedTemplates);
+    } catch (e, stack) {
+      _handleError(e, stack, 'Delete template failed');
+    }
+  }
+
+  Future<void> addTemplateFromAI(String templateName) async {
+    state = state.copyWith(isAILoading: true);
+    try {
+      final newTemplate = await _aiService.generateTemplateItems(templateName, state.categories);
+      await saveTemplate(newTemplate);
+      state = state.copyWith(isAILoading: false);
+      unawaited(AppHaptics.success());
+    } catch (e, stack) {
+      _handleError(e, stack, 'AI template generation failed');
+      state = state.copyWith(isAILoading: false);
+    }
+  }
+
+  Future<void> createTaskFromTemplate(TaskTemplate template) async {
+    try {
+      final String taskCategory = state.categories.contains(template.category) ? template.category : 'Personal';
+      final taskId = _uuid.v4();
+      
+      final subtasks = template.subtaskTitles.map((title) => SubTask(
+        id: _uuid.v4(),
+        title: title,
+        isCompleted: false,
+      )).toList();
+
+      final updatedTasks = state.tasks.map((t) => t.copyWith(orderIndex: t.orderIndex + 1)).toList();
+
+      final newTask = Task(
+        id: taskId,
+        title: template.name,
+        category: taskCategory,
+        color: state.categoryColors[taskCategory] ?? Colors.blue,
+        icon: template.icon,
+        orderIndex: 0,
+        subtasks: subtasks,
+      );
+
+      state = state.copyWith(
+        tasks: [newTask, ...updatedTasks],
+        selectedTask: newTask,
+      );
+      _updateFilteredTasks();
+      unawaited(_calculateStats());
+      unawaited(AppHaptics.success());
+      await _repository.saveTasks(state.tasks);
+    } catch (e, stack) {
+      _handleError(e, stack, 'Create task from template failed');
+    }
+  }
+
+  Future<ParsedVoiceTask> parseVoiceCommand(String transcript) async {
+    return _aiService.parseVoiceCommand(transcript, state.categories, state.templates);
   }
 }
 

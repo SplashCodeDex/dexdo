@@ -58,6 +58,8 @@ dependencies:
   logger: ^2.5.0
   equatable: ^2.0.7
   fl_chart: ^1.2.0
+  speech_to_text: ^7.3.0
+  device_calendar_plus: ^0.7.0
   flutter_localizations:
     sdk: flutter
 

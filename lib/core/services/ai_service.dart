@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'package:dexdo/core/services/offline_task_parser.dart';
+import 'package:dexdo/core/services/parsed_voice_task.dart';
 import 'package:dexdo/core/utils/logger.dart';
+import 'package:dexdo/features/tasks/domain/entities/task_templates.dart';
+import 'package:flutter/material.dart' show Icons;
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 class AIService {
@@ -133,6 +138,116 @@ class AIService {
     } catch (e, stack) {
       AppLogger.e('Error generating batch roadmap with AI', e, stack);
       return {};
+    }
+  }
+
+  Future<ParsedVoiceTask> parseVoiceCommand(
+    String transcript,
+    List<String> categories, [
+    List<TaskTemplate> templates = const [],
+  ]) async {
+    final cleanCategories = categories.where((c) => c != 'All').toList();
+    final now = DateTime.now();
+    final todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+    final weekdayStr = _getWeekdayName(now.weekday);
+
+    final prompt = '''
+You are a smart assistant parsing a voice command into a structured JSON task.
+Current Date: $todayStr (today is $weekdayStr)
+Available Categories: ${cleanCategories.join(", ")}
+
+Voice command: "$transcript"
+
+Please parse this voice command and return a JSON object with the following fields:
+- "title": (String) A clear, short title for the task.
+- "description": (String or null) Any extra context or description spoken, if present.
+- "dueDate": (String or null) ISO-8601 date (YYYY-MM-DD) if a date/time is mentioned (e.g. "tomorrow", "next Friday", "at 5pm" is today, etc.). Resolve relative dates using the current date $todayStr.
+- "category": (String or null) Select the most appropriate category from the available categories list. If none match, set to null.
+- "priority": (String) Choose one of: "low", "medium", "high", "urgent". Default to "medium".
+- "recurrence": (String) Choose one of: "none", "daily", "weekly", "monthly", "yearly". Default to "none".
+- "subtasks": (Array of Strings or null) If subtasks are implied or requested, list them.
+
+Return ONLY the raw JSON object. Do not wrap it in markdown code blocks or add any other text.
+''';
+
+    try {
+      final content = [Content.text(prompt)];
+      final response = await _model.generateContent(
+        content,
+        generationConfig: GenerationConfig(responseMimeType: 'application/json'),
+      );
+      
+      final text = response.text;
+      if (text == null || text.isEmpty) {
+        return OfflineTaskParser.parse(transcript, cleanCategories, templates);
+      }
+      
+      final json = jsonDecode(text.trim()) as Map<String, dynamic>;
+      return ParsedVoiceTask.fromJson(json);
+    } catch (e, stack) {
+      AppLogger.e('Error parsing voice command with AI, falling back to offline parser', e, stack);
+      return OfflineTaskParser.parse(transcript, cleanCategories, templates);
+    }
+  }
+
+  Future<TaskTemplate> generateTemplateItems(String templateName, List<String> categories) async {
+    final cleanCategories = categories.where((c) => c != 'All').toList();
+    final prompt = '''
+You are a creative planner. Generate a task template for: "$templateName".
+Available Categories: ${cleanCategories.join(", ")}
+
+Generate a JSON object with:
+- "name": "$templateName"
+- "category": Choose the best category from the list. Defaults to "Personal".
+- "subtaskTitles": An array of 4 to 6 actionable subtasks for this template.
+
+Return ONLY the raw JSON object. Do not wrap it in markdown code blocks or add any other text.
+''';
+
+    try {
+      final content = [Content.text(prompt)];
+      final response = await _model.generateContent(
+        content,
+        generationConfig: GenerationConfig(responseMimeType: 'application/json'),
+      );
+      
+      final text = response.text;
+      if (text != null && text.isNotEmpty) {
+        final json = jsonDecode(text.trim()) as Map<String, dynamic>;
+        final subtasks = List<String>.from(json['subtaskTitles'] as List);
+        final category = json['category'] as String? ?? 'Personal';
+        
+        return TaskTemplate(
+          id: 'template_ai_${DateTime.now().millisecondsSinceEpoch}',
+          name: templateName,
+          icon: Icons.auto_awesome,
+          subtaskTitles: subtasks,
+          category: category,
+        );
+      }
+    } catch (e, stack) {
+      AppLogger.e('Error generating template items with AI', e, stack);
+    }
+    
+    return TaskTemplate(
+      id: 'template_ai_${DateTime.now().millisecondsSinceEpoch}',
+      name: templateName,
+      icon: Icons.auto_awesome,
+      subtaskTitles: const ['Step 1: Planning', 'Step 2: Execution', 'Step 3: Review'],
+      category: 'Personal',
+    );
+  }
+
+  String _getWeekdayName(int weekday) {
+    switch (weekday) {
+      case 1: return 'Monday';
+      case 2: return 'Tuesday';
+      case 3: return 'Wednesday';
+      case 4: return 'Thursday';
+      case 5: return 'Friday';
+      case 6: return 'Saturday';
+      case 7: return 'Sunday';
+      default: return '';
     }
   }
 }
