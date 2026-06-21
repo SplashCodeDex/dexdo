@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'dart:ui';
-import 'package:dexdo/core/app_bootstrap.dart';
 import 'package:dexdo/core/services/speech_service.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:flutter/material.dart';
@@ -11,12 +10,6 @@ class AppVoiceOverlay extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Avoid initializing taskProvider (which accesses Firestore) before Firebase is ready
-    final startupState = ref.watch(appStartupProvider);
-    if (!startupState.hasValue) {
-      return const SizedBox.shrink();
-    }
-
     final speechState = ref.watch(speechProvider);
     final isListening = speechState.isListening;
     final soundLevel = speechState.soundLevel;
@@ -253,7 +246,7 @@ class _GlowFogState extends State<_GlowFog> with SingleTickerProviderStateMixin 
                     Positioned(
                       left: 28,
                       right: 28,
-                      bottom: 195, // Positioned above the bottom navigation bar and FAB
+                      bottom: 165, // Positioned above the bottom navigation bar and FAB
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
