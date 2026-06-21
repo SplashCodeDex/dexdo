@@ -10,6 +10,7 @@ class SpeechState {
     this.soundLevel = 0.0,
     this.isAvailable = false,
     this.error = '',
+    this.isProcessing = false,
   });
 
   final bool isListening;
@@ -17,6 +18,7 @@ class SpeechState {
   final double soundLevel;
   final bool isAvailable;
   final String error;
+  final bool isProcessing;
 
   SpeechState copyWith({
     bool? isListening,
@@ -24,6 +26,7 @@ class SpeechState {
     double? soundLevel,
     bool? isAvailable,
     String? error,
+    bool? isProcessing,
   }) {
     return SpeechState(
       isListening: isListening ?? this.isListening,
@@ -31,6 +34,7 @@ class SpeechState {
       soundLevel: soundLevel ?? this.soundLevel,
       isAvailable: isAvailable ?? this.isAvailable,
       error: error ?? this.error,
+      isProcessing: isProcessing ?? this.isProcessing,
     );
   }
 }
@@ -41,6 +45,10 @@ class SpeechNotifier extends Notifier<SpeechState> {
   @override
   SpeechState build() {
     return SpeechState();
+  }
+
+  void setProcessing(bool value) {
+    state = state.copyWith(isProcessing: value);
   }
 
   Future<bool> init() async {

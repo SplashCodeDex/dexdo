@@ -7,7 +7,6 @@ import 'package:dexdo/core/services/toast_service.dart';
 import 'package:dexdo/core/utils/haptics.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:dexdo/features/tasks/presentation/widgets/quick_task_sheet.dart';
-import 'package:dexdo/shared/widgets/voice_preview_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,7 +22,6 @@ class SmartFab extends ConsumerStatefulWidget {
 
 class _SmartFabState extends ConsumerState<SmartFab> with TickerProviderStateMixin {
   SmartFabPhase _phase = SmartFabPhase.idle;
-  bool _isProcessingAI = false;
 
   // Animation Controllers
   late AnimationController _scaleController;
@@ -59,9 +57,7 @@ class _SmartFabState extends ConsumerState<SmartFab> with TickerProviderStateMix
   Future<void> _onLongPressEnd(LongPressEndDetails details) async {
     if (_phase == SmartFabPhase.listening) {
       // Release voice mode
-      setState(() {
-        _isProcessingAI = true;
-      });
+      ref.read(speechProvider.notifier).setProcessing(true);
 
       // Stop listening and capture transcript
       final speechState = ref.read(speechProvider);
@@ -108,9 +104,7 @@ class _SmartFabState extends ConsumerState<SmartFab> with TickerProviderStateMix
         );
       }
 
-      setState(() {
-        _isProcessingAI = false;
-      });
+      ref.read(speechProvider.notifier).setProcessing(false);
       _resetFab();
     }
   }
@@ -144,9 +138,6 @@ class _SmartFabState extends ConsumerState<SmartFab> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    final speechState = ref.watch(speechProvider);
-    final taskState = ref.watch(taskProvider);
-
     // FAB Button size mapping
     const double fabSize = 56.0;
 
@@ -154,21 +145,6 @@ class _SmartFabState extends ConsumerState<SmartFab> with TickerProviderStateMix
       alignment: Alignment.center,
       clipBehavior: Clip.none,
       children: [
-        // FLOATING VOICE PREVIEW WINDOW
-        if (_phase == SmartFabPhase.listening)
-          Positioned(
-            bottom: 100,
-            right: 0,
-            child: IgnorePointer(
-              ignoring: _isProcessingAI,
-              child: VoicePreviewWindow(
-                transcript: speechState.lastWords,
-                categories: taskState.categories,
-                isProcessing: _isProcessingAI,
-              ),
-            ),
-          ),
-
         // MASTER FAB GESTURE WRAPPER
         GestureDetector(
           onLongPressStart: _onLongPressStart,

@@ -203,6 +203,7 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
     return const TaskListPane();
   }
 
+
   @override
   Widget build(BuildContext context) {
     final taskNotifier = ref.read(taskProvider.notifier);
@@ -421,8 +422,6 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
               },
             ),
             bottomNavigationBar: !isLargeScreen ? _buildBottomNav() : null,
-            floatingActionButton: const SmartFab(),
-            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           ),
         );
       },
@@ -435,53 +434,64 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
     final Brightness brightness = Theme.of(context).brightness;
     final bool isDark = brightness == Brightness.dark;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      child: Container(
-        height: 64,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(32),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: RepaintBoundary(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(32),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                height: 64,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface.withValues(alpha: isDark ? 0.7 : 0.8),
                   borderRadius: BorderRadius.circular(32),
-                border: Border.all(
-                  color: isDark 
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : Colors.black.withValues(alpha: 0.05),
-                  width: 1,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: RepaintBoundary(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(32),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface.withValues(alpha: isDark ? 0.7 : 0.8),
+                          borderRadius: BorderRadius.circular(32),
+                          border: Border.all(
+                            color: isDark 
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : Colors.black.withValues(alpha: 0.05),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildNavItem(Icons.space_dashboard_outlined, Icons.space_dashboard_rounded, 0, 'Home'),
+                            _buildNavItem(Icons.calendar_today_outlined, Icons.calendar_today_rounded, 1, 'Schedule'),
+                            _buildNavItem(Icons.check_circle_outline_rounded, Icons.check_circle_rounded, 2, 'Tasks'),
+                            _buildNavItem(Icons.insights_outlined, Icons.insights_rounded, 3, 'Insights'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildNavItem(Icons.space_dashboard_outlined, Icons.space_dashboard_rounded, 0, 'Home'),
-                  _buildNavItem(Icons.calendar_today_outlined, Icons.calendar_today_rounded, 1, 'Schedule'),
-                  _buildNavItem(Icons.check_circle_outline_rounded, Icons.check_circle_rounded, 2, 'Tasks'),
-                  _buildNavItem(Icons.insights_outlined, Icons.insights_rounded, 3, 'Insights'),
-                ],
-              ),
             ),
-          ),
+            const SizedBox(width: 16),
+            const SmartFab(),
+          ],
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildNavItem(IconData unselectedIcon, IconData selectedIcon, int index, String label) {
     final isSelected = _selectedIndex == index;
