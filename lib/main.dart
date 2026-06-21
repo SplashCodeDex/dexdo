@@ -17,7 +17,7 @@ import 'package:dexdo/features/tasks/presentation/widgets/quick_task_sheet.dart'
 import 'package:dexdo/features/tasks/presentation/widgets/task_editor_pane.dart';
 import 'package:dexdo/features/tasks/presentation/widgets/task_list_pane.dart';
 import 'package:dexdo/l10n/app_localizations.dart';
-import 'package:dexdo/shared/widgets/smart_fab.dart';
+import 'package:dexdo/shared/widgets/liquid_dock.dart';
 import 'package:dexdo/shared/widgets/toast_overlay.dart';
 import 'package:dexdo/shared/widgets/voice_glow_overlay.dart';
 import 'package:flutter/material.dart';
@@ -386,11 +386,32 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
             body: rp.Consumer(
               builder: (context, ref, _) {
                 final isAILoading = ref.watch(taskProvider.select((s) => s.isAILoading));
+                final isLiquidDockActive = ref.watch(liquidDockInputActiveProvider);
+
                 return Stack(
                   children: [
                     _buildMainContent(isLargeScreen)
                         .animate()
                         .fadeIn(duration: 400.ms, curve: Curves.easeOut),
+
+                    // Tap-to-dismiss semi-transparent scrim overlay behind the liquid dock
+                    IgnorePointer(
+                      ignoring: !isLiquidDockActive,
+                      child: AnimatedOpacity(
+                        opacity: isLiquidDockActive ? 1.0 : 0.0,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                        child: GestureDetector(
+                          onTap: () {
+                            ref.read(liquidDockInputActiveProvider.notifier).toggle(false);
+                          },
+                          child: Container(
+                            color: Colors.black.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ),
+                    ),
+
                     if (isAILoading)
                       Container(
                         color: Colors.black.withValues(alpha: 0.3),
@@ -421,7 +442,10 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                 );
               },
             ),
-            bottomNavigationBar: !isLargeScreen ? _buildBottomNav() : null,
+            bottomNavigationBar: !isLargeScreen ? LiquidDock(
+              selectedIndex: _selectedIndex,
+              onNavIndexChanged: (i) => setState(() => _selectedIndex = i),
+            ) : null,
           ),
         );
       },
@@ -430,127 +454,4 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
 );
   }
 
-  Widget _buildBottomNav() {
-    final Brightness brightness = Theme.of(context).brightness;
-    final bool isDark = brightness == Brightness.dark;
-
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: Container(
-                height: 64,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: RepaintBoundary(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(32),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface.withValues(alpha: isDark ? 0.7 : 0.8),
-                          borderRadius: BorderRadius.circular(32),
-                          border: Border.all(
-                            color: isDark 
-                                ? Colors.white.withValues(alpha: 0.05)
-                                : Colors.black.withValues(alpha: 0.05),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildNavItem(Icons.space_dashboard_outlined, Icons.space_dashboard_rounded, 0, 'Home'),
-                            _buildNavItem(Icons.calendar_today_outlined, Icons.calendar_today_rounded, 1, 'Schedule'),
-                            _buildNavItem(Icons.check_circle_outline_rounded, Icons.check_circle_rounded, 2, 'Tasks'),
-                            _buildNavItem(Icons.insights_outlined, Icons.insights_rounded, 3, 'Insights'),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            const SmartFab(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData unselectedIcon, IconData selectedIcon, int index, String label) {
-    final isSelected = _selectedIndex == index;
-    return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-        setState(() => _selectedIndex = index);
-        HapticFeedback.lightImpact();
-      },
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOutCubic,
-        padding: EdgeInsets.symmetric(horizontal: isSelected ? 12 : 8, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected 
-              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12) 
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(100), // Perfect pill shape
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              transitionBuilder: (child, animation) {
-                return ScaleTransition(scale: animation, child: child);
-              },
-              child: Icon(
-                isSelected ? selectedIcon : unselectedIcon,
-                key: ValueKey(isSelected),
-                color: isSelected 
-                    ? Theme.of(context).colorScheme.primary 
-                    : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                size: 24,
-              ),
-            ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
-              alignment: Alignment.centerLeft,
-              child: isSelected 
-                ? Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        letterSpacing: -0.2, // Tighter typography for pills
-                      ),
-                    ),
-                  )
-                : const SizedBox.shrink(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
+import 'package:dexdo/core/app_bootstrap.dart';
 import 'package:dexdo/core/services/speech_service.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,12 @@ class AppVoiceOverlay extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Avoid initializing taskProvider (which accesses Firestore) before Firebase is ready
+    final startupState = ref.watch(appStartupProvider);
+    if (!startupState.hasValue) {
+      return const SizedBox.shrink();
+    }
+
     final speechState = ref.watch(speechProvider);
     final isListening = speechState.isListening;
     final soundLevel = speechState.soundLevel;
@@ -173,26 +180,26 @@ class _GlowFogState extends State<_GlowFog> with SingleTickerProviderStateMixin 
               Colors.cyan,
               Colors.deepPurpleAccent,
               (math.sin(t * 2 * math.pi) + 1) / 2,
-            )!.withValues(alpha: 0.48 + (smoothedPulse * 0.32));
+            )!.withValues(alpha: 0.78 + (smoothedPulse * 0.17));
             
             final Color color2 = Color.lerp(
               Colors.purpleAccent,
               Colors.orangeAccent,
               (math.cos(t * 2 * math.pi) + 1) / 2,
-            )!.withValues(alpha: 0.42 + (smoothedPulse * 0.28));
+            )!.withValues(alpha: 0.72 + (smoothedPulse * 0.20));
 
             final Color color3 = Color.lerp(
               Colors.blueAccent,
               Colors.cyanAccent,
               (math.sin((t + 0.5) * 2 * math.pi) + 1) / 2,
-            )!.withValues(alpha: 0.48 + (smoothedPulse * 0.32));
+            )!.withValues(alpha: 0.78 + (smoothedPulse * 0.17));
 
-            // Visual height based on smoothed sound level
-            final double visualHeight = 110.0 + (smoothedPulse * 70.0);
+            // Visual height based on smoothed sound level (extended upwards)
+            final double visualHeight = 220.0 + (smoothedPulse * 120.0);
 
             return RepaintBoundary(
               child: SizedBox(
-                height: 320, // Ceiling container height
+                height: 450, // Ceiling container height
                 width: double.infinity,
                 child: Stack(
                   alignment: Alignment.bottomCenter,
@@ -202,7 +209,7 @@ class _GlowFogState extends State<_GlowFog> with SingleTickerProviderStateMixin 
                       left: 0,
                       right: 0,
                       bottom: 0,
-                      height: 320, // Full height to prevent blur clipping
+                      height: 450, // Full height to prevent blur clipping
                       child: ImageFiltered(
                         imageFilter: ImageFilter.blur(sigmaX: 70.0, sigmaY: 70.0),
                         child: Align(
@@ -217,7 +224,7 @@ class _GlowFogState extends State<_GlowFog> with SingleTickerProviderStateMixin 
                                   Colors.white,
                                   Colors.transparent,
                                 ],
-                                stops: [0.0, 0.45, 1.0],
+                                stops: [0.0, 0.65, 1.0],
                               ).createShader(bounds);
                             },
                             blendMode: BlendMode.dstIn,
@@ -246,7 +253,7 @@ class _GlowFogState extends State<_GlowFog> with SingleTickerProviderStateMixin 
                     Positioned(
                       left: 28,
                       right: 28,
-                      bottom: 120, // Positioned above the bottom navigation bar and FAB
+                      bottom: 195, // Positioned above the bottom navigation bar and FAB
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
