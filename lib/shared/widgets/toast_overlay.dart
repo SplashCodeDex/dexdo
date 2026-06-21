@@ -14,29 +14,32 @@ class AppToastOverlay extends ConsumerWidget {
 
     final int count = toasts.length;
 
-    return SafeArea(
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          child: Stack(
-            alignment: Alignment.topCenter,
-            clipBehavior: Clip.none,
-            children: List.generate(count, (index) {
-              final toast = toasts[index];
-              final int indexFromEnd = count - 1 - index;
+    return Material(
+      color: Colors.transparent,
+      child: SafeArea(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+            child: Stack(
+              alignment: Alignment.topCenter,
+              clipBehavior: Clip.none,
+              children: List.generate(count, (index) {
+                final toast = toasts[index];
+                final int indexFromEnd = count - 1 - index;
 
-              // Only render the top 3 items in the stack to maintain high rendering performance
-              if (indexFromEnd >= 3) {
-                return const SizedBox.shrink();
-              }
+                // Only render the top 3 items in the stack to maintain high rendering performance
+                if (indexFromEnd >= 3) {
+                  return const SizedBox.shrink();
+                }
 
-              return _ToastCard(
-                key: ValueKey(toast.id),
-                toast: toast,
-                indexFromEnd: indexFromEnd,
-              );
-            }),
+                return _ToastCard(
+                  key: ValueKey(toast.id),
+                  toast: toast,
+                  indexFromEnd: indexFromEnd,
+                );
+              }),
+            ),
           ),
         ),
       ),

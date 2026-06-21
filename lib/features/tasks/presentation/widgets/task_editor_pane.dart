@@ -266,7 +266,10 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
     final canPop = Navigator.of(context).canPop();
 
     if (_isFocusActive) {
-      return _buildFocusModeUI();
+      return Material(
+        color: Colors.transparent,
+        child: _buildFocusModeUI(),
+      );
     }
 
     return Scaffold(

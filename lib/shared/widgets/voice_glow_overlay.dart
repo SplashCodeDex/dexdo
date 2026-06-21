@@ -27,14 +27,17 @@ class AppVoiceOverlay extends ConsumerWidget {
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOut,
       child: IgnorePointer(
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: _GlowFog(
-            pulse: pulse,
-            isListening: isListening,
-            isProcessing: isProcessing,
-            transcript: speechState.lastWords,
-            categories: taskState.categories,
+        child: Material(
+          color: Colors.transparent,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: _GlowFog(
+              pulse: pulse,
+              isListening: isListening,
+              isProcessing: isProcessing,
+              transcript: speechState.lastWords,
+              categories: taskState.categories,
+            ),
           ),
         ),
       ),
@@ -170,19 +173,19 @@ class _GlowFogState extends State<_GlowFog> with SingleTickerProviderStateMixin 
               Colors.cyan,
               Colors.deepPurpleAccent,
               (math.sin(t * 2 * math.pi) + 1) / 2,
-            )!.withValues(alpha: 0.38 + (smoothedPulse * 0.22));
+            )!.withValues(alpha: 0.48 + (smoothedPulse * 0.32));
             
             final Color color2 = Color.lerp(
               Colors.purpleAccent,
               Colors.orangeAccent,
               (math.cos(t * 2 * math.pi) + 1) / 2,
-            )!.withValues(alpha: 0.32 + (smoothedPulse * 0.18));
+            )!.withValues(alpha: 0.42 + (smoothedPulse * 0.28));
 
             final Color color3 = Color.lerp(
               Colors.blueAccent,
               Colors.cyanAccent,
               (math.sin((t + 0.5) * 2 * math.pi) + 1) / 2,
-            )!.withValues(alpha: 0.38 + (smoothedPulse * 0.22));
+            )!.withValues(alpha: 0.48 + (smoothedPulse * 0.32));
 
             // Visual height based on smoothed sound level
             final double visualHeight = 110.0 + (smoothedPulse * 70.0);
