@@ -13,22 +13,26 @@ class DashboardState {
     required this.mode,
     required this.secondsRemaining,
     this.focusTask,
+    this.isTimerRunning = false,
   });
 
   final DashboardMode mode;
   final int secondsRemaining;
   final Task? focusTask;
+  final bool isTimerRunning;
 
   DashboardState copyWith({
     DashboardMode? mode,
     int? secondsRemaining,
     Task? focusTask,
     bool clearFocusTask = false,
+    bool? isTimerRunning,
   }) {
     return DashboardState(
       mode: mode ?? this.mode,
       secondsRemaining: secondsRemaining ?? this.secondsRemaining,
       focusTask: clearFocusTask ? null : (focusTask ?? this.focusTask),
+      isTimerRunning: isTimerRunning ?? this.isTimerRunning,
     );
   }
 }
@@ -60,6 +64,7 @@ class DashboardNotifier extends Notifier<DashboardState> {
     return const DashboardState(
       mode: DashboardMode.planning,
       secondsRemaining: _defaultFocusDuration,
+      isTimerRunning: false,
     );
   }
 
@@ -68,6 +73,7 @@ class DashboardNotifier extends Notifier<DashboardState> {
       mode: DashboardMode.deepWork,
       focusTask: task,
       secondsRemaining: minutes * 60,
+      isTimerRunning: true,
     );
     _startTimer();
   }
@@ -78,16 +84,19 @@ class DashboardNotifier extends Notifier<DashboardState> {
       mode: DashboardMode.planning,
       clearFocusTask: true,
       secondsRemaining: _defaultFocusDuration,
+      isTimerRunning: false,
     );
   }
 
   void _startTimer() {
     _timer?.cancel();
+    state = state.copyWith(isTimerRunning: true);
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (state.secondsRemaining > 0) {
         state = state.copyWith(secondsRemaining: state.secondsRemaining - 1);
       } else {
         _timer?.cancel();
+        state = state.copyWith(isTimerRunning: false);
         // In a real app, we might trigger a notification here
       }
     });
@@ -97,6 +106,7 @@ class DashboardNotifier extends Notifier<DashboardState> {
     _wasTimerRunning = _timer?.isActive ?? false;
     if (_wasTimerRunning) {
       _timer?.cancel();
+      state = state.copyWith(isTimerRunning: false);
       _targetEndTime = DateTime.now().add(Duration(seconds: state.secondsRemaining));
     }
   }
@@ -105,10 +115,16 @@ class DashboardNotifier extends Notifier<DashboardState> {
     if (_wasTimerRunning && _targetEndTime != null) {
       final remaining = _targetEndTime!.difference(DateTime.now()).inSeconds;
       if (remaining > 0) {
-        state = state.copyWith(secondsRemaining: remaining);
+        state = state.copyWith(
+          secondsRemaining: remaining,
+          isTimerRunning: true,
+        );
         _startTimer();
       } else {
-        state = state.copyWith(secondsRemaining: 0);
+        state = state.copyWith(
+          secondsRemaining: 0,
+          isTimerRunning: false,
+        );
       }
     }
   }
@@ -116,6 +132,7 @@ class DashboardNotifier extends Notifier<DashboardState> {
   void toggleTimer() {
     if (_timer?.isActive ?? false) {
       _timer?.cancel();
+      state = state.copyWith(isTimerRunning: false);
     } else {
       _startTimer();
     }

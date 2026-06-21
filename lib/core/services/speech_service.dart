@@ -11,6 +11,7 @@ class SpeechState {
     this.isAvailable = false,
     this.error = '',
     this.isProcessing = false,
+    this.isCancelImminent = false,
   });
 
   final bool isListening;
@@ -19,6 +20,7 @@ class SpeechState {
   final bool isAvailable;
   final String error;
   final bool isProcessing;
+  final bool isCancelImminent;
 
   SpeechState copyWith({
     bool? isListening,
@@ -27,6 +29,7 @@ class SpeechState {
     bool? isAvailable,
     String? error,
     bool? isProcessing,
+    bool? isCancelImminent,
   }) {
     return SpeechState(
       isListening: isListening ?? this.isListening,
@@ -35,6 +38,7 @@ class SpeechState {
       isAvailable: isAvailable ?? this.isAvailable,
       error: error ?? this.error,
       isProcessing: isProcessing ?? this.isProcessing,
+      isCancelImminent: isCancelImminent ?? this.isCancelImminent,
     );
   }
 }
@@ -51,13 +55,17 @@ class SpeechNotifier extends Notifier<SpeechState> {
     state = state.copyWith(isProcessing: value);
   }
 
+  void setCancelImminent(bool value) {
+    state = state.copyWith(isCancelImminent: value);
+  }
+
   Future<bool> init() async {
     if (state.isAvailable) return true;
     try {
       final available = await _speech.initialize(
         onError: (val) {
           AppLogger.e('SpeechToText onError: ${val.errorMsg}');
-          state = state.copyWith(error: val.errorMsg, isListening: false);
+          state = state.copyWith(error: val.errorMsg, isListening: false, isCancelImminent: false);
         },
         onStatus: (val) {
           AppLogger.d('SpeechToText onStatus: $val');
@@ -93,7 +101,7 @@ class SpeechNotifier extends Notifier<SpeechState> {
       return;
     }
 
-    state = state.copyWith(lastWords: '', error: '');
+    state = state.copyWith(lastWords: '', error: '', isCancelImminent: false);
     await _speech.listen(
       onResult: (val) {
         state = state.copyWith(lastWords: val.recognizedWords);
@@ -112,12 +120,12 @@ class SpeechNotifier extends Notifier<SpeechState> {
 
   Future<void> stopListening() async {
     await _speech.stop();
-    state = state.copyWith(isListening: false, soundLevel: 0.0);
+    state = state.copyWith(isListening: false, soundLevel: 0.0, isCancelImminent: false);
   }
 
   Future<void> cancelListening() async {
     await _speech.cancel();
-    state = state.copyWith(isListening: false, lastWords: '', soundLevel: 0.0);
+    state = state.copyWith(isListening: false, lastWords: '', soundLevel: 0.0, isCancelImminent: false);
   }
 }
 

@@ -14,6 +14,8 @@ class AppToast {
     this.duration = const Duration(seconds: 3),
     this.actionLabel,
     this.onAction,
+    this.secondaryActionLabel,
+    this.onSecondaryAction,
   });
 
   final String id;
@@ -23,6 +25,8 @@ class AppToast {
   final Duration duration;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final String? secondaryActionLabel;
+  final VoidCallback? onSecondaryAction;
 }
 
 final toastProvider = NotifierProvider<ToastNotifier, List<AppToast>>(() {
@@ -44,6 +48,8 @@ class ToastNotifier extends Notifier<List<AppToast>> {
     Duration duration = const Duration(seconds: 3),
     String? actionLabel,
     VoidCallback? onAction,
+    String? secondaryActionLabel,
+    VoidCallback? onSecondaryAction,
   }) {
     final id = _uuid.v4();
     final toast = AppToast(
@@ -54,6 +60,8 @@ class ToastNotifier extends Notifier<List<AppToast>> {
       duration: duration,
       actionLabel: actionLabel,
       onAction: onAction,
+      secondaryActionLabel: secondaryActionLabel,
+      onSecondaryAction: onSecondaryAction,
     );
     
     state = [...state, toast];
@@ -64,7 +72,7 @@ class ToastNotifier extends Notifier<List<AppToast>> {
     });
   }
 
-  void showSuccess(String message, {String? title, Duration? duration, String? actionLabel, VoidCallback? onAction}) {
+  void showSuccess(String message, {String? title, Duration? duration, String? actionLabel, VoidCallback? onAction, String? secondaryActionLabel, VoidCallback? onSecondaryAction}) {
     show(
       message: message,
       title: title,
@@ -72,10 +80,12 @@ class ToastNotifier extends Notifier<List<AppToast>> {
       duration: duration ?? const Duration(seconds: 3),
       actionLabel: actionLabel,
       onAction: onAction,
+      secondaryActionLabel: secondaryActionLabel,
+      onSecondaryAction: onSecondaryAction,
     );
   }
 
-  void showError(String message, {String? title, Duration? duration, String? actionLabel, VoidCallback? onAction}) {
+  void showError(String message, {String? title, Duration? duration, String? actionLabel, VoidCallback? onAction, String? secondaryActionLabel, VoidCallback? onSecondaryAction}) {
     show(
       message: message,
       title: title,
@@ -83,10 +93,12 @@ class ToastNotifier extends Notifier<List<AppToast>> {
       duration: duration ?? const Duration(seconds: 4),
       actionLabel: actionLabel,
       onAction: onAction,
+      secondaryActionLabel: secondaryActionLabel,
+      onSecondaryAction: onSecondaryAction,
     );
   }
 
-  void showInfo(String message, {String? title, Duration? duration, String? actionLabel, VoidCallback? onAction}) {
+  void showInfo(String message, {String? title, Duration? duration, String? actionLabel, VoidCallback? onAction, String? secondaryActionLabel, VoidCallback? onSecondaryAction}) {
     show(
       message: message,
       title: title,
@@ -94,10 +106,12 @@ class ToastNotifier extends Notifier<List<AppToast>> {
       duration: duration ?? const Duration(seconds: 3),
       actionLabel: actionLabel,
       onAction: onAction,
+      secondaryActionLabel: secondaryActionLabel,
+      onSecondaryAction: onSecondaryAction,
     );
   }
 
-  void showWarning(String message, {String? title, Duration? duration, String? actionLabel, VoidCallback? onAction}) {
+  void showWarning(String message, {String? title, Duration? duration, String? actionLabel, VoidCallback? onAction, String? secondaryActionLabel, VoidCallback? onSecondaryAction}) {
     show(
       message: message,
       title: title,
@@ -105,6 +119,8 @@ class ToastNotifier extends Notifier<List<AppToast>> {
       duration: duration ?? const Duration(seconds: 3),
       actionLabel: actionLabel,
       onAction: onAction,
+      secondaryActionLabel: secondaryActionLabel,
+      onSecondaryAction: onSecondaryAction,
     );
   }
 

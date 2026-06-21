@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class TaskListPane extends ConsumerStatefulWidget {
   const TaskListPane({super.key});
@@ -413,40 +412,21 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
   Widget _buildEmptyState(TaskState state) {
     return Center(
       key: const ValueKey('empty_state'),
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.0, end: 1.0),
-        duration: const Duration(seconds: 2),
-        curve: Curves.easeInOutSine,
-        builder: (context, value, child) {
-          return Transform.translate(
-            offset: Offset(0, 10 * (0.5 - (0.5 - value).abs()) * 2 - 10),
-            child: child,
-          );
-        },
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.8, end: 1.0),
-              duration: const Duration(milliseconds: 600),
-              curve: Curves.easeOutBack,
-              builder: (context, scale, child) {
-                return Transform.scale(
-                  scale: scale,
-                  child: child,
-                );
-              },
-              child: RepaintBoundary(
-                child: SvgPicture.asset(
-                  'assets/images/logo2DexDoNo.svg',
-                  height: 180,
-                  colorFilter: ColorFilter.mode(
-                    Colors.blue.withValues(alpha: 0.15),
-                    BlendMode.srcIn,
-                  ),
-                ),
-              ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+              shape: BoxShape.circle,
             ),
+            child: Icon(
+              Icons.done_all_rounded,
+              size: 40,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
             const SizedBox(height: 32),
             Text(
               'All Caught Up!',
@@ -469,7 +449,6 @@ class _TaskListPaneState extends ConsumerState<TaskListPane> {
             ),
           ],
         ),
-      ),
-    );
+      );
+    }
   }
-}

@@ -1,3 +1,4 @@
+import 'package:dexdo/features/home/presentation/widgets/home_pane.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -27,10 +28,10 @@ class StatisticsPane extends StatelessWidget {
             const _MetricsRow(),
             const SizedBox(height: 32),
 
-            // Velocity Chart
-            const _SectionLabel(text: 'COMPLETION VELOCITY (LAST 30 DAYS)'),
+            // Weekly Completion Chart
+            const _SectionLabel(text: 'WEEKLY COMPLETION'),
             const SizedBox(height: 16),
-            const _VelocityChart(),
+            const ProductivityChart(),
             const SizedBox(height: 32),
 
             // Category Distribution
@@ -72,83 +73,6 @@ class _MetricsRow extends ConsumerWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _VelocityChart extends ConsumerWidget {
-  const _VelocityChart();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final spots = ref.watch(taskProvider.select((s) => s.statistics.completionVelocitySpots));
-
-    return Container(
-      height: 250,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.1)),
-      ),
-      child: RepaintBoundary(
-        child: LineChart(
-          LineChartData(
-            gridData: const FlGridData(show: false),
-            titlesData: FlTitlesData(
-              leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 30,
-                  getTitlesWidget: (value, meta) {
-                    if (value % 5 != 0) return const SizedBox.shrink();
-                    return SideTitleWidget(
-                      meta: meta,
-                      child: Text(
-                        '${value.toInt()}d',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                          fontSize: 10,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            borderData: FlBorderData(show: false),
-            lineBarsData: [
-              LineChartBarData(
-                spots: spots,
-                isCurved: true,
-                color: Theme.of(context).colorScheme.primary,
-                barWidth: 4,
-                isStrokeCapRound: true,
-                dotData: const FlDotData(show: false),
-                belowBarData: BarAreaData(
-                  show: true,
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                ),
-              ),
-            ],
-            lineTouchData: LineTouchData(
-              touchTooltipData: LineTouchTooltipData(
-                getTooltipColor: (spot) => Theme.of(context).colorScheme.surfaceContainerHighest,
-              ),
-            ),
-          ),
-          transformationConfig: const FlTransformationConfig(
-            scaleAxis: FlScaleAxis.horizontal,
-            minScale: 1.0,
-            maxScale: 3.0,
-            panEnabled: true,
-            scaleEnabled: true,
-          ),
-        ),
-      ),
     );
   }
 }

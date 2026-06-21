@@ -35,6 +35,7 @@ class _DeepWorkLayout extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final focusTask = ref.watch(dashboardProvider.select((s) => s.focusTask));
+    final isTimerRunning = ref.watch(dashboardProvider.select((s) => s.isTimerRunning));
 
     if (focusTask == null) {
       return Center(
@@ -89,7 +90,7 @@ class _DeepWorkLayout extends ConsumerWidget {
                 children: [
                   IconButton.filled(
                     onPressed: () => ref.read(dashboardProvider.notifier).toggleTimer(),
-                    icon: const Icon(Icons.pause_rounded),
+                    icon: Icon(isTimerRunning ? Icons.pause_rounded : Icons.play_arrow_rounded),
                     style: IconButton.styleFrom(
                       padding: const EdgeInsets.all(16),
                       backgroundColor: Theme.of(context).colorScheme.primaryContainer,

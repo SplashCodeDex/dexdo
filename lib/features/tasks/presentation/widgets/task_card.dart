@@ -209,6 +209,8 @@ class TaskCard extends StatelessWidget {
                                             color: Colors.transparent,
                                             child: Text(
                                               task.title.isEmpty ? 'New Task' : task.title,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 16,

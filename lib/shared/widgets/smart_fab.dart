@@ -7,6 +7,7 @@ import 'package:dexdo/core/services/toast_service.dart';
 import 'package:dexdo/core/utils/haptics.dart';
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:dexdo/features/tasks/presentation/widgets/quick_task_sheet.dart';
+import 'package:dexdo/features/tasks/presentation/widgets/task_editor_pane.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,6 +27,11 @@ class _SmartFabState extends ConsumerState<SmartFab> with TickerProviderStateMix
   // Animation Controllers
   late AnimationController _scaleController;
   late AnimationController _morphController;
+
+  // Gesture slide-to-cancel state tracking
+  Offset? _dragStartPoint;
+  double _dragXOffset = 0.0;
+  bool _isCancelThresholdExceeded = false;
 
   @override
   void initState() {
@@ -51,11 +57,45 @@ class _SmartFabState extends ConsumerState<SmartFab> with TickerProviderStateMix
 
   void _onLongPressStart(LongPressStartDetails details) {
     if (_phase != SmartFabPhase.idle) return;
+    _dragStartPoint = details.globalPosition;
+    _dragXOffset = 0.0;
+    _isCancelThresholdExceeded = false;
     _startVoiceListening();
+  }
+
+  void _onLongPressMoveUpdate(LongPressMoveUpdateDetails details) {
+    if (_phase != SmartFabPhase.listening) return;
+    if (_dragStartPoint == null) return;
+    final double currentX = details.globalPosition.dx;
+    final double startX = _dragStartPoint!.dx;
+    setState(() {
+      // Allow sliding left (negative values). Drag limit is 120 pixels.
+      _dragXOffset = (currentX - startX).clamp(-120.0, 0.0);
+      final bool wasExceeded = _isCancelThresholdExceeded;
+      _isCancelThresholdExceeded = _dragXOffset < -80.0;
+      if (_isCancelThresholdExceeded != wasExceeded) {
+        if (_isCancelThresholdExceeded) {
+          HapticFeedback.heavyImpact();
+          ref.read(speechProvider.notifier).setCancelImminent(true);
+        } else {
+          HapticFeedback.mediumImpact();
+          ref.read(speechProvider.notifier).setCancelImminent(false);
+        }
+      }
+    });
   }
 
   Future<void> _onLongPressEnd(LongPressEndDetails details) async {
     if (_phase == SmartFabPhase.listening) {
+      if (_isCancelThresholdExceeded) {
+        // Discard recording and clean up
+        await ref.read(speechProvider.notifier).cancelListening();
+        unawaited(AppHaptics.success());
+        ref.read(toastProvider.notifier).showWarning('Voice input cancelled.');
+        _resetFab();
+        return;
+      }
+
       // Release voice mode
       ref.read(speechProvider.notifier).setProcessing(true);
 
@@ -96,6 +136,22 @@ class _SmartFabState extends ConsumerState<SmartFab> with TickerProviderStateMix
           actionLabel: 'Undo',
           onAction: () {
             ref.read(taskProvider.notifier).deleteTask(createdTask);
+          },
+          secondaryActionLabel: 'Edit',
+          onSecondaryAction: () {
+            if (mounted) {
+              Navigator.of(context).push(
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => TaskEditorPane(task: createdTask),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: child,
+                    );
+                  },
+                ),
+              );
+            }
           },
         );
       } else {
@@ -147,6 +203,9 @@ class _SmartFabState extends ConsumerState<SmartFab> with TickerProviderStateMix
 
     setState(() {
       _phase = SmartFabPhase.idle;
+      _dragStartPoint = null;
+      _dragXOffset = 0.0;
+      _isCancelThresholdExceeded = false;
     });
   }
 
@@ -163,6 +222,7 @@ class _SmartFabState extends ConsumerState<SmartFab> with TickerProviderStateMix
         GestureDetector(
           onLongPressStart: _onLongPressStart,
           onLongPressEnd: _onLongPressEnd,
+          onLongPressMoveUpdate: _onLongPressMoveUpdate,
           onTap: () {
             // Tap behaviour (Default QuickTaskSheet bottom sheet)
             FocusScope.of(context).unfocus();
@@ -181,41 +241,54 @@ class _SmartFabState extends ConsumerState<SmartFab> with TickerProviderStateMix
               final double morph = _morphController.value;
 
               final isDark = Theme.of(context).brightness == Brightness.dark;
-              return Transform.scale(
-                scale: scale,
-                child: Container(
-                  width: fabSize,
-                  height: fabSize,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: ClipOval(
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.25),
-                          border: Border.all(
-                            color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15),
-                            width: 1.0,
-                          ),
+              final Color baseFabColor = _isCancelThresholdExceeded
+                  ? Colors.redAccent.withValues(alpha: 0.35)
+                  : (isDark ? Colors.black : Colors.white).withValues(alpha: 0.25);
+              final Color baseBorderColor = _isCancelThresholdExceeded
+                  ? Colors.redAccent.withValues(alpha: 0.5)
+                  : (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15);
+
+              return Transform.translate(
+                offset: Offset(_dragXOffset, 0.0),
+                child: Transform.scale(
+                  scale: scale,
+                  child: Container(
+                    width: fabSize,
+                    height: fabSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: _isCancelThresholdExceeded 
+                              ? Colors.redAccent.withValues(alpha: 0.1)
+                              : Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
                         ),
-                        child: Center(
-                          child: morph > 0.5
-                              ? Icon(
-                                  Icons.mic_none_rounded, // professional vertical mic icon
-                                  color: isDark ? Colors.white : Colors.black87,
-                                  size: 28,
-                                )
-                              : Transform.rotate(
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: baseFabColor,
+                            border: Border.all(
+                              color: baseBorderColor,
+                              width: 1.0,
+                            ),
+                          ),
+                          child: Center(
+                            child: morph > 0.5
+                                ? Icon(
+                                    _isCancelThresholdExceeded ? Icons.delete_outline_rounded : Icons.mic_none_rounded,
+                                    color: _isCancelThresholdExceeded 
+                                        ? Colors.redAccent 
+                                        : (isDark ? Colors.white : Colors.black87),
+                                    size: 28,
+                                  )
+                                : Transform.rotate(
                                   angle: morph * math.pi / 4, // rotate add icon slightly, leaving mic unrotated
                                   child: Icon(
                                     Icons.add_rounded,
@@ -228,8 +301,9 @@ class _SmartFabState extends ConsumerState<SmartFab> with TickerProviderStateMix
                     ),
                   ),
                 ),
-              );
-            },
+              ),
+            );
+          },
           ),
         ),
       ],

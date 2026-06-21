@@ -29,15 +29,26 @@ class AppVoiceOverlay extends ConsumerWidget {
       child: IgnorePointer(
         child: Material(
           color: Colors.transparent,
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: _GlowFog(
-              pulse: pulse,
-              isListening: isListening,
-              isProcessing: isProcessing,
-              transcript: speechState.lastWords,
-              categories: taskState.categories,
-            ),
+          child: Stack(
+            children: [
+              // Subtle dimming overlay behind the glow
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.35),
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: _GlowFog(
+                  pulse: pulse,
+                  isListening: isListening,
+                  isProcessing: isProcessing,
+                  transcript: speechState.lastWords,
+                  categories: taskState.categories,
+                  isCancelImminent: speechState.isCancelImminent,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -52,6 +63,7 @@ class _GlowFog extends StatefulWidget {
     required this.isProcessing,
     required this.transcript,
     required this.categories,
+    required this.isCancelImminent,
   });
 
   final double pulse;
@@ -59,6 +71,7 @@ class _GlowFog extends StatefulWidget {
   final bool isProcessing;
   final String transcript;
   final List<String> categories;
+  final bool isCancelImminent;
 
   @override
   State<_GlowFog> createState() => _GlowFogState();
@@ -169,21 +182,30 @@ class _GlowFogState extends State<_GlowFog> with SingleTickerProviderStateMixin 
           curve: Curves.easeOutCubic,
           builder: (context, smoothedPulse, child) {
             // Highly subtle organic colors (Gemini Live inspired)
+            // If cancel is imminent, shift towards warning colors (red/coral/charcoal)
+            final Color baseColor1 = widget.isCancelImminent ? Colors.redAccent : Colors.cyan;
+            final Color baseColor2 = widget.isCancelImminent ? Colors.pinkAccent : Colors.purpleAccent;
+            final Color baseColor3 = widget.isCancelImminent ? Colors.deepOrangeAccent : Colors.blueAccent;
+
+            final Color targetColor1 = widget.isCancelImminent ? Colors.deepOrangeAccent : Colors.deepPurpleAccent;
+            final Color targetColor2 = widget.isCancelImminent ? const Color(0xFF212121) : Colors.orangeAccent;
+            final Color targetColor3 = widget.isCancelImminent ? Colors.redAccent : Colors.cyanAccent;
+
             final Color color1 = Color.lerp(
-              Colors.cyan,
-              Colors.deepPurpleAccent,
+              baseColor1,
+              targetColor1,
               (math.sin(t * 2 * math.pi) + 1) / 2,
             )!.withValues(alpha: 0.78 + (smoothedPulse * 0.17));
             
             final Color color2 = Color.lerp(
-              Colors.purpleAccent,
-              Colors.orangeAccent,
+              baseColor2,
+              targetColor2,
               (math.cos(t * 2 * math.pi) + 1) / 2,
             )!.withValues(alpha: 0.72 + (smoothedPulse * 0.20));
 
             final Color color3 = Color.lerp(
-              Colors.blueAccent,
-              Colors.cyanAccent,
+              baseColor3,
+              targetColor3,
               (math.sin((t + 0.5) * 2 * math.pi) + 1) / 2,
             )!.withValues(alpha: 0.78 + (smoothedPulse * 0.17));
 
@@ -246,86 +268,67 @@ class _GlowFogState extends State<_GlowFog> with SingleTickerProviderStateMixin 
                     Positioned(
                       left: 28,
                       right: 28,
-                      bottom: 165, // Positioned above the bottom navigation bar and FAB
-                      child: Transform.scale(
-                        scale: 1.0 + (smoothedPulse * 0.035), // Subtle voice-reactive pulse
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (widget.isProcessing)
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const SizedBox(
-                                    width: 14,
-                                    height: 14,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    'AI is parsing your task...',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.9),
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.2,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.black.withValues(alpha: 0.4),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              )
-                            else if (widget.transcript.isEmpty)
-                              const _BreathingListeningPrompt()
-                            else
-                              AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 250),
-                                switchInCurve: Curves.easeOutCubic,
-                                switchOutCurve: Curves.easeInCubic,
-                                transitionBuilder: (child, animation) {
-                                  return FadeTransition(
-                                    opacity: animation,
-                                    child: SlideTransition(
-                                      position: Tween<Offset>(
-                                        begin: const Offset(0.0, 0.12),
-                                        end: Offset.zero,
-                                      ).animate(animation),
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                child: RichText(
-                                  key: ValueKey<String>(widget.transcript),
-                                  textAlign: TextAlign.center,
-                                  text: TextSpan(
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                      height: 1.45,
-                                      letterSpacing: 0.2,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.black.withValues(alpha: 0.5),
-                                          blurRadius: 12,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    children: _highlightTranscript(widget.transcript, widget.categories),
+                      bottom: 145, // Positioned above the bottom navigation bar and FAB
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (widget.isCancelImminent)
+                            const _CancelImminentPrompt()
+                          else if (widget.isProcessing)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
                                   ),
                                 ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'AI is parsing your task...',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.2,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black.withValues(alpha: 0.4),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            )
+                          else if (widget.transcript.isEmpty)
+                            const _BreathingListeningPrompt()
+                          else
+                            RichText(
+                              textAlign: TextAlign.center,
+                              text: TextSpan(
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.45,
+                                  letterSpacing: 0.2,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withValues(alpha: 0.5),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                children: _highlightTranscript(widget.transcript, widget.categories),
                               ),
-                          ],
-                        ),
+                            ),
+                        ],
                       ),
                     ),
                   ],
@@ -371,23 +374,156 @@ class _BreathingListeningPromptState extends State<_BreathingListeningPrompt> wi
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _opacityAnimation,
-      child: Text(
-        'Listening...',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-          shadows: [
-            Shadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            double scale(double offset) {
+              final double angle = _controller.value * 2 * math.pi + offset;
+              return (math.sin(angle) + 1.0) / 2.0;
+            }
+
+            const double minHeight = 6.0;
+            const double maxHeight = 24.0;
+
+            final double h1 = minHeight + (maxHeight - minHeight) * scale(0.0);
+            final double h2 = minHeight + (maxHeight - minHeight) * scale(math.pi * 0.4);
+            final double h3 = minHeight + (maxHeight - minHeight) * scale(math.pi * 0.8);
+            final double h4 = minHeight + (maxHeight - minHeight) * scale(math.pi * 1.2);
+            final double h5 = minHeight + (maxHeight - minHeight) * scale(math.pi * 1.6);
+
+            Widget buildBar(double height, Color color) {
+              return Container(
+                width: 3.5,
+                height: height,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return SizedBox(
+              height: maxHeight,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  buildBar(h1, Colors.white.withValues(alpha: 0.85)),
+                  const SizedBox(width: 4.5),
+                  buildBar(h2, Colors.white.withValues(alpha: 0.9)),
+                  const SizedBox(width: 4.5),
+                  buildBar(h3, Colors.white.withValues(alpha: 0.95)),
+                  const SizedBox(width: 4.5),
+                  buildBar(h4, Colors.white.withValues(alpha: 0.9)),
+                  const SizedBox(width: 4.5),
+                  buildBar(h5, Colors.white.withValues(alpha: 0.85)),
+                ],
+              ),
+            );
+          },
         ),
+        const SizedBox(height: 12),
+        FadeTransition(
+          opacity: _opacityAnimation,
+          child: Text(
+            'Listening...',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CancelImminentPrompt extends StatefulWidget {
+  const _CancelImminentPrompt();
+
+  @override
+  State<_CancelImminentPrompt> createState() => _CancelImminentPromptState();
+}
+
+class _CancelImminentPromptState extends State<_CancelImminentPrompt> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    _controller.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.redAccent.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.delete_sweep_rounded,
+              color: Colors.redAccent,
+              size: 32,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Release to Cancel',
+            style: TextStyle(
+              color: Colors.redAccent,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+              shadows: [
+                Shadow(
+                  color: Colors.black38,
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

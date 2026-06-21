@@ -84,19 +84,19 @@ class _ToastCard extends ConsumerWidget {
     }
 
     // Dynamic calculations for stack depth styling and positioning
-    final double scale = indexFromEnd == 0 ? 1.0 : (indexFromEnd == 1 ? 0.95 : 0.90);
-    final double yOffset = indexFromEnd == 0 ? 0.0 : (indexFromEnd == 1 ? -8.0 : -16.0);
-    final double opacity = indexFromEnd == 0 ? 1.0 : (indexFromEnd == 1 ? 0.85 : 0.60);
+    final double scale = indexFromEnd == 0 ? 1.0 : (indexFromEnd == 1 ? 0.94 : 0.88);
+    final double yOffset = indexFromEnd == 0 ? 0.0 : (indexFromEnd == 1 ? -10.0 : -20.0);
+    final double opacity = indexFromEnd == 0 ? 1.0 : (indexFromEnd == 1 ? 0.80 : 0.50);
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 400),
       curve: Curves.easeOutBack,
       transform: Matrix4.identity()
         ..translateByDouble(0.0, yOffset, 0.0, 1.0)
         ..scaleByDouble(scale, scale, scale, 1.0),
       transformAlignment: Alignment.topCenter,
       child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 250),
+        duration: const Duration(milliseconds: 300),
         opacity: opacity,
         child: Dismissible(
           key: ValueKey(toast.id),
@@ -107,23 +107,23 @@ class _ToastCard extends ConsumerWidget {
           child: Container(
             constraints: const BoxConstraints(maxWidth: 450),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: (isDark ? const Color(0xFF1E1E1E) : Colors.white).withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(16),
+                    color: (isDark ? const Color(0xFF1A1A1A) : Colors.white).withValues(alpha: isDark ? 0.75 : 0.85),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
-                      width: 1.0,
+                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.12),
+                      width: 1.2,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 16,
-                        offset: const Offset(0, 8),
+                        color: Colors.black.withValues(alpha: indexFromEnd == 0 ? 0.12 : 0.06),
+                        blurRadius: 24,
+                        offset: const Offset(0, 10),
                       ),
                     ],
                   ),
@@ -132,18 +132,18 @@ class _ToastCard extends ConsumerWidget {
                     children: [
                       // Toast Icon
                       Container(
-                        padding: const EdgeInsets.all(6),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: typeColor.withValues(alpha: 0.15),
+                          color: typeColor.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           typeIcon,
                           color: typeColor,
-                          size: 20,
+                          size: 22,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 14),
                       // Toast Text
                       Expanded(
                         child: Column(
@@ -154,25 +154,27 @@ class _ToastCard extends ConsumerWidget {
                               Text(
                                 toast.title!,
                                 style: TextStyle(
-                                  color: isDark ? Colors.white : Colors.black87,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : Colors.black.withValues(alpha: 0.9),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.2,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 1),
                             ],
                             Text(
                               toast.message,
                               style: TextStyle(
-                                color: isDark ? Colors.white70 : Colors.black54,
+                                color: isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black.withValues(alpha: 0.6),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
+                                letterSpacing: -0.1,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      // Action Button (e.g. Undo)
+                      // Primary Action Button (e.g. Undo)
                       if (toast.actionLabel != null && toast.onAction != null) ...[
                         const SizedBox(width: 8),
                         TextButton(
@@ -181,6 +183,9 @@ class _ToastCard extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                           onPressed: () {
                             toast.onAction!();
@@ -189,8 +194,34 @@ class _ToastCard extends ConsumerWidget {
                           child: Text(
                             toast.actionLabel!,
                             style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                      // Secondary Action Button (e.g. Edit)
+                      if (toast.secondaryActionLabel != null && toast.onSecondaryAction != null) ...[
+                        const SizedBox(width: 6),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            foregroundColor: typeColor,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onPressed: () {
+                            toast.onSecondaryAction!();
+                            ref.read(toastProvider.notifier).dismiss(toast.id);
+                          },
+                          child: Text(
+                            toast.secondaryActionLabel!,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
@@ -201,10 +232,17 @@ class _ToastCard extends ConsumerWidget {
                         onTap: () {
                           ref.read(toastProvider.notifier).dismiss(toast.id);
                         },
-                        child: Icon(
-                          Icons.close_rounded,
-                          color: isDark ? Colors.white38 : Colors.black38,
-                          size: 18,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            color: isDark ? Colors.white.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.4),
+                            size: 16,
+                          ),
                         ),
                       ),
                     ],
@@ -216,7 +254,7 @@ class _ToastCard extends ConsumerWidget {
         ),
       ),
     ).animate()
-     .fadeIn(duration: 250.ms, curve: Curves.easeOut)
-     .slideY(begin: -0.4, end: 0, duration: 300.ms, curve: Curves.easeOutCubic);
+     .fadeIn(duration: 300.ms, curve: Curves.easeOut)
+     .slideY(begin: -0.3, end: 0, duration: 500.ms, curve: Curves.easeOutBack);
   }
 }

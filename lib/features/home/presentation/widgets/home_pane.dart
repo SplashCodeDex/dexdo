@@ -37,10 +37,6 @@ class HomePane extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              const _SectionTitle(title: 'Weekly Completion'),
-              const SizedBox(height: 16),
-              const _ProductivityChart(),
-              const SizedBox(height: 32),
               const _SectionTitle(title: 'Upcoming Tasks'),
               const SizedBox(height: 16),
               _UpcomingTasks(onTaskTap: onTaskTap),
@@ -120,7 +116,7 @@ class _HomeSliverAppBar extends ConsumerWidget {
       floating: false,
       pinned: true,
       stretch: true,
-      backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+      backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
       surfaceTintColor: Colors.transparent,
@@ -163,109 +159,65 @@ class _HomeSliverAppBar extends ConsumerWidget {
           ),
         ),
       ],
-      flexibleSpace: Stack(
-        fit: StackFit.expand,
-        children: [
-          ClipRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: Container(color: Colors.transparent),
-            ),
-          ),
-          FlexibleSpaceBar(
-            stretchModes: const [
-              StretchMode.zoomBackground,
-              StretchMode.blurBackground,
-              StretchMode.fadeTitle,
-            ],
-            background: Stack(
-              fit: StackFit.expand,
-              children: [
-                DecoratedBox(
+      flexibleSpace: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          const double expandedHeight = 280.0;
+          final double minHeight = MediaQuery.paddingOf(context).top + kToolbarHeight;
+          final double currentHeight = constraints.maxHeight;
+          final double collapseProgress = ((expandedHeight - currentHeight) / (expandedHeight - minHeight)).clamp(0.0, 1.0);
+
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              // Collapsed background color and blur (fades in as app bar collapses)
+              if (collapseProgress > 0.0)
+                Opacity(
+                  opacity: collapseProgress,
+                  child: ClipRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(
+                        sigmaX: 12 * collapseProgress,
+                        sigmaY: 12 * collapseProgress,
+                      ),
+                      child: Container(
+                        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ),
+                ),
+              // Expanded background gradient (fades out as app bar collapses, transparent bottom for feathered blend)
+              Opacity(
+                opacity: 1.0 - collapseProgress,
+                child: DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
                         Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-                        Theme.of(context).colorScheme.surface,
+                        Theme.of(context).colorScheme.surface.withValues(alpha: 0.0),
                       ],
                     ),
                   ),
                 ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    24, 
-                    MediaQuery.paddingOf(context).top + 40, 
-                    24, 
-                    24
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              greeting,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              userName,
-                              style: const TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -1.5,
-                                height: 1.1,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.stars_rounded,
-                                    size: 16,
-                                    color: Theme.of(context).colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    totalToday == 0 
-                                        ? 'No tasks yet' 
-                                        : '$completedTodayCount/$totalToday Daily Goals',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.primary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      _AnimatedProgressIndicator(progress: progressToday),
-                    ],
-                  ),
+              ),
+              FlexibleSpaceBar(
+                stretchModes: const [
+                  StretchMode.zoomBackground,
+                  StretchMode.blurBackground,
+                  StretchMode.fadeTitle,
+                ],
+                background: _HeaderPageView(
+                  greeting: greeting,
+                  userName: userName,
+                  totalToday: totalToday,
+                  completedTodayCount: completedTodayCount,
+                  progressToday: progressToday,
                 ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -365,8 +317,177 @@ class _AnimatedProgressIndicator extends StatelessWidget {
   }
 }
 
-class _ProductivityChart extends ConsumerWidget {
-  const _ProductivityChart();
+class _HeaderPageView extends StatefulWidget {
+  const _HeaderPageView({
+    required this.greeting,
+    required this.userName,
+    required this.totalToday,
+    required this.completedTodayCount,
+    required this.progressToday,
+  });
+
+  final String greeting;
+  final String userName;
+  final int totalToday;
+  final int completedTodayCount;
+  final double progressToday;
+
+  @override
+  State<_HeaderPageView> createState() => _HeaderPageViewState();
+}
+
+class _HeaderPageViewState extends State<_HeaderPageView> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Expanded(
+          child: PageView(
+            controller: _pageController,
+            onPageChanged: (index) => setState(() => _currentPage = index),
+            children: [
+              // Page 1: Greeting and Progress
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  24,
+                  MediaQuery.paddingOf(context).top + 40,
+                  24,
+                  24
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            widget.greeting,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.userName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -1.5,
+                              height: 1.1,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.stars_rounded,
+                                  size: 16,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    widget.totalToday == 0
+                                        ? 'No tasks yet'
+                                        : '${widget.completedTodayCount}/${widget.totalToday} Daily Goals',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    _AnimatedProgressIndicator(progress: widget.progressToday),
+                  ],
+                ),
+              ),
+              // Page 2: Weekly Completion Chart
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  24,
+                  MediaQuery.paddingOf(context).top + 40,
+                  24,
+                  24
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Weekly Completion',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Expanded(
+                      child: ProductivityChart(transparent: true),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(2, (index) {
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _currentPage == index
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+}
+
+class ProductivityChart extends ConsumerWidget {
+  const ProductivityChart({super.key, this.transparent = false});
+  final bool transparent;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -378,10 +499,10 @@ class _ProductivityChart extends ConsumerWidget {
 
     return RepaintBoundary(
       child: Container(
-        height: 200,
+        height: transparent ? null : 200,
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(12, 24, 12, 12),
-        decoration: BoxDecoration(
+        decoration: transparent ? null : BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
@@ -618,11 +739,11 @@ class _SimpleTaskTile extends ConsumerWidget {
                     ref.read(dashboardProvider.notifier).enterFocusMode(task);
                   },
                   icon: Icon(
-                    Icons.bolt_rounded,
-                    color: Colors.amber[600],
+                    Icons.filter_center_focus_rounded,
+                    color: Theme.of(context).colorScheme.primary,
                     size: 20,
                   ),
-                  tooltip: 'Enter Focus Mode',
+                  tooltip: 'Start Focus Session',
                 ),
                 if (task.dueDate != null)
                   Container(
