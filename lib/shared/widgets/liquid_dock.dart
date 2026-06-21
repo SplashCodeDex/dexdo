@@ -84,7 +84,6 @@ class _LiquidDockState extends ConsumerState<LiquidDock>
     _NavItemData(Icons.space_dashboard_outlined, Icons.space_dashboard_rounded, 'Home'),
     _NavItemData(Icons.calendar_today_outlined, Icons.calendar_today_rounded, 'Schedule'),
     _NavItemData(Icons.check_circle_outline_rounded, Icons.check_circle_rounded, 'Tasks'),
-    _NavItemData(Icons.insights_outlined, Icons.insights_rounded, 'Insights'),
   ];
 
   @override

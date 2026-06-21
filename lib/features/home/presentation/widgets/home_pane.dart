@@ -509,9 +509,7 @@ class _UpcomingTasks extends ConsumerWidget {
                 size: 40,
                 color: Theme.of(context).colorScheme.primary,
               ),
-            ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-             .scale(duration: 2.seconds, curve: Curves.easeInOut)
-             .moveY(begin: -5, end: 5, duration: 2.seconds, curve: Curves.easeInOut),
+            ),
             const SizedBox(height: 24),
             Text(
               'All Caught Up!',
@@ -520,7 +518,7 @@ class _UpcomingTasks extends ConsumerWidget {
                 fontWeight: FontWeight.w800,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
-            ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
+            ),
             const SizedBox(height: 8),
             Text(
               'You\'ve completed all your tasks.\nTake a break and recharge.',
@@ -530,7 +528,7 @@ class _UpcomingTasks extends ConsumerWidget {
                 color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                 height: 1.5,
               ),
-            ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
+            ),
           ],
         ),
       );
