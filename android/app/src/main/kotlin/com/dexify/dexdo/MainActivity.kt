@@ -35,12 +35,65 @@ class MainActivity: FlutterActivity() {
         }
         
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.dexify.dexdo/audio").setMethodCallHandler { call, result ->
-            if (call.method == "playVoiceTrigger") {
-                playChime()
-                result.success(null)
-            } else {
-                result.notImplemented()
+            when (call.method) {
+                "playVoiceTrigger" -> {
+                    playChime()
+                    result.success(null)
+                }
+                "muteSpeechRecognizerBeep" -> {
+                    muteSpeechBeep()
+                    result.success(null)
+                }
+                "unmuteSpeechRecognizerBeep" -> {
+                    unmuteSpeechBeep()
+                    result.success(null)
+                }
+                else -> {
+                    result.notImplemented()
+                }
             }
+        }
+    }
+
+    private var originalMusicVolume = -1
+    private var originalSystemVolume = -1
+
+    private fun muteSpeechBeep() {
+        val audioManager = getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                audioManager.adjustStreamVolume(android.media.AudioManager.STREAM_SYSTEM, android.media.AudioManager.ADJUST_MUTE, 0)
+                audioManager.adjustStreamVolume(android.media.AudioManager.STREAM_MUSIC, android.media.AudioManager.ADJUST_MUTE, 0)
+            } else {
+                originalSystemVolume = audioManager.getStreamVolume(android.media.AudioManager.STREAM_SYSTEM)
+                audioManager.setStreamVolume(android.media.AudioManager.STREAM_SYSTEM, 0, 0)
+                
+                originalMusicVolume = audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC)
+                audioManager.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, 0, 0)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivityAudio", "Error muting streams: ${e.message}")
+        }
+    }
+
+    private fun unmuteSpeechBeep() {
+        val audioManager = getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                audioManager.adjustStreamVolume(android.media.AudioManager.STREAM_SYSTEM, android.media.AudioManager.ADJUST_UNMUTE, 0)
+                audioManager.adjustStreamVolume(android.media.AudioManager.STREAM_MUSIC, android.media.AudioManager.ADJUST_UNMUTE, 0)
+            } else {
+                if (originalSystemVolume != -1) {
+                    audioManager.setStreamVolume(android.media.AudioManager.STREAM_SYSTEM, originalSystemVolume, 0)
+                    originalSystemVolume = -1
+                }
+                if (originalMusicVolume != -1) {
+                    audioManager.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, originalMusicVolume, 0)
+                    originalMusicVolume = -1
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivityAudio", "Error unmuting streams: ${e.message}")
         }
     }
 

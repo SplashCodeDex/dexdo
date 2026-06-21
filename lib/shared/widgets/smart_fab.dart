@@ -119,12 +119,26 @@ class _SmartFabState extends ConsumerState<SmartFab> with TickerProviderStateMix
     unawaited(_morphController.forward());
     unawaited(_scaleController.animateTo(1.0, curve: Curves.elasticOut)); // Grow the mic FAB slightly
     
+    // Wait for the custom chime to finish playing (400ms) before muting and starting speech recognizer
+    await Future.delayed(const Duration(milliseconds: 400));
+    
+    // Mute system streams to suppress the default beep
+    await AudioService.muteSpeechRecognizerBeep();
+    
     // Start voice recording
     await ref.read(speechProvider.notifier).startListening();
+
+    // After 1.2 seconds, restore the audio volumes so device music/systems are normal
+    unawaited(Future.delayed(const Duration(milliseconds: 1200), () {
+      AudioService.unmuteSpeechRecognizerBeep();
+    }));
   }
 
   void _resetFab() {
     unawaited(ref.read(speechProvider.notifier).cancelListening());
+    
+    // Always unmute system volume streams when resetting/finishing
+    unawaited(AudioService.unmuteSpeechRecognizerBeep());
     
     unawaited(_scaleController.animateTo(0.0, curve: Curves.easeOut).then((_) {
       _scaleController.value = 0.0;

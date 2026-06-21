@@ -12,4 +12,22 @@ class AudioService {
       AppLogger.e('AudioService MethodChannel error', e, stack);
     }
   }
+
+  /// Temporarily mute streams to silence the default Android SpeechRecognizer beep.
+  static Future<void> muteSpeechRecognizerBeep() async {
+    try {
+      await _channel.invokeMethod('muteSpeechRecognizerBeep');
+    } catch (e, stack) {
+      AppLogger.e('AudioService mute error', e, stack);
+    }
+  }
+
+  /// Restore audio streams to their original volume.
+  static Future<void> unmuteSpeechRecognizerBeep() async {
+    try {
+      await _channel.invokeMethod('unmuteSpeechRecognizerBeep');
+    } catch (e, stack) {
+      AppLogger.e('AudioService unmute error', e, stack);
+    }
+  }
 }
