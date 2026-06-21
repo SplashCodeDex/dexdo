@@ -65,6 +65,7 @@ dependencies:
   widgetbook_annotation: ^3.11.0
   connectivity_plus: ^7.1.1
   cloud_functions: ^6.3.3
+  home_widget: ^0.7.0
 
 dev_dependencies:
   flutter_test:
@@ -92,6 +93,9 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/images/DexDo.png"
   min_sdk_android: 21
+  adaptive_icon_background: "#6c3db8"
+  adaptive_icon_foreground: "assets/images/DexDo_foreground.png"
+  monochrome_icon: "assets/images/DexDo_monochrome.png"
 
 flutter_native_splash:
   color: "#ffffff"

@@ -16,6 +16,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:uuid/uuid.dart';
 
 final taskProvider = NotifierProvider<TaskNotifier, TaskState>(() {
@@ -99,7 +100,7 @@ class TaskNotifier extends Notifier<TaskState> {
         isLoading: false,
       );
       _updateFilteredTasks();
-      _calculateStats();
+      unawaited(_calculateStats());
     } catch (e, stack) {
       _handleError(e, stack, 'Reload from storage failed');
     }
@@ -109,7 +110,7 @@ class TaskNotifier extends Notifier<TaskState> {
     if (_disposed) return;
     state = state.copyWith(tasks: updatedTasks);
     _updateFilteredTasks();
-    _calculateStats();
+    unawaited(_calculateStats());
   }
 
   void setCategory(String category) {
@@ -239,6 +240,7 @@ class TaskNotifier extends Notifier<TaskState> {
       recoveryTasks: recovery,
       completedTodayCount: completedTodayCount,
     );
+    unawaited(_updateHomeWidget());
   }
 
   Future<void> _calculateStats() async {
@@ -348,7 +350,7 @@ class TaskNotifier extends Notifier<TaskState> {
         selectedTask: newTask,
       );
       _updateFilteredTasks();
-      _calculateStats();
+      unawaited(_calculateStats());
       unawaited(AppHaptics.light());
       await _repository.saveTasks(state.tasks);
     } catch (e, stack) {
@@ -395,7 +397,7 @@ class TaskNotifier extends Notifier<TaskState> {
       );
       
       _replaceTask(updatedTask);
-      _calculateStats();
+      unawaited(_calculateStats());
 
       if (isMarkingDone) {
         unawaited(AppHaptics.heavy());
@@ -554,7 +556,7 @@ class TaskNotifier extends Notifier<TaskState> {
         tasks: [duplicatedTask, ...updatedTasks],
       );
       _updateFilteredTasks();
-      _calculateStats();
+      unawaited(_calculateStats());
       unawaited(AppHaptics.medium());
       await _repository.saveTasks(state.tasks);
     } catch (e, stack) {
@@ -565,10 +567,6 @@ class TaskNotifier extends Notifier<TaskState> {
   Future<void> reorderTasks(int oldIndex, int newIndex) async {
     try {
       final activeTasks = state.filteredTasks.where((t) => !t.isCompleted).toList();
-      
-      if (oldIndex < newIndex) {
-        newIndex -= 1;
-      }
       
       final task = activeTasks.removeAt(oldIndex);
       activeTasks.insert(newIndex, task);
@@ -584,7 +582,7 @@ class TaskNotifier extends Notifier<TaskState> {
       
       state = state.copyWith(tasks: updatedTasks);
       _updateFilteredTasks();
-      _calculateStats();
+      unawaited(_calculateStats());
       await _repository.saveTasks(state.tasks);
     } catch (e, stack) {
       _handleError(e, stack, 'Reorder tasks failed');
@@ -614,7 +612,7 @@ class TaskNotifier extends Notifier<TaskState> {
       );
       
       _updateFilteredTasks();
-      _calculateStats();
+      unawaited(_calculateStats());
       unawaited(AppHaptics.heavy());
       await _repository.deleteTask(task.id);
       await _notifications.cancelTaskReminder(task.id);
@@ -648,7 +646,7 @@ class TaskNotifier extends Notifier<TaskState> {
     );
     
     _updateFilteredTasks();
-    _calculateStats();
+    unawaited(_calculateStats());
     await _repository.batchDeleteTasks(toDeleteIds);
     for (var id in toDeleteIds) {
       await _notifications.cancelTaskReminder(id);
@@ -675,7 +673,7 @@ class TaskNotifier extends Notifier<TaskState> {
       selectedTaskIds: {},
     );
     _updateFilteredTasks();
-    _calculateStats();
+    unawaited(_calculateStats());
     await _repository.saveTasks(state.tasks);
   }
 
@@ -704,7 +702,7 @@ class TaskNotifier extends Notifier<TaskState> {
 
       state = state.copyWith(tasks: updatedTasks, isAILoading: false, selectedTaskIds: {});
       _updateFilteredTasks();
-      _calculateStats();
+      unawaited(_calculateStats());
       await _repository.saveTasks(state.tasks);
       unawaited(AppHaptics.success());
     } catch (e, stack) {
@@ -718,7 +716,7 @@ class TaskNotifier extends Notifier<TaskState> {
       final taskIds = state.tasks.map((t) => t.id).toList();
       state = state.copyWith(tasks: [], selectedTaskIds: {}, clearSelectedTask: true);
       _updateFilteredTasks();
-      _calculateStats();
+      unawaited(_calculateStats());
       await _repository.batchDeleteTasks(taskIds);
       for (var id in taskIds) {
         await _notifications.cancelTaskReminder(id);
@@ -741,7 +739,7 @@ class TaskNotifier extends Notifier<TaskState> {
       );
       
       _updateFilteredTasks();
-      _calculateStats();
+      unawaited(_calculateStats());
       await _repository.batchDeleteTasks(completedIds);
     } catch (e, stack) {
       _handleError(e, stack, 'Clear completed failed');
@@ -867,6 +865,29 @@ class TaskNotifier extends Notifier<TaskState> {
       await _repository.saveCategoryColors(updatedColors);
     } catch (e, stack) {
       _handleError(e, stack, 'Delete category failed');
+    }
+  }
+
+  Future<void> _updateHomeWidget() async {
+    try {
+      final active = state.activeTasks;
+      final count = active.length;
+
+      // Save count of remaining tasks
+      await HomeWidget.saveWidgetData<int>('active_tasks_count', count);
+
+      // Save top 3 task titles
+      for (int i = 0; i < 3; i++) {
+        final title = i < active.length ? active[i].title : '';
+        await HomeWidget.saveWidgetData<String>('task_title_$i', title);
+      }
+
+      // Trigger native widget update
+      await HomeWidget.updateWidget(
+        androidName: 'DexDoWidgetProvider',
+      );
+    } catch (e) {
+      AppLogger.e('Failed to update home widget data', e);
     }
   }
 }
