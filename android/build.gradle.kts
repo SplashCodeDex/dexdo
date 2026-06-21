@@ -18,9 +18,8 @@ buildscript {
 }
 
 val newBuildDir: Directory =
-    rootProject.layout.buildDirectory
+    rootProject.layout.projectDirectory
         .dir("../build")
-        .get()
 rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {

@@ -11,7 +11,7 @@ import 'package:dexdo/features/home/presentation/widgets/home_pane.dart';
 import 'package:dexdo/features/home/presentation/widgets/statistics_pane.dart' deferred as statistics_pane;
 import 'package:dexdo/features/settings/presentation/widgets/settings_pane.dart' deferred as settings_pane;
 import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
-import 'package:dexdo/features/tasks/presentation/providers/task_state.dart';
+
 import 'package:dexdo/features/tasks/presentation/widgets/quick_task_sheet.dart';
 import 'package:dexdo/features/tasks/presentation/widgets/task_editor_pane.dart';
 import 'package:dexdo/features/tasks/presentation/widgets/task_list_pane.dart';
@@ -82,71 +82,6 @@ class DeleteSelectedIntent extends Intent {
 
 class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
   int _selectedIndex = 2; // Default to 'Tasks' icon
-
-  Widget _buildBody(bool isLargeScreen, TaskState taskState, TaskNotifier notifier) {
-    if (isLargeScreen) {
-      return Row(
-        children: [
-          // Sidebar Navigation for Desktop
-          _buildDesktopNavigationRail(),
-          VerticalDivider(width: 1, color: Theme.of(context).dividerColor),
-          
-          // Content Area
-          Expanded(
-            child: _buildMainContent(isLargeScreen),
-          ),
-        ],
-      );
-    }
-
-    return _buildMainContent(isLargeScreen);
-  }
-
-  Widget _buildDesktopNavigationRail() {
-    return NavigationRail(
-      selectedIndex: _selectedIndex,
-      onDestinationSelected: (index) {
-        FocusScope.of(context).unfocus();
-        HapticFeedback.selectionClick();
-        setState(() => _selectedIndex = index);
-      },
-      labelType: NavigationRailLabelType.selected,
-      backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
-      indicatorColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-      selectedIconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
-      unselectedIconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurfaceVariant),
-      selectedLabelTextStyle: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
-      unselectedLabelTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-      destinations: const [
-        NavigationRailDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home_rounded),
-          label: Text('Home'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.calendar_month_outlined),
-          selectedIcon: Icon(Icons.calendar_month_rounded),
-          label: Text('Calendar'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.list_alt_rounded),
-          selectedIcon: Icon(Icons.list_alt_rounded),
-          label: Text('Tasks'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.insights_outlined),
-          selectedIcon: Icon(Icons.insights_rounded),
-          label: Text('Insights'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.settings_outlined),
-          selectedIcon: Icon(Icons.settings_rounded),
-          label: Text('Settings'),
-        ),
-      ],
-    );
-  }
-
   Widget _buildMainContent(bool isLargeScreen) {
     if (_selectedIndex != 2) {
       Widget content;
@@ -581,7 +516,7 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeOutCubic,
-        padding: EdgeInsets.symmetric(horizontal: isSelected ? 18 : 12, vertical: 10),
+        padding: EdgeInsets.symmetric(horizontal: isSelected ? 12 : 8, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected 
               ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12) 
