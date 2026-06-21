@@ -127,6 +127,17 @@ class FirebaseAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> updateProfile({String? displayName}) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      if (displayName != null) {
+        await user.updateDisplayName(displayName);
+      }
+      await user.reload();
+    }
+  }
+
+  @override
   Future<void> signOut() async {
     await _googleSignIn.signOut();
     await _auth.signOut();

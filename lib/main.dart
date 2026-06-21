@@ -6,6 +6,7 @@ import 'package:dexdo/core/theme/app_theme.dart';
 import 'package:dexdo/core/theme/theme_provider.dart';
 import 'package:dexdo/core/widgets/deferred_widget.dart';
 import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
+import 'package:dexdo/features/auth/presentation/widgets/profile_screen.dart';
 import 'package:dexdo/features/calendar/presentation/widgets/calendar_pane.dart' deferred as calendar_pane;
 import 'package:dexdo/features/home/presentation/widgets/home_pane.dart';
 import 'package:dexdo/features/home/presentation/widgets/statistics_pane.dart' deferred as statistics_pane;
@@ -340,12 +341,8 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                             showAvatarDropdown(context, ref, onMenuSelected: (value) {
                               switch (value) {
                                 case 0: // Profile
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text('My Profile is coming soon!'),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    ),
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
                                   );
                                   break;
                                 case 1: // Stats

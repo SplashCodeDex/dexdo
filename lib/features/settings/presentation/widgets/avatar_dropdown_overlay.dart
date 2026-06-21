@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:dexdo/core/theme/theme_provider.dart';
 import 'package:dexdo/features/auth/presentation/providers/auth_provider.dart';
+import 'package:dexdo/features/tasks/presentation/providers/task_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -58,6 +59,9 @@ class _AvatarDropdownContent extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authState = ref.watch(authStateChangesProvider);
     final user = authState.value;
+    final completedCount = ref.watch(taskProvider.select((s) => s.completedTasks.length));
+    final level = (completedCount ~/ 10) + 1;
+    final xpProgress = (completedCount % 10) / 10.0;
 
     return Container(
       width: 320,
@@ -97,7 +101,7 @@ class _AvatarDropdownContent extends ConsumerWidget {
                 _buildNestedCard(
                   context,
                   children: [
-                    _buildProfileHeader(context, user, () {
+                    _buildProfileHeader(context, user, level, xpProgress, () {
                       HapticFeedback.mediumImpact();
                       onMenuSelected(0);
                     }),
@@ -202,7 +206,7 @@ class _AvatarDropdownContent extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, User? user, VoidCallback onTap) {
+  Widget _buildProfileHeader(BuildContext context, User? user, int level, double xpProgress, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -240,7 +244,7 @@ class _AvatarDropdownContent extends ConsumerWidget {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(4),
                           child: LinearProgressIndicator(
-                            value: 0.4,
+                            value: xpProgress,
                             minHeight: 6,
                             backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                             color: Theme.of(context).colorScheme.primary,
@@ -249,7 +253,7 @@ class _AvatarDropdownContent extends ConsumerWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Lvl 1',
+                        'Lvl $level',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,

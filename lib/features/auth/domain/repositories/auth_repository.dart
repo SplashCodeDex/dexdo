@@ -6,5 +6,6 @@ abstract class AuthRepository {
   bool get isAnonymous;
   Future<UserCredential?> signInAnonymously();
   Future<UserCredential?> linkWithGoogle();
+  Future<void> updateProfile({String? displayName});
   Future<void> signOut();
 }
