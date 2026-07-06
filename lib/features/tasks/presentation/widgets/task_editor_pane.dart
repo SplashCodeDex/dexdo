@@ -371,7 +371,7 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
                         ),
                         const SizedBox(height: 16),
                       ],
-                      
+
                       // Title Input
                       Material(
                         color: Colors.transparent,
@@ -495,25 +495,25 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
                                       initialDate: widget.task.dueDate,
                                     ),
                                   );
-                                  
+
                                   if (mounted && (pickedDate != null || widget.task.dueDate != null)) {
                                     // Note: DateTimePickerSheet returns null for 'Clear'
                                     // If we want to distinguish from 'Dismiss', we'd need a more complex result
                                     // For now, if result is null and it had a date, we assume clear.
                                     // But to be safe against accidental dismiss, we might only clear if we are certain.
                                     // In a pro UI, dismiss shouldn't clear.
-                                    
+
                                     // Re-check: the 'Clear' button in DateTimePickerSheet returns null.
-                                    // The user must have a way to clear. 
+                                    // The user must have a way to clear.
                                     // Let's assume for now that if we get null, it's either dismiss or clear.
                                     // To avoid clearing on dismiss, we could have used a sentinel.
-                                    
+
                                     if (pickedDate != null) {
                                       unawaited(taskNotifier.updateDueDate(widget.task, pickedDate));
                                     } else if (pickedDate == null && widget.task.dueDate != null) {
-                                      // Only clear if the user actually clicked clear. 
-                                      // Since showModalBottomSheet returns null on dismiss too, 
-                                      // this is ambiguous. 
+                                      // Only clear if the user actually clicked clear.
+                                      // Since showModalBottomSheet returns null on dismiss too,
+                                      // this is ambiguous.
                                       // I'll leave it as only updating if NOT null for now to prevent accidental clears.
                                     }
                                   }
@@ -572,7 +572,7 @@ class _TaskEditorPaneState extends ConsumerState<TaskEditorPane> {
                               unawaited(HapticFeedback.mediumImpact());
                               _handleAIBreakdown(taskNotifier);
                             },
-                            icon: _isAILoading 
+                            icon: _isAILoading
                               ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                               : const Icon(Icons.auto_awesome_rounded, size: 16),
                             label: Text(_isAILoading ? 'Thinking...' : 'AI Breakdown', style: const TextStyle(fontSize: 12)),

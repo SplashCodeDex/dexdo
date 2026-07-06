@@ -215,7 +215,7 @@ class TaskCard extends StatelessWidget {
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 16,
                                                 color: task.isCompleted
-                                                    ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) 
+                                                    ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
                                                     : Theme.of(context).colorScheme.onSurface,
                                                 decoration: task.isCompleted ? TextDecoration.lineThrough : null,
                                               ),

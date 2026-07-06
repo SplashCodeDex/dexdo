@@ -116,7 +116,7 @@ class _HomeSliverAppBar extends ConsumerWidget {
       floating: false,
       pinned: true,
       stretch: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
       elevation: 0,
       scrolledUnderElevation: 0,
       surfaceTintColor: Colors.transparent,
@@ -159,65 +159,47 @@ class _HomeSliverAppBar extends ConsumerWidget {
           ),
         ),
       ],
-      flexibleSpace: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          const double expandedHeight = 280.0;
-          final double minHeight = MediaQuery.paddingOf(context).top + kToolbarHeight;
-          final double currentHeight = constraints.maxHeight;
-          final double collapseProgress = ((expandedHeight - currentHeight) / (expandedHeight - minHeight)).clamp(0.0, 1.0);
-
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              // Collapsed background color and blur (fades in as app bar collapses)
-              if (collapseProgress > 0.0)
-                Opacity(
-                  opacity: collapseProgress,
-                  child: ClipRect(
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(
-                        sigmaX: 12 * collapseProgress,
-                        sigmaY: 12 * collapseProgress,
-                      ),
-                      child: Container(
-                        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ),
-                ),
-              // Expanded background gradient (fades out as app bar collapses, transparent bottom for feathered blend)
-              Opacity(
-                opacity: 1.0 - collapseProgress,
-                child: DecoratedBox(
+      flexibleSpace: Stack(
+        fit: StackFit.expand,
+        children: [
+          ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(color: Colors.transparent),
+            ),
+          ),
+          FlexibleSpaceBar(
+            stretchModes: const [
+              StretchMode.zoomBackground,
+              StretchMode.blurBackground,
+              StretchMode.fadeTitle,
+            ],
+            background: Stack(
+              fit: StackFit.expand,
+              children: [
+                DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
                         Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-                        Theme.of(context).colorScheme.surface.withValues(alpha: 0.0),
+                        Theme.of(context).colorScheme.surface,
                       ],
                     ),
                   ),
                 ),
-              ),
-              FlexibleSpaceBar(
-                stretchModes: const [
-                  StretchMode.zoomBackground,
-                  StretchMode.blurBackground,
-                  StretchMode.fadeTitle,
-                ],
-                background: _HeaderPageView(
+                _HeaderPageView(
                   greeting: greeting,
                   userName: userName,
                   totalToday: totalToday,
                   completedTodayCount: completedTodayCount,
                   progressToday: progressToday,
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -372,8 +354,6 @@ class _HeaderPageViewState extends State<_HeaderPageView> {
                         children: [
                           Text(
                             widget.greeting,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 16,
                               color: Theme.of(context).colorScheme.primary,
@@ -384,8 +364,6 @@ class _HeaderPageViewState extends State<_HeaderPageView> {
                           const SizedBox(height: 4),
                           Text(
                             widget.userName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.w900,
@@ -409,18 +387,14 @@ class _HeaderPageViewState extends State<_HeaderPageView> {
                                   color: Theme.of(context).colorScheme.primary,
                                 ),
                                 const SizedBox(width: 6),
-                                Flexible(
-                                  child: Text(
-                                    widget.totalToday == 0
-                                        ? 'No tasks yet'
-                                        : '${widget.completedTodayCount}/${widget.totalToday} Daily Goals',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.primary,
-                                    ),
+                                Text(
+                                  widget.totalToday == 0
+                                      ? 'No tasks yet'
+                                      : '${widget.completedTodayCount}/${widget.totalToday} Daily Goals',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.primary,
                                   ),
                                 ),
                               ],

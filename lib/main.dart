@@ -435,8 +435,10 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
     final bool isDark = brightness == Brightness.dark;
 
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.fromLTRB(20, 0, _selectedIndex == 1 ? 12 : 20, 20),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -464,7 +466,7 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                           color: Theme.of(context).colorScheme.surface.withValues(alpha: isDark ? 0.7 : 0.8),
                           borderRadius: BorderRadius.circular(32),
                           border: Border.all(
-                            color: isDark 
+                            color: isDark
                                 ? Colors.white.withValues(alpha: 0.05)
                                 : Colors.black.withValues(alpha: 0.05),
                             width: 1,
@@ -485,7 +487,11 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 16),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              width: _selectedIndex == 1 ? 8 : 16,
+            ),
             const SmartFab(),
           ],
         ),
@@ -533,7 +539,7 @@ class _HomeScreenState extends rp.ConsumerState<HomeScreen> {
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOutCubic,
               alignment: Alignment.centerLeft,
-              child: isSelected 
+              child: isSelected
                 ? Padding(
                     padding: const EdgeInsets.only(left: 8.0),
                     child: Text(
